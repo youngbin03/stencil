@@ -2,6 +2,8 @@
   "files": [],
   "references": [
     { "path": "packages/ir" },
-    { "path": "packages/normalizer" }
+    { "path": "packages/normalizer" },
+    { "path": "packages/solver" },
+    { "path": "packages/renderer" }
   ]
 }

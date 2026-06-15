@@ -276,5 +276,10 @@ export interface RenderSlide {
 export interface RenderAdapter {
   /** v1 "inplace" / v2 "resynth", etc. */
   readonly id: string;
-  render(slide: RenderSlide, tokens: Tokens): string;
+  /**
+   * @param slide   solved render tree
+   * @param baseSvg original template SVG string (used by "inplace"; ignored by "resynth")
+   * @param tokens  design system tokens
+   */
+  render(slide: RenderSlide, baseSvg: string, tokens: Tokens): string;
 }
