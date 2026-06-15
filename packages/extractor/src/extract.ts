@@ -65,7 +65,8 @@ function extractColors(doc: ReturnType<DOMParser["parseFromString"]>, canvasW: n
     for (let i = 0; i < els.length; i++) {
       const el = els[i]!;
       const fill = el.getAttribute("fill");
-      if (!fill || fill === "none") continue;
+      // Only solid colors count as tokens; skip none, gradients, patterns.
+      if (!fill || fill === "none" || fill.startsWith("url(")) continue;
       if (tag === "rect" && (num(el, "width") ?? 0) >= canvasW * 0.98 && bg === undefined) {
         bg = fill;
         continue;
