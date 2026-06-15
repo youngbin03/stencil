@@ -9,7 +9,8 @@ import { solveSlide } from "../packages/solver/dist/index.js";
 import { renderComposite } from "../packages/renderer/dist/index.js";
 
 const theme = process.argv[2] || "colorful";
-const prompt = process.argv[3] || "2026년 1분기 성과 보고: 매출 성장, 사용자 증가, 핵심 지표, 다음 분기 계획";
+// English by default: easier to reason about wrap/fit during development.
+const prompt = process.argv[3] || "2026 Q1 business review: revenue up 38%, 120K new users, churn down 5.2pp, next-quarter roadmap";
 
 const sysPath = resolve(`fixtures/assets/${theme}/system.json`);
 if (!existsSync(sysPath)) {

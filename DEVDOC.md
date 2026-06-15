@@ -422,7 +422,8 @@ stencil/
 - **Phase 2.5 — LLM 비전 분류.** `classifier`: SVG→PNG 래스터화(resvg-js) + 슬롯 bbox 번호 오버레이 + 구조 메타 → Claude 비전(opus) tool use → 풍부한 역할·이미지 교체성(mediaKind)·아키타입. extractor가 주입받아 role 오버라이드 + layout.archetype. id-규칙은 폴백(키 없으면 `--no-classify`). ✅ **완료(green 검증: body/decoration만 → kpi·label·logo·photo·chart + cover/stat/content 아키타입).**
 - **Phase 3 — 구성(Claude).** `composer`: tool use로 프롬프트 → 구성. 단일 레이아웃부터. → "프롬프트 → 구성 → 조립 → SVG."
 - **Phase 4 — 재합성 조립 고도화.** 텍스트 피팅(줄바꿈·오토핏·말줄임) → 블록 복제·재배치 + 이미지 바인딩 + 멀티 슬라이드 일관성.
-- **Phase 4.5 — 관계 그래프 추출 (RCE 내장).** 에셋화에서 ① 장식 구조화(배경/강조/포인트/이미지홀더/차트/구분선 분해) ② 타입된 관계 그래프(슬롯↔슬롯 above/aligned/coupled/emphasis_rank + 슬롯↔장식 anchored_to/inside/over/avoids)를 결정론 기하 + 비전 보강으로 추출해 에셋에 저장. 생성에선 정렬·앵커만 약하게 사용. → "에셋이 요소 간 조합 관계를 담는다." (제약 솔버 활용은 v2.)
+- **Phase 4.5 — 관계 그래프 추출 (RCE 내장).** 에셋화에서 ① 장식 구조화 ② 타입된 관계 그래프(슬롯↔슬롯 + 슬롯↔장식)를 결정론 기하 + 비전 보강으로 추출해 에셋에 저장. → 상세: `DEVDOC_phase4.5_relation-graph.md`.
+- **Phase 4.7 — Claude 디자인 에셋 배치 & 이미지 생성.** 배치 디렉터(관계 보존 배치) + 이미지 디렉터(Nano Banana Pro로 테마 일관 픽셀 생성, 레퍼런스 주입) + 비전 비평 루프(evaluator-optimizer, N≤2). Claude=판단/비평, nanobanana=픽셀, 솔버=좌표. → 상세: `DEVDOC_phase4.7_design-asset-placement.md`.
 - **Phase 5 — 웹앱 셸.** Next.js + Supabase 한 바퀴.
 - **Phase 6 — 다듬기.** 3테마 전체·오버플로 엣지·폰트 임베드·경고 UX.
 - **(v2+)** 인브라우저 편집 · RCE 생성부(관계→제약 솔버 kiwi.js 좌표 투영 + 렌더-비평-재정제 루프) · PPTX 어댑터 · 멀티 매체.
