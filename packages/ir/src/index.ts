@@ -165,14 +165,70 @@ export interface Region {
   allowedBlocks: string[];
 }
 
+// ---------------------------------------------------------------------------
+// Design grammar — relational/placement rules measured from the template
+// (DEVDOC: assetize stage; the "extraction" half of RCE). Deterministic.
+// ---------------------------------------------------------------------------
+
+/** Snap guidelines elements align to, in viewBox px. */
+export interface AlignmentGrid {
+  xGuides: number[];
+  yGuides: number[];
+  margin: number;
+}
+
+/** Vertical gap vocabulary quantized to a base unit. */
+export interface SpacingRhythm {
+  baseUnit: number;
+  gaps: { tight: number; normal: number; loose: number; section: number };
+}
+
+export interface HierarchyRank {
+  role: Role;
+  size: number;
+  weight: number;
+}
+
+export interface Hierarchy {
+  /** Roles ordered by visual weight (largest first). */
+  ranks: HierarchyRank[];
+  titleToBodyRatio: number;
+}
+
+/** A cluster of slots that sit together (proximity + shared alignment). */
+export interface SlotGroup {
+  id: string;
+  roles: Role[];
+  slotIds: string[];
+}
+
+export interface DesignGrammar {
+  alignmentGrid: AlignmentGrid;
+  spacingRhythm: SpacingRhythm;
+  hierarchy: Hierarchy;
+  groups: SlotGroup[];
+}
+
+/** A slot with its measured placement, persisted in the layout asset. */
+export interface PlacedSlot {
+  id: string;
+  role: Role;
+  type: SlotType;
+  bbox: BBox;
+  align: TextAlign;
+  groupId?: string;
+}
+
 export interface Layout {
   id: string;
   /** Reference to the decoration-only SVG fragment (text slots stripped). */
   decorationRef: string;
+  /** Measured placement of every text/image slot (assemble reads this). */
+  slots: PlacedSlot[];
   regions: Region[];
   /**
-   * Original slot ids in authoring order. Used by the assemble stage's
-   * inplace special case (content maps 1:1 onto these slots).
+   * Slot ids in authoring order. Assemble's inplace special case maps content
+   * 1:1 onto these; full re-composition uses `slots` + grammar instead.
    */
   defaultSlots: string[];
 }
@@ -183,6 +239,8 @@ export interface DesignSystemIR {
   version: 1;
   canvas: Canvas;
   tokens: Tokens;
+  /** Relational + placement rules of the template (per layout in v1). */
+  grammar: DesignGrammar;
   blocks: Block[];
   layouts: Layout[];
 }

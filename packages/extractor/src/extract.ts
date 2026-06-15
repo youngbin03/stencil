@@ -1,6 +1,7 @@
 import { DOMParser, XMLSerializer, type Element } from "@xmldom/xmldom";
 import type {
   BBox,
+  DesignGrammar,
   DesignSystemIR,
   Layout,
   ManifestSlot,
@@ -13,6 +14,7 @@ import type {
   TypeToken,
 } from "@stencil/ir";
 import { normalizeSvg } from "@stencil/normalizer";
+import { extractGrammar, placeSlots } from "./grammar.js";
 
 /**
  * Assetize stage (DEVDOC 5/②). Turns a template SVG into a persistent design
@@ -135,17 +137,18 @@ function unionBBox(slots: ManifestSlot[]): BBox {
   return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
 }
 
-function buildLayout(manifest: SlotManifest, decorationRef: string): Layout {
+function buildLayout(manifest: SlotManifest, decorationRef: string, grammar: DesignGrammar): Layout {
   const region: Region = {
     id: "content",
     bbox: unionBBox(manifest.slots),
     flow: "column",
-    gap: 24,
+    gap: grammar.spacingRhythm.gaps.normal,
     allowedBlocks: [],
   };
   return {
     id: manifest.layoutId,
     decorationRef,
+    slots: placeSlots(manifest, grammar.groups),
     regions: [region],
     defaultSlots: manifest.slots.filter((s) => s.type === "text").map((s) => s.id),
   };
@@ -184,14 +187,19 @@ export function extractAsset(svg: string, opts: ExtractOptions): ExtractResult {
   });
   const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
 
+  const tokens = extractTokens(doc, manifest);
+  const grammar = extractGrammar(manifest, tokens.type);
+  tokens.spacing.unit = grammar.spacingRhythm.baseUnit;
+
   const asset: DesignSystemIR = {
     templateId: opts.templateId,
     theme: opts.theme,
     version: 1,
     canvas: manifest.canvas,
-    tokens: extractTokens(doc, manifest),
+    tokens,
+    grammar,
     blocks: [],
-    layouts: [buildLayout(manifest, opts.decorationRef)],
+    layouts: [buildLayout(manifest, opts.decorationRef, grammar)],
   };
 
   return { asset, decorationSvg: extractDecoration(svg), manifest };

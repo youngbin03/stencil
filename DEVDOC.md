@@ -63,7 +63,7 @@
 ### 2.2 비목표 (의도적 제외)
 아래는 "아직 안 함"이지 "못 함"이 아니다. 에셋/조립 구조가 나중에 흡수하도록 설계하되, v1에서는 구현하지 않는다.
 
-- **미감 조합 엔진(RCE) 풀버전.** 관계 그래프 + 제약 솔버(kiwi.js) + 비전 비평 루프는 별도 상위 모드(v2+). v1 조립은 영역·흐름 기반 결정론으로 한다. RCE의 가벼운 부분(간격 리듬·위계 비율·오버플로 검출)만 v1 조립 규칙으로 흡수.
+- **미감 조합 엔진(RCE) 풀버전.** RCE는 둘로 쪼갠다. **(추출) 디자인 문법**(정렬 그리드·간격 리듬·위계 비율·그룹핑)은 **v1 에셋화 ②에 포함**한다. **(생성) 관계 그래프 + 제약 솔버(kiwi.js) + 비전 비평 루프**는 별도 상위 모드(v2+)다. v1 조립은 디자인 문법을 규칙으로 쓰되 영역·흐름 기반 결정론으로 한다.
 - **장식의 재발명.** 장식은 추출한 조각을 재사용만 한다. 새 장식을 모델이 생성하지 않는다.
 - **래스터(PNG·JPG) 템플릿 입력.** 입력은 벡터 SVG로 한정.
 - **PPTX·DOCX·PDF 등 비-SVG 출력.** 출력 어댑터로 후속 추가.
@@ -106,7 +106,8 @@
   │       (id→역할 매핑, bbox, 폰트·색)           │
   ▼                                              │
 ② 에셋화  분석 결과를 디자인 시스템 에셋으로 저장 │
-  │       토큰 · 블록 · 레이아웃 · 장식 조각      │
+  │       토큰 · 디자인 문법 · 블록 · 레이아웃 ·  │
+  │       장식 조각                              │
   ▼                                              │
 [디자인 시스템 에셋]  ──── (Supabase 영속 저장) ──┘
   │
@@ -152,9 +153,10 @@
 - **입력:** 슬롯 매니페스트(들) + 원본 SVG.
 - **출력:** 디자인 시스템 에셋(6.3) + 레이아웃별 장식 에셋 SVG.
 - **주요 로직:**
-  - **토큰:** 슬롯·도형의 fill 빈도·면적 가중 → 팔레트(bg/text/accent). 슬롯 실측 size/family/weight를 역할별로 묶어 타입스케일. 슬롯 간격 분포 → spacing 리듬.
-  - **블록:** 근접·정렬·역할 반복 패턴으로 슬롯을 블록으로 군집(7.2). 상대 기하·repeatable·제약 기록. (v1은 휴리스틱 + 수동 보정 허용.)
-  - **레이아웃:** 영역 경계를 슬롯 분포로 추정/수동 정의, 허용 블록 구성, 원본 슬롯 구성을 `default_slots`로 보존(인플레이스 특수케이스용).
+  - **토큰:** 슬롯·도형의 fill 빈도 → 팔레트(bg/text/accent; 그래디언트·패턴 fill 제외). 슬롯 실측 size/family/weight를 역할별로 묶어 타입스케일.
+  - **디자인 문법(라벨·관계·배치 규칙):** ① 정렬 그리드(슬롯 left-x/top-y 1D 클러스터 → x/y 가이드·margin) ② 간격 리듬(컬럼별 인접 슬롯 세로 gap → base unit + tight/normal/loose/section) ③ 위계(역할별 size 순위 + title:body 비율) ④ 그룹핑(근접+좌측정렬 슬롯 묶음 = 블록의 기초이자 라벨된 관계). 전부 실측·결정론.
+  - **블록:** 그룹핑을 기초로 근접·정렬·역할 반복을 블록으로 군집(7.2). 상대 기하·repeatable·제약 기록. (v1은 휴리스틱 + 수동 보정 허용.)
+  - **레이아웃:** 영역 경계 추정/정의 + 허용 블록 + **배치 슬롯**(각 슬롯 bbox·align·groupId) + 원본 슬롯 구성 `default_slots`(인플레이스 특수케이스용).
   - **장식 에셋:** 원본 SVG에서 텍스트 슬롯 노드를 제거한 사본을 레이아웃별 장식 SVG로 저장. 도형·`Decorative`·`<image>`·기기목업은 보존.
 - **엣지케이스:** 역할별 폰트가 파일마다 다르면 슬롯별 실측을 우선, 토큰은 대표값. 장식/텍스트 오분류 → `uncertain` 게이트.
 
@@ -243,6 +245,12 @@
     },
     "spacing": { "unit": 8, "scale": [8, 16, 24, 48, 96] }
   },
+  "grammar": {
+    "alignmentGrid": { "xGuides": [64, 1283], "yGuides": [66, 127, 174], "margin": 64 },
+    "spacingRhythm": { "baseUnit": 8, "gaps": { "tight": 33, "normal": 33, "loose": 81, "section": 81 } },
+    "hierarchy": { "ranks": [ { "role": "title", "size": 180, "weight": 200 }, { "role": "body", "size": 28, "weight": 400 } ], "titleToBodyRatio": 6.43 },
+    "groups": [ { "id": "g2", "roles": ["caption", "body"], "slotIds": ["Caption_2", "Body"] } ]
+  },
   "blocks": [
     {
       "id": "stat_card", "repeatable": true,
@@ -257,17 +265,24 @@
     {
       "id": "colorful_Frame-0",
       "decoration_ref": "storage://decorations/colorful_Frame-0.svg",
-      "regions": [
-        { "id": "header", "bbox": { "x": 64, "y": 80, "w": 1180, "h": 600 }, "flow": "column", "gap": 24, "allowed_blocks": ["title", "caption"] }
+      "slots": [
+        { "id": "Presentation title", "role": "title", "type": "text", "bbox": { "x": 64, "y": 174, "w": 1188, "h": 540 }, "align": "left", "groupId": "g3" },
+        { "id": "Caption_2", "role": "caption", "type": "text", "bbox": { "x": 1283, "y": 66, "w": 108, "h": 28 }, "align": "left", "groupId": "g2" },
+        { "id": "Body", "role": "body", "type": "text", "bbox": { "x": 1283, "y": 127, "w": 631, "h": 62 }, "align": "left", "groupId": "g2" }
       ],
-      "default_slots": ["Presentation title", "Caption", "Caption_2", "Body"]
+      "regions": [
+        { "id": "content", "bbox": { "x": 64, "y": 66, "w": 1850, "h": 648 }, "flow": "column", "gap": 33, "allowed_blocks": [] }
+      ],
+      "default_slots": ["Caption", "Caption_2", "Body", "Presentation title"]
     }
   ]
 }
 ```
 
 - `decoration_ref`로 레이아웃별 장식 SVG 조각을 참조한다. 조립이 이를 깐다.
+- `slots`는 각 슬롯의 측정된 배치(bbox·align·groupId). 조립이 읽는다.
 - `default_slots`는 원본 슬롯 구성(인플레이스 특수케이스 경로).
+- `grammar`는 템플릿의 라벨·관계·배치 규칙(v1은 레이아웃당; 후속 테마 단위 병합).
 - `type.*`의 family/size/weight는 실측값.
 
 ### 6.4 구성 (구성 ③ 출력, 생성마다 · Claude · 좌표 없음)
@@ -402,7 +417,7 @@ stencil/
 
 - **Phase 0 — 흡수 PoC.** `normalizer`로 템플릿 1장 → 슬롯 매니페스트(실측). ✅ **완료.**
 - **Phase 1 — 조립 PoC (인플레이스 특수케이스).** 손 콘텐츠 → `solver` → `renderer`로 SVG 1장. 비텍스트 보존·텍스트 치환 검증. ✅ **완료.**
-- **Phase 2 — 에셋화.** `extractor`: 토큰·블록·레이아웃 추출 + **장식 조각 분리 저장**. 83장 일괄. id→역할 매핑 보정 흐름. → "손 에셋 없이 에셋이 나온다."
+- **Phase 2 — 에셋화.** `extractor`: 토큰 + **디자인 문법**(정렬 그리드·간격 리듬·위계·그룹) + 배치 슬롯 + 레이아웃 + **장식 조각 분리 저장**. 83장 일괄. ✅ **완료.**
 - **Phase 3 — 구성(Claude).** `composer`: tool use로 프롬프트 → 구성. 단일 레이아웃부터. → "프롬프트 → 구성 → 조립 → SVG."
 - **Phase 4 — 재합성 조립 + 멀티 슬라이드.** 장식 깔기 + 블록 복제·재배치 + 텍스트 피팅 + 이미지 바인딩. 인플레이스 특수케이스와 통합. → "주제 한 줄 → 여러 장 덱(원본 미조회)."
 - **Phase 5 — 웹앱 셸.** Next.js + Supabase 한 바퀴.
@@ -432,17 +447,19 @@ stencil/
 
 **완료**
 - 리포 골격: npm workspaces, strict TS(NodeNext/ESM), 공유 tsconfig.
-- `packages/ir`: 6장 데이터 계약 타입(슬롯 매니페스트·디자인 시스템 에셋·구성·렌더 트리·어댑터).
-- **Phase 0 (흡수):** `packages/normalizer` — SVG → 슬롯 매니페스트. id→역할 사전 매핑, 실측 폰트·색·bbox. 3테마 + 장식-only 엣지 검증. (현재 bbox w/h는 휴리스틱; 정밀 getBBox는 Phase 2.)
-- **Phase 1 (조립·인플레이스 특수케이스):** `packages/solver`(고정 슬롯) + `packages/renderer`(텍스트 치환). 비텍스트 byte-identical, 텍스트만 교체·디자인 보존 검증. `scripts/phase1.mjs`.
+- `packages/ir`: 6장 데이터 계약 타입(슬롯 매니페스트·디자인 시스템 에셋+디자인 문법·배치 슬롯·구성·렌더 트리·어댑터).
+- **Phase 0 (흡수):** `packages/normalizer` — SVG → 슬롯 매니페스트. id→역할 사전 매핑, 실측 폰트·색·bbox. 3테마 + 장식-only 엣지 검증. (bbox w/h는 휴리스틱; 정밀 getBBox는 후속.)
+- **Phase 1 (조립·인플레이스 특수케이스):** `packages/solver`(고정 슬롯) + `packages/renderer`(텍스트 치환). 비텍스트 byte-identical 검증. `scripts/phase1.mjs`.
+- **Phase 2 (에셋화):** `packages/extractor` — 토큰(색/타입/간격) + **디자인 문법**(정렬 그리드·간격 리듬·위계 비율·그룹핑) + 배치 슬롯 + 레이아웃 + **장식 조각 분리 저장**. 83장 일괄. 확인 도구 `scripts/inspect-assets.mjs`(원본↔장식↔토큰↔문법 HTML 뷰어). `ir` 디자인 시스템 에셋을 grammar/placed-slot 모델로 확장.
 
-**다음 (Phase 2 — 에셋화)**
-- `packages/extractor` 신설: 토큰(색·타입스케일·간격) 추출 + 블록 군집(휴리스틱) + 레이아웃 정의 + **장식 조각 분리 저장**.
-- 핵심 신규 작업: 원본에서 텍스트 슬롯 제거한 **장식 SVG 조각**을 레이아웃별로 산출(생성 시 원본 미조회를 가능케 하는 핵심).
-- `ir` 타입 정합: 6.3 디자인 시스템 에셋에 `decoration_ref`·`default_slots` 반영(현재 타입은 인플레이스 baseTemplate 기준 → 에셋 모델로 갱신 필요).
+**다음 (Phase 3 — 구성, Claude)**
+- `packages/composer` 신설: 에셋 어휘 요약(레이아웃·영역·허용 블록·블록 슬롯·제약 + 그룹/위계 힌트)을 Claude에 주고 **tool use로 구성 JSON 강제**. 2패스(아웃라인→채움) + 검증 루프(허용 블록·필수 슬롯).
+- 산출 구성 → 기존 `solver`/`renderer`로 조립까지 한 바퀴. 단일 레이아웃부터.
+- API 키는 환경변수 `ANTHROPIC_API_KEY`로만(코드/커밋 금지).
 
 **유의**
 - 현 `renderer`는 인플레이스(원본 베이스) 구현. Phase 4에서 "장식 조각 + 토큰 텍스트 합성" 재합성 경로를 추가하고 인플레이스를 그 특수케이스로 통합.
+- `grammar`는 v1에서 레이아웃당 산출. 테마(=다중 레이아웃) 단위 병합은 후속.
 - 커밋 author 임시값 `Sinobin <dev@stencil.local>` 사용 중 — 실제 git config 확인 필요.
 
 ---

@@ -47,7 +47,10 @@ function main(): void {
   console.log("decoration:", decorationRef);
   console.log("tokens.colors:", JSON.stringify(asset.tokens.colors));
   console.log("type roles:", Object.keys(asset.tokens.type).join(", "));
-  console.log("defaultSlots:", asset.layouts[0]?.defaultSlots.join(", "));
+  console.log("grammar.grid:", JSON.stringify(asset.grammar.alignmentGrid));
+  console.log("grammar.rhythm:", JSON.stringify(asset.grammar.spacingRhythm.gaps), "base", asset.grammar.spacingRhythm.baseUnit);
+  console.log("grammar.hierarchy ratio:", asset.grammar.hierarchy.titleToBodyRatio);
+  console.log("grammar.groups:", asset.grammar.groups.map((g) => `${g.id}[${g.roles.join("+")}]`).join(" "));
 }
 
 main();
