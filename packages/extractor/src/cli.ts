@@ -1,11 +1,11 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { basename, dirname, resolve } from "node:path";
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { basename, resolve } from "node:path";
 import type { Theme } from "@stencil/ir";
-import { extractAsset } from "./extract.js";
+import { extractThemeSystem, type SlideInput } from "./extract.js";
 
 /**
- * Assetize runner: `extract <path-to-svg>` writes the design system asset JSON
- * and the decoration-only SVG fragment under fixtures/assets/.
+ * Assetize runner: `extract <theme-dir>` builds ONE design system for the theme
+ * and writes system.json + per-layout decoration SVGs under fixtures/assets.
  */
 
 const THEME_BY_DIR: Record<string, Theme> = {
@@ -17,40 +17,39 @@ const THEME_BY_DIR: Record<string, Theme> = {
 function main(): void {
   const input = process.argv[2];
   if (!input) {
-    console.error("usage: extract <path-to-svg>");
+    console.error("usage: extract <theme-dir>");
     process.exit(1);
   }
 
   const abs = resolve(input);
-  const svg = readFileSync(abs, "utf8");
-  const dir = basename(dirname(abs));
-  const theme = THEME_BY_DIR[dir] ?? "colorful";
-  const name = basename(abs).replace(/\.svg$/i, "");
-  const layoutId = `${theme}_${name}`;
+  const dirName = basename(abs);
+  const theme = THEME_BY_DIR[dirName] ?? "colorful";
+
+  const files = readdirSync(abs).filter((f) => f.toLowerCase().endsWith(".svg")).sort();
+  const slides: SlideInput[] = files.map((f) => ({
+    name: f.replace(/\.svg$/i, ""),
+    svg: readFileSync(resolve(abs, f), "utf8"),
+  }));
 
   const outDir = resolve("fixtures/assets", theme);
-  mkdirSync(outDir, { recursive: true });
-  const decorationRef = `fixtures/assets/${theme}/${name}.decoration.svg`;
+  const decoDir = resolve(outDir, "decorations");
+  mkdirSync(decoDir, { recursive: true });
 
-  const { asset, decorationSvg, manifest } = extractAsset(svg, {
-    templateId: theme,
+  const { system, decorations } = extractThemeSystem(slides, {
     theme,
-    layoutId,
-    decorationRef,
+    decorationRef: (layoutId) => `fixtures/assets/${theme}/decorations/${layoutId}.svg`,
   });
 
-  writeFileSync(resolve(outDir, `${name}.decoration.svg`), decorationSvg, "utf8");
-  writeFileSync(resolve(outDir, `${name}.asset.json`), JSON.stringify(asset, null, 2), "utf8");
-  writeFileSync(resolve(outDir, `${name}.manifest.json`), JSON.stringify(manifest, null, 2), "utf8");
+  writeFileSync(resolve(outDir, "system.json"), JSON.stringify(system, null, 2), "utf8");
+  for (const d of decorations) writeFileSync(resolve(decoDir, `${d.layoutId}.svg`), d.svg, "utf8");
 
-  console.log("asset:", `${decorationRef.replace(".decoration.svg", ".asset.json")}`);
-  console.log("decoration:", decorationRef);
-  console.log("tokens.colors:", JSON.stringify(asset.tokens.colors));
-  console.log("type roles:", Object.keys(asset.tokens.type).join(", "));
-  console.log("grammar.grid:", JSON.stringify(asset.grammar.alignmentGrid));
-  console.log("grammar.rhythm:", JSON.stringify(asset.grammar.spacingRhythm.gaps), "base", asset.grammar.spacingRhythm.baseUnit);
-  console.log("grammar.hierarchy ratio:", asset.grammar.hierarchy.titleToBodyRatio);
-  console.log("grammar.groups:", asset.grammar.groups.map((g) => `${g.id}[${g.roles.join("+")}]`).join(" "));
+  console.log(`theme: ${theme}  (${slides.length} slides -> 1 design system)`);
+  console.log("shared colors:", JSON.stringify(system.tokens.colors));
+  console.log("palette:", system.tokens.palette.join(", "));
+  console.log("shared type:", Object.entries(system.tokens.type).map(([r, t]) => `${r} ${t.family}/${t.size}`).join(" · "));
+  console.log("grammar grid x:", JSON.stringify(system.grammar.alignmentGrid.xGuides), "rhythm:", JSON.stringify(system.grammar.spacingRhythm.gaps));
+  console.log("grouping conventions:", system.grammar.groups.map((g) => g.roles.join("+")).join(", ") || "(none)");
+  console.log("layouts:", system.layouts.length, "→", resolve(outDir, "system.json"));
 }
 
 main();

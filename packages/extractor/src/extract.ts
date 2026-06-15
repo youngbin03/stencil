@@ -1,29 +1,25 @@
 import { DOMParser, XMLSerializer, type Element } from "@xmldom/xmldom";
 import type {
   BBox,
-  DesignGrammar,
+  Canvas,
   DesignSystemIR,
   Layout,
   ManifestSlot,
   Palette,
   Region,
-  SlotManifest,
+  SlotGroup,
   Theme,
   Tokens,
   TypeScale,
   TypeToken,
 } from "@stencil/ir";
 import { normalizeSvg } from "@stencil/normalizer";
-import { extractGrammar, placeSlots } from "./grammar.js";
+import { extractGroups, extractThemeGrammar, placeSlots, textSlots } from "./grammar.js";
 
 /**
- * Assetize stage (DEVDOC 5/②). Turns a template SVG into a persistent design
- * system asset (tokens + layout + decoration fragment). Generation later reads
- * these assets only — never the original SVG.
- *
- * Phase 2 scope: tokens (colors/type/spacing), one layout with defaultSlots,
- * and the decoration fragment. Block clustering is deferred to Phase 4; the
- * inplace special case (defaultSlots) covers generation until then.
+ * Assetize stage (DEVDOC ②). Builds ONE design system per theme: shared tokens
+ * and grammar measured across every slide, plus each slide as a layout and its
+ * decoration fragment. Generation later reads this system only — never the SVGs.
  */
 
 const DEFAULT_LINE_HEIGHT: Record<string, number> = {
@@ -33,22 +29,7 @@ const DEFAULT_LINE_HEIGHT: Record<string, number> = {
   body: 1.4,
   caption: 1.2,
 };
-
 const DEFAULT_SPACING_SCALE = [8, 16, 24, 48, 96];
-
-function modeOf(values: string[]): string | undefined {
-  const count = new Map<string, number>();
-  for (const v of values) count.set(v, (count.get(v) ?? 0) + 1);
-  let best: string | undefined;
-  let bestN = 0;
-  for (const [v, n] of count) {
-    if (n > bestN) {
-      best = v;
-      bestN = n;
-    }
-  }
-  return best;
-}
 
 function num(el: Element, attr: string): number | undefined {
   const v = el.getAttribute(attr);
@@ -57,78 +38,89 @@ function num(el: Element, attr: string): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-/** Collect fill colors from shapes, separating the full-canvas background. */
-function extractColors(doc: ReturnType<DOMParser["parseFromString"]>, canvasW: number, slots: ManifestSlot[]): Palette {
-  let bg: string | undefined;
-  const shapeFills: string[] = [];
+/** Most frequent value (ties → first seen). */
+function modeOf<T>(values: T[]): T | undefined {
+  const count = new Map<T, number>();
+  for (const v of values) count.set(v, (count.get(v) ?? 0) + 1);
+  let best: T | undefined;
+  let bestN = 0;
+  for (const [v, n] of count) if (n > bestN) ((best = v), (bestN = n));
+  return best;
+}
 
+/** Distinct values ordered by frequency desc. */
+function byFrequency<T>(values: T[]): T[] {
+  const count = new Map<T, number>();
+  for (const v of values) count.set(v, (count.get(v) ?? 0) + 1);
+  return [...count.entries()].sort((a, b) => b[1] - a[1]).map(([v]) => v);
+}
+
+interface SlideFills {
+  background?: string;
+  shapeFills: string[];
+}
+
+/** Collect solid fills from one slide, separating the full-canvas background. */
+function collectFills(doc: ReturnType<DOMParser["parseFromString"]>, canvasW: number): SlideFills {
+  let background: string | undefined;
+  const shapeFills: string[] = [];
   for (const tag of ["rect", "path", "circle", "ellipse", "polygon"]) {
     const els = doc.getElementsByTagName(tag);
     for (let i = 0; i < els.length; i++) {
       const el = els[i]!;
       const fill = el.getAttribute("fill");
-      // Only solid colors count as tokens; skip none, gradients, patterns.
       if (!fill || fill === "none" || fill.startsWith("url(")) continue;
-      if (tag === "rect" && (num(el, "width") ?? 0) >= canvasW * 0.98 && bg === undefined) {
-        bg = fill;
+      if (tag === "rect" && (num(el, "width") ?? 0) >= canvasW * 0.98 && background === undefined) {
+        background = fill;
         continue;
       }
       shapeFills.push(fill);
     }
   }
-
-  const textColor = modeOf(slots.filter((s) => s.type === "text" && s.color).map((s) => s.color!));
-  const accent = modeOf(shapeFills);
-
-  return {
-    primary: textColor ?? "#000000",
-    accent: accent ?? textColor ?? "#000000",
-    bg: bg ?? "#FFFFFF",
-    text: textColor ?? "#000000",
-  };
+  return background === undefined ? { shapeFills } : { background, shapeFills };
 }
 
-/** Build the type scale by grouping text slots by role (representative = largest size). */
+/** Shared type scale: per role, the most common font-size (tie → larger) sets the rank. */
 function extractType(slots: ManifestSlot[]): TypeScale {
-  const byRole = new Map<string, ManifestSlot>();
-  for (const s of slots) {
-    if (s.type !== "text") continue;
-    const cur = byRole.get(s.role);
-    if (!cur || (s.fontSize ?? 0) > (cur.fontSize ?? 0)) byRole.set(s.role, s);
-  }
+  const byRole = new Map<string, ManifestSlot[]>();
+  for (const s of textSlots(slots)) (byRole.get(s.role) ?? byRole.set(s.role, []).get(s.role)!).push(s);
 
-  const tokenFor = (s: ManifestSlot): TypeToken => ({
-    family: s.fontFamily ?? "sans-serif",
-    size: s.fontSize ?? 16,
-    weight: s.fontWeight ?? 400,
-    lineHeight: DEFAULT_LINE_HEIGHT[s.role] ?? 1.2,
-  });
+  const tokenFor = (group: ManifestSlot[]): TypeToken => {
+    const size = modeOf(group.map((s) => s.fontSize ?? 16)) ?? 16;
+    const rep = group.find((s) => (s.fontSize ?? 16) === size) ?? group[0]!;
+    return {
+      family: rep.fontFamily ?? "sans-serif",
+      size,
+      weight: rep.fontWeight ?? 400,
+      lineHeight: DEFAULT_LINE_HEIGHT[rep.role] ?? 1.2,
+    };
+  };
 
   const scale: Record<string, TypeToken> = {};
-  for (const [role, slot] of byRole) scale[role] = tokenFor(slot);
+  for (const [role, group] of byRole) scale[role] = tokenFor(group);
 
-  // Guarantee the three required keys (fall back to the largest available).
-  const largest = [...byRole.values()].sort((a, b) => (b.fontSize ?? 0) - (a.fontSize ?? 0))[0];
-  const fallback: TypeToken = largest
-    ? tokenFor(largest)
+  const allSorted = textSlots(slots).sort((a, b) => (b.fontSize ?? 0) - (a.fontSize ?? 0));
+  const fallback: TypeToken = allSorted[0]
+    ? tokenFor([allSorted[0]])
     : { family: "sans-serif", size: 16, weight: 400, lineHeight: 1.2 };
   const ensure = (role: "title" | "subtitle" | "body"): TypeToken => scale[role] ?? fallback;
-
   return { ...scale, title: ensure("title"), subtitle: ensure("subtitle"), body: ensure("body") };
 }
 
-function extractTokens(doc: ReturnType<DOMParser["parseFromString"]>, manifest: SlotManifest): Tokens {
-  const type = extractType(manifest.slots);
+function extractColors(backgrounds: string[], shapeFills: string[], textColors: string[]): Palette {
+  const bg = modeOf(backgrounds);
+  const text = modeOf(textColors);
+  const accent = modeOf(shapeFills.filter((c) => c !== bg));
   return {
-    fontFamily: type.body.family,
-    colors: extractColors(doc, manifest.canvas.w, manifest.slots),
-    type,
-    spacing: { unit: 8, scale: DEFAULT_SPACING_SCALE },
+    primary: text ?? "#000000",
+    accent: accent ?? text ?? "#000000",
+    bg: bg ?? "#FFFFFF",
+    text: text ?? "#000000",
   };
 }
 
 function unionBBox(slots: ManifestSlot[]): BBox {
-  const text = slots.filter((s) => s.type === "text");
+  const text = textSlots(slots);
   if (text.length === 0) return { x: 0, y: 0, w: 0, h: 0 };
   const minX = Math.min(...text.map((s) => s.bbox.x));
   const minY = Math.min(...text.map((s) => s.bbox.y));
@@ -137,70 +129,114 @@ function unionBBox(slots: ManifestSlot[]): BBox {
   return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
 }
 
-function buildLayout(manifest: SlotManifest, decorationRef: string, grammar: DesignGrammar): Layout {
-  const region: Region = {
-    id: "content",
-    bbox: unionBBox(manifest.slots),
-    flow: "column",
-    gap: grammar.spacingRhythm.gaps.normal,
-    allowedBlocks: [],
-  };
-  return {
-    id: manifest.layoutId,
-    decorationRef,
-    slots: placeSlots(manifest, grammar.groups),
-    regions: [region],
-    defaultSlots: manifest.slots.filter((s) => s.type === "text").map((s) => s.id),
-  };
-}
-
-/** Produce a decoration-only SVG by removing every <text> node. */
+/** Decoration-only SVG: remove every <text> node, keep shapes/decoration. */
 export function extractDecoration(svg: string): string {
   const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
   const texts = doc.getElementsByTagName("text");
-  // Collect first (live list mutates as we remove).
   const nodes: Element[] = [];
   for (let i = 0; i < texts.length; i++) nodes.push(texts[i]!);
   for (const n of nodes) n.parentNode?.removeChild(n);
   return new XMLSerializer().serializeToString(doc);
 }
 
-export interface ExtractOptions {
-  templateId: string;
-  theme: Theme;
+export interface SlideInput {
+  /** File name without extension; used for the layout id. */
+  name: string;
+  svg: string;
+}
+
+export interface ThemeDecoration {
   layoutId: string;
-  /** Stored reference for the decoration fragment (e.g. a storage path). */
-  decorationRef: string;
+  svg: string;
 }
 
-export interface ExtractResult {
-  asset: DesignSystemIR;
-  decorationSvg: string;
-  manifest: SlotManifest;
+export interface ThemeResult {
+  system: DesignSystemIR;
+  decorations: ThemeDecoration[];
 }
 
-export function extractAsset(svg: string, opts: ExtractOptions): ExtractResult {
-  const manifest = normalizeSvg(svg, {
-    layoutId: opts.layoutId,
-    theme: opts.theme,
-    baseTemplate: opts.decorationRef,
-  });
-  const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
+export interface ThemeOptions {
+  theme: Theme;
+  /** Builds the stored decoration ref from a layout id. */
+  decorationRef: (layoutId: string) => string;
+}
 
-  const tokens = extractTokens(doc, manifest);
-  const grammar = extractGrammar(manifest, tokens.type);
-  tokens.spacing.unit = grammar.spacingRhythm.baseUnit;
+/** Build one design system from all slides of a theme. */
+export function extractThemeSystem(slides: SlideInput[], opts: ThemeOptions): ThemeResult {
+  const allSlots: ManifestSlot[] = [];
+  const slidesTextSlots: ManifestSlot[][] = [];
+  const perSlideGroups: SlotGroup[][] = [];
+  const backgrounds: string[] = [];
+  const shapeFills: string[] = [];
+  const decorations: ThemeDecoration[] = [];
+  const layouts: Layout[] = [];
+  let canvas: Canvas = { w: 0, h: 0 };
 
-  const asset: DesignSystemIR = {
-    templateId: opts.templateId,
+  for (const slide of slides) {
+    const layoutId = `${opts.theme}_${slide.name}`;
+    const manifest = normalizeSvg(slide.svg, {
+      layoutId,
+      theme: opts.theme,
+      baseTemplate: opts.decorationRef(layoutId),
+    });
+    canvas = manifest.canvas;
+
+    const doc = new DOMParser().parseFromString(slide.svg, "image/svg+xml");
+    const fills = collectFills(doc, manifest.canvas.w);
+    if (fills.background) backgrounds.push(fills.background);
+    shapeFills.push(...fills.shapeFills);
+
+    const text = textSlots(manifest.slots);
+    const groups = extractGroups(text);
+    allSlots.push(...manifest.slots);
+    slidesTextSlots.push(text);
+    perSlideGroups.push(groups);
+
+    layouts.push({
+      id: layoutId,
+      decorationRef: opts.decorationRef(layoutId),
+      background: fills.background ?? "#FFFFFF",
+      slots: placeSlots(manifest.slots, groups),
+      regions: [
+        {
+          id: "content",
+          bbox: unionBBox(manifest.slots),
+          flow: "column",
+          gap: 0, // filled from grammar below
+          allowedBlocks: [],
+        } satisfies Region,
+      ],
+      defaultSlots: text.map((s) => s.id),
+    });
+    decorations.push({ layoutId, svg: extractDecoration(slide.svg) });
+  }
+
+  const type = extractType(allSlots);
+  const textColors = textSlots(allSlots)
+    .map((s) => s.color)
+    .filter((c): c is string => Boolean(c));
+  const grammar = extractThemeGrammar(slidesTextSlots, type, perSlideGroups);
+
+  for (const layout of layouts) layout.regions[0]!.gap = grammar.spacingRhythm.gaps.normal;
+
+  const tokens: Tokens = {
+    fontFamily: type.body.family,
+    colors: extractColors(backgrounds, shapeFills, textColors),
+    palette: byFrequency([...backgrounds, ...shapeFills, ...textColors]),
+    type,
+    spacing: { unit: grammar.spacingRhythm.baseUnit, scale: DEFAULT_SPACING_SCALE },
+  };
+
+  const system: DesignSystemIR = {
+    templateId: opts.theme,
     theme: opts.theme,
     version: 1,
-    canvas: manifest.canvas,
+    canvas,
     tokens,
     grammar,
     blocks: [],
-    layouts: [buildLayout(manifest, opts.decorationRef, grammar)],
+    layouts,
   };
 
-  return { asset, decorationSvg: extractDecoration(svg), manifest };
+  return { system, decorations };
 }

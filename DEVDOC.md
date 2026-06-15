@@ -148,17 +148,18 @@
   - `<image>`/기기목업은 이미지 슬롯 후보 또는 장식으로 분류.
 - **엣지케이스:** 레이어명이 역할이 아니라 콘텐츠 인스턴스명(`Alison Lee`, `[Company Logo]`)인 경우 → `uncertain`으로 사람 확인 게이트. `<text>` 0개 파일 → 장식-only 레이아웃.
 
-### ② 에셋화 (슬롯 분석 → 디자인 시스템 에셋)
-- **책임:** 흡수 결과를 영속 에셋으로 정립. **여기서 장식 조각을 잘라 보관한다.**
-- **입력:** 슬롯 매니페스트(들) + 원본 SVG.
-- **출력:** 디자인 시스템 에셋(6.3) + 레이아웃별 장식 에셋 SVG.
+### ② 에셋화 (테마 슬라이드 전체 → 디자인 시스템 1개)
+- **책임:** **테마(폴더) 전체의 여러 슬라이드에서 공통 디자인 문법을 추출해 디자인 시스템 1개로 구축.** 슬라이드별로 따로 만들지 않는다 — 디자인 시스템은 정의상 공통 규칙의 집합이다. 여기서 장식 조각도 잘라 보관한다.
+- **입력:** 테마 폴더의 모든 SVG.
+- **출력:** 테마당 디자인 시스템 에셋 1개(6.3: 공유 토큰·팔레트·문법 + 레이아웃 N개) + 레이아웃별 장식 SVG.
 - **주요 로직:**
-  - **토큰:** 슬롯·도형의 fill 빈도 → 팔레트(bg/text/accent; 그래디언트·패턴 fill 제외). 슬롯 실측 size/family/weight를 역할별로 묶어 타입스케일.
-  - **디자인 문법(라벨·관계·배치 규칙):** ① 정렬 그리드(슬롯 left-x/top-y 1D 클러스터 → x/y 가이드·margin) ② 간격 리듬(컬럼별 인접 슬롯 세로 gap → base unit + tight/normal/loose/section) ③ 위계(역할별 size 순위 + title:body 비율) ④ 그룹핑(근접+좌측정렬 슬롯 묶음 = 블록의 기초이자 라벨된 관계). 전부 실측·결정론.
-  - **블록:** 그룹핑을 기초로 근접·정렬·역할 반복을 블록으로 군집(7.2). 상대 기하·repeatable·제약 기록. (v1은 휴리스틱 + 수동 보정 허용.)
-  - **레이아웃:** 영역 경계 추정/정의 + 허용 블록 + **배치 슬롯**(각 슬롯 bbox·align·groupId) + 원본 슬롯 구성 `default_slots`(인플레이스 특수케이스용).
-  - **장식 에셋:** 원본 SVG에서 텍스트 슬롯 노드를 제거한 사본을 레이아웃별 장식 SVG로 저장. 도형·`Decorative`·`<image>`·기기목업은 보존.
-- **엣지케이스:** 역할별 폰트가 파일마다 다르면 슬롯별 실측을 우선, 토큰은 대표값. 장식/텍스트 오분류 → `uncertain` 게이트.
+  - **공유 토큰:** 전 슬라이드의 슬롯·도형 fill 빈도 → 대표 팔레트(bg=최빈 배경, accent, text; 그래디언트·패턴 제외) + `palette`(테마 전체 색 합집합, 빈도순). 역할별 실측 size **최빈값**으로 공유 타입스케일.
+  - **디자인 문법(테마 공통):** ① 정렬 그리드(전 슬라이드 슬롯 x/y를 클러스터하되 **빈도 임계 이상**만 = 반복되는 공통 가이드) ② 간격 리듬(컬럼별 인접 gap을 전 슬라이드에서 모아 base unit + tight/normal/loose/section; section은 상위 분위로 outlier 완화) ③ 위계(공유 타입스케일 기반 size 순위 + title:body 비율) ④ 그룹 관습(슬라이드마다 반복되는 역할 시퀀스, 빈도순). 전부 실측·결정론.
+  - **레이아웃(슬라이드당 1개):** `decoration_ref` + `background`(레이아웃 배경색) + **배치 슬롯**(각 슬롯 bbox·align·groupId + **실측 폰트**) + `default_slots`(인플레이스 특수케이스용) + region.
+  - **블록:** 그룹 관습을 기초로 반복 패턴을 블록으로 군집(7.2). (v1은 `[]`도 허용; 인플레이스 특수케이스로 동작.)
+  - **장식 에셋:** 각 슬라이드에서 텍스트 슬롯 노드를 제거한 사본을 레이아웃별 장식 SVG로 저장.
+- **두 층:** 공유 토큰·문법 = 일관성(Claude 어휘·재합성), 레이아웃 슬롯의 실측 폰트 = 인플레이스 충실도. 둘을 모두 보존.
+- **엣지케이스:** 배경색은 슬라이드마다 다를 수 있어 레이아웃별 `background`로 보존(테마 대표 bg와 별개). 장식/텍스트 오분류 → `uncertain` 게이트.
 
 ### ③ 구성 (프롬프트 → 구성, Claude)
 - **책임:** 사용자 의도를 에셋 어휘로 번역.
@@ -236,7 +237,8 @@
   "canvas": { "w": 1920, "h": 1080 },
   "tokens": {
     "fontFamily": "Inter",
-    "colors": { "primary": "#1A1A2E", "accent": "#FF542D", "bg": "#F3F3F3", "text": "#000000" },
+    "colors": { "primary": "#000000", "accent": "#FF542D", "bg": "#F3F3F3", "text": "#000000" },
+    "palette": ["#000000", "#F3F3F3", "#FFFFFF", "#5FA0FB", "#237267", "#FF542D"],
     "type": {
       "title":    { "family": "Bricolage Grotesque", "size": 180, "weight": 200, "lineHeight": 1.0 },
       "subtitle": { "family": "Inter", "size": 40, "weight": 600, "lineHeight": 1.2 },
@@ -265,8 +267,9 @@
     {
       "id": "colorful_Frame-0",
       "decoration_ref": "storage://decorations/colorful_Frame-0.svg",
+      "background": "#F3F3F3",
       "slots": [
-        { "id": "Presentation title", "role": "title", "type": "text", "bbox": { "x": 64, "y": 174, "w": 1188, "h": 540 }, "align": "left", "groupId": "g3" },
+        { "id": "Presentation title", "role": "title", "type": "text", "bbox": { "x": 64, "y": 174, "w": 1188, "h": 540 }, "align": "left", "groupId": "g3", "fontFamily": "Bricolage Grotesque", "fontSize": 180, "fontWeight": 200, "color": "#000000" },
         { "id": "Caption_2", "role": "caption", "type": "text", "bbox": { "x": 1283, "y": 66, "w": 108, "h": 28 }, "align": "left", "groupId": "g2" },
         { "id": "Body", "role": "body", "type": "text", "bbox": { "x": 1283, "y": 127, "w": 631, "h": 62 }, "align": "left", "groupId": "g2" }
       ],
@@ -450,7 +453,7 @@ stencil/
 - `packages/ir`: 6장 데이터 계약 타입(슬롯 매니페스트·디자인 시스템 에셋+디자인 문법·배치 슬롯·구성·렌더 트리·어댑터).
 - **Phase 0 (흡수):** `packages/normalizer` — SVG → 슬롯 매니페스트. id→역할 사전 매핑, 실측 폰트·색·bbox. 3테마 + 장식-only 엣지 검증. (bbox w/h는 휴리스틱; 정밀 getBBox는 후속.)
 - **Phase 1 (조립·인플레이스 특수케이스):** `packages/solver`(고정 슬롯) + `packages/renderer`(텍스트 치환). 비텍스트 byte-identical 검증. `scripts/phase1.mjs`.
-- **Phase 2 (에셋화):** `packages/extractor` — 토큰(색/타입/간격) + **디자인 문법**(정렬 그리드·간격 리듬·위계 비율·그룹핑) + 배치 슬롯 + 레이아웃 + **장식 조각 분리 저장**. 83장 일괄. 확인 도구 `scripts/inspect-assets.mjs`(원본↔장식↔토큰↔문법 HTML 뷰어). `ir` 디자인 시스템 에셋을 grammar/placed-slot 모델로 확장.
+- **Phase 2 (에셋화, 테마 단위):** `packages/extractor` — **테마 폴더 전체 → 디자인 시스템 1개**(공유 토큰·팔레트 + 공통 디자인 문법[빈도 필터 정렬 그리드·간격 리듬·위계·그룹 관습] + 레이아웃 N개[배경·실측 슬롯·장식조각]). 3테마 = 시스템 3개(black 40 / colorful 32 / green 11 레이아웃). 확인 도구 `scripts/inspect-assets.mjs`(테마별 시스템 뷰어). `ir` 디자인 시스템을 테마 모델로 확장(palette, PlacedSlot 스타일, Layout.background).
 
 **다음 (Phase 3 — 구성, Claude)**
 - `packages/composer` 신설: 에셋 어휘 요약(레이아웃·영역·허용 블록·블록 슬롯·제약 + 그룹/위계 힌트)을 Claude에 주고 **tool use로 구성 JSON 강제**. 2패스(아웃라인→채움) + 검증 루프(허용 블록·필수 슬롯).

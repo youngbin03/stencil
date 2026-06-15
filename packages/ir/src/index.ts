@@ -136,6 +136,8 @@ export interface Tokens {
   /** Default body font (representative); per-slot real family takes precedence. */
   fontFamily: string;
   colors: Palette;
+  /** All distinct colors used across the theme, most frequent first. */
+  palette: string[];
   type: TypeScale;
   spacing: SpacingToken;
 }
@@ -209,7 +211,11 @@ export interface DesignGrammar {
   groups: SlotGroup[];
 }
 
-/** A slot with its measured placement, persisted in the layout asset. */
+/**
+ * A slot with its measured placement and style, persisted in the layout asset.
+ * Carries the slot's own measured font (for inplace fidelity); the theme's
+ * shared type scale lives in tokens (for consistency / re-composition).
+ */
 export interface PlacedSlot {
   id: string;
   role: Role;
@@ -217,13 +223,21 @@ export interface PlacedSlot {
   bbox: BBox;
   align: TextAlign;
   groupId?: string;
+  color?: string;
+  fontFamily?: string;
+  fontSize?: number;
+  fontWeight?: number;
+  letterSpacing?: string;
+  ratio?: string;
 }
 
 export interface Layout {
   id: string;
   /** Reference to the decoration-only SVG fragment (text slots stripped). */
   decorationRef: string;
-  /** Measured placement of every text/image slot (assemble reads this). */
+  /** This layout's background fill (full-canvas), preserved per layout. */
+  background: string;
+  /** Measured placement + style of every text/image slot (assemble reads this). */
   slots: PlacedSlot[];
   regions: Region[];
   /**
@@ -233,15 +247,22 @@ export interface Layout {
   defaultSlots: string[];
 }
 
+/**
+ * One design system per theme: shared tokens + grammar extracted across all of
+ * the theme's slides, plus every slide as a layout. Generation reads this only.
+ */
 export interface DesignSystemIR {
+  /** Theme name; one design system per theme. */
   templateId: string;
   theme: Theme;
   version: 1;
   canvas: Canvas;
+  /** Shared design language across the whole theme. */
   tokens: Tokens;
-  /** Relational + placement rules of the template (per layout in v1). */
+  /** Common relational + placement rules across the theme's slides. */
   grammar: DesignGrammar;
   blocks: Block[];
+  /** Every slide of the theme, as a layout. */
   layouts: Layout[];
 }
 
