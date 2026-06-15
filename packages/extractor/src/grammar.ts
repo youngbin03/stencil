@@ -4,6 +4,7 @@ import type {
   Hierarchy,
   HierarchyRank,
   ManifestSlot,
+  MediaKind,
   PlacedSlot,
   Role,
   SlotGroup,
@@ -11,6 +12,14 @@ import type {
   TextAlign,
   TypeScale,
 } from "@stencil/ir";
+
+/** Per-slot label from the vision classifier (extra fields merged into slots). */
+export interface SlotLabelLite {
+  role: Role;
+  mediaKind?: MediaKind;
+  replaceable?: boolean;
+  note?: string;
+}
 
 /**
  * Design grammar extraction (DEVDOC assetize ②, the "extraction" half of RCE).
@@ -174,14 +183,19 @@ export function extractThemeGrammar(
 }
 
 /** Promote manifest slots to placed slots with style, tagging group membership. */
-export function placeSlots(slots: ManifestSlot[], groups: SlotGroup[]): PlacedSlot[] {
+export function placeSlots(
+  slots: ManifestSlot[],
+  groups: SlotGroup[],
+  labels?: Map<string, SlotLabelLite>,
+): PlacedSlot[] {
   const groupOf = new Map<string, string>();
   for (const g of groups) for (const id of g.slotIds) groupOf.set(id, g.id);
 
   return slots.map((s) => {
+    const label = labels?.get(s.id);
     const slot: PlacedSlot = {
       id: s.id,
-      role: s.role,
+      role: label?.role ?? s.role,
       type: s.type,
       bbox: s.bbox,
       align: (s.align ?? "left") satisfies TextAlign,
@@ -194,6 +208,9 @@ export function placeSlots(slots: ManifestSlot[], groups: SlotGroup[]): PlacedSl
     if (s.fontWeight !== undefined) slot.fontWeight = s.fontWeight;
     if (s.letterSpacing) slot.letterSpacing = s.letterSpacing;
     if (s.ratio) slot.ratio = s.ratio;
+    if (label?.mediaKind) slot.mediaKind = label.mediaKind;
+    if (label?.replaceable !== undefined) slot.replaceable = label.replaceable;
+    if (label?.note) slot.note = label.note;
     return slot;
   });
 }

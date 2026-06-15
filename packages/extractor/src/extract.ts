@@ -4,6 +4,7 @@ import type {
   Canvas,
   DesignSystemIR,
   Layout,
+  LayoutArchetype,
   ManifestSlot,
   Palette,
   Region,
@@ -14,7 +15,21 @@ import type {
   TypeToken,
 } from "@stencil/ir";
 import { normalizeSvg } from "@stencil/normalizer";
-import { extractGroups, extractThemeGrammar, placeSlots, textSlots } from "./grammar.js";
+import { extractGroups, extractThemeGrammar, placeSlots, textSlots, type SlotLabelLite } from "./grammar.js";
+
+/** Injected vision classifier (Phase 2.5). Returns null on failure → id-rule fallback. */
+export type ClassifyFn = (
+  svg: string,
+  slots: ManifestSlot[],
+) => Promise<{ archetype: LayoutArchetype; labels: Map<string, SlotLabelLite> } | null>;
+
+async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = [];
+  for (let i = 0; i < items.length; i += limit) {
+    out.push(...(await Promise.all(items.slice(i, i + limit).map(fn))));
+  }
+  return out;
+}
 
 /**
  * Assetize stage (DEVDOC ②). Builds ONE design system per theme: shared tokens
@@ -159,10 +174,55 @@ export interface ThemeOptions {
   theme: Theme;
   /** Builds the stored decoration ref from a layout id. */
   decorationRef: (layoutId: string) => string;
+  /** Optional vision classifier (Phase 2.5). When absent, id-rule roles are kept. */
+  classify?: ClassifyFn;
+  /** Max concurrent classify calls. */
+  concurrency?: number;
+}
+
+interface Prepared {
+  layoutId: string;
+  slide: SlideInput;
+  manifest: ReturnType<typeof normalizeSvg>;
+  background: string | undefined;
+  shapeFills: string[];
 }
 
 /** Build one design system from all slides of a theme. */
-export function extractThemeSystem(slides: SlideInput[], opts: ThemeOptions): ThemeResult {
+export async function extractThemeSystem(slides: SlideInput[], opts: ThemeOptions): Promise<ThemeResult> {
+  // 1) Deterministic prep: normalize + collect fills per slide.
+  const prepared: Prepared[] = slides.map((slide) => {
+    const layoutId = `${opts.theme}_${slide.name}`;
+    const manifest = normalizeSvg(slide.svg, {
+      layoutId,
+      theme: opts.theme,
+      baseTemplate: opts.decorationRef(layoutId),
+    });
+    const doc = new DOMParser().parseFromString(slide.svg, "image/svg+xml");
+    const fills = collectFills(doc, manifest.canvas.w);
+    return { layoutId, slide, manifest, background: fills.background, shapeFills: fills.shapeFills };
+  });
+
+  // 2) Vision classification (optional). Overrides slot roles + tags media/archetype.
+  const archetypes = new Map<string, LayoutArchetype>();
+  const labelsByLayout = new Map<string, Map<string, SlotLabelLite>>();
+  if (opts.classify) {
+    const results = await mapLimit(prepared, opts.concurrency ?? 4, (p) =>
+      opts.classify!(p.slide.svg, p.manifest.slots).catch(() => null),
+    );
+    results.forEach((res, i) => {
+      if (!res) return;
+      const p = prepared[i]!;
+      archetypes.set(p.layoutId, res.archetype);
+      labelsByLayout.set(p.layoutId, res.labels);
+      for (const slot of p.manifest.slots) {
+        const role = res.labels.get(slot.id)?.role;
+        if (role) slot.role = role; // role drives tokens + grammar below
+      }
+    });
+  }
+
+  // 3) Aggregate into one design system.
   const allSlots: ManifestSlot[] = [];
   const slidesTextSlots: ManifestSlot[][] = [];
   const perSlideGroups: SlotGroup[][] = [];
@@ -172,43 +232,31 @@ export function extractThemeSystem(slides: SlideInput[], opts: ThemeOptions): Th
   const layouts: Layout[] = [];
   let canvas: Canvas = { w: 0, h: 0 };
 
-  for (const slide of slides) {
-    const layoutId = `${opts.theme}_${slide.name}`;
-    const manifest = normalizeSvg(slide.svg, {
-      layoutId,
-      theme: opts.theme,
-      baseTemplate: opts.decorationRef(layoutId),
-    });
-    canvas = manifest.canvas;
+  for (const p of prepared) {
+    canvas = p.manifest.canvas;
+    if (p.background) backgrounds.push(p.background);
+    shapeFills.push(...p.shapeFills);
 
-    const doc = new DOMParser().parseFromString(slide.svg, "image/svg+xml");
-    const fills = collectFills(doc, manifest.canvas.w);
-    if (fills.background) backgrounds.push(fills.background);
-    shapeFills.push(...fills.shapeFills);
-
-    const text = textSlots(manifest.slots);
+    const text = textSlots(p.manifest.slots);
     const groups = extractGroups(text);
-    allSlots.push(...manifest.slots);
+    allSlots.push(...p.manifest.slots);
     slidesTextSlots.push(text);
     perSlideGroups.push(groups);
 
-    layouts.push({
-      id: layoutId,
-      decorationRef: opts.decorationRef(layoutId),
-      background: fills.background ?? "#FFFFFF",
-      slots: placeSlots(manifest.slots, groups),
+    const layout: Layout = {
+      id: p.layoutId,
+      decorationRef: opts.decorationRef(p.layoutId),
+      background: p.background ?? "#FFFFFF",
+      slots: placeSlots(p.manifest.slots, groups, labelsByLayout.get(p.layoutId)),
       regions: [
-        {
-          id: "content",
-          bbox: unionBBox(manifest.slots),
-          flow: "column",
-          gap: 0, // filled from grammar below
-          allowedBlocks: [],
-        } satisfies Region,
+        { id: "content", bbox: unionBBox(p.manifest.slots), flow: "column", gap: 0, allowedBlocks: [] } satisfies Region,
       ],
       defaultSlots: text.map((s) => s.id),
-    });
-    decorations.push({ layoutId, svg: extractDecoration(slide.svg) });
+    };
+    const archetype = archetypes.get(p.layoutId);
+    if (archetype) layout.archetype = archetype;
+    layouts.push(layout);
+    decorations.push({ layoutId: p.layoutId, svg: extractDecoration(p.slide.svg) });
   }
 
   const type = extractType(allSlots);

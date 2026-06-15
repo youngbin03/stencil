@@ -1,5 +1,5 @@
 {
-  "name": "@stencil/extractor",
+  "name": "@stencil/classifier",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -11,9 +11,6 @@
       "default": "./dist/index.js"
     }
   },
-  "bin": {
-    "extract": "./dist/cli.js"
-  },
   "scripts": {
     "build": "tsc --build",
     "clean": "tsc --build --clean"
@@ -21,8 +18,8 @@
   "dependencies": {
     "@stencil/ir": "*",
     "@stencil/normalizer": "*",
-    "@stencil/classifier": "*",
-    "@xmldom/xmldom": "^0.9.7"
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@resvg/resvg-js": "^2.6.2"
   },
   "devDependencies": {
     "@types/node": "^20.14.0"

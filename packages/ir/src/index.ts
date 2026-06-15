@@ -53,6 +53,32 @@ export type Role =
 
 export type SlotType = "text" | "image";
 
+/** Finer-grained kind for image/graphic slots (Phase 2.5 vision classifier). */
+export type MediaKind =
+  | "photo"
+  | "device_mockup"
+  | "chart_pie"
+  | "chart_bar"
+  | "chart_line"
+  | "logo"
+  | "avatar"
+  | "icon"
+  | "illustration";
+
+/** Intent of a slide, used by composition to pick the right layout. */
+export type LayoutArchetype =
+  | "cover"
+  | "agenda"
+  | "section"
+  | "content"
+  | "stat"
+  | "quote"
+  | "comparison"
+  | "team"
+  | "gallery"
+  | "closing"
+  | "other";
+
 // ---------------------------------------------------------------------------
 // 7.4 Slot manifest — output of M0 (normalizer)
 // ---------------------------------------------------------------------------
@@ -229,12 +255,20 @@ export interface PlacedSlot {
   fontWeight?: number;
   letterSpacing?: string;
   ratio?: string;
+  /** Finer media kind for image/graphic slots (vision classifier). */
+  mediaKind?: MediaKind;
+  /** Whether a user upload can replace this image slot. */
+  replaceable?: boolean;
+  /** Free-form note from the classifier (debugging / human review). */
+  note?: string;
 }
 
 export interface Layout {
   id: string;
   /** Reference to the decoration-only SVG fragment (text slots stripped). */
   decorationRef: string;
+  /** Slide intent from the vision classifier (composition picks by this). */
+  archetype?: LayoutArchetype;
   /** This layout's background fill (full-canvas), preserved per layout. */
   background: string;
   /** Measured placement + style of every text/image slot (assemble reads this). */

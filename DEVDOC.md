@@ -153,6 +153,7 @@
 - **입력:** 테마 폴더의 모든 SVG.
 - **출력:** 테마당 디자인 시스템 에셋 1개(6.3: 공유 토큰·팔레트·문법 + 레이아웃 N개) + 레이아웃별 장식 SVG.
 - **주요 로직:**
+  - **분류·라벨링 (LLM 비전 주도, Phase 2.5):** `id` 단일 신호의 한계를 넘기 위해, 각 슬라이드를 PNG로 래스터화하고 슬롯 bbox를 번호 오버레이해 Claude 비전 + 구조 메타(bbox·size·color·내용·자식)를 함께 투입 → 슬롯의 **풍부한 의미 역할**(kpi·photo·device_mockup·chart_pie/bar·logo·avatar·icon 등) + 이미지 **교체성** + **컴포넌트 묶음** + **슬라이드 아키타입**(cover/stat/quote/content/...)을 tool use로 받는다. 구조 신호는 결정이 아니라 LLM의 근거로만 들어간다(하드코딩이 상한을 막지 않게). id-규칙은 LLM 실패 시 폴백. **에셋화는 1회성이라 비용보다 정확도 우선** + 결과 영속·사람 검토로 비결정성 흡수.
   - **공유 토큰:** 전 슬라이드의 슬롯·도형 fill 빈도 → 대표 팔레트(bg=최빈 배경, accent, text; 그래디언트·패턴 제외) + `palette`(테마 전체 색 합집합, 빈도순). 역할별 실측 size **최빈값**으로 공유 타입스케일.
   - **디자인 문법(테마 공통):** ① 정렬 그리드(전 슬라이드 슬롯 x/y를 클러스터하되 **빈도 임계 이상**만 = 반복되는 공통 가이드) ② 간격 리듬(컬럼별 인접 gap을 전 슬라이드에서 모아 base unit + tight/normal/loose/section; section은 상위 분위로 outlier 완화) ③ 위계(공유 타입스케일 기반 size 순위 + title:body 비율) ④ 그룹 관습(슬라이드마다 반복되는 역할 시퀀스, 빈도순). 전부 실측·결정론.
   - **레이아웃(슬라이드당 1개):** `decoration_ref` + `background`(레이아웃 배경색) + **배치 슬롯**(각 슬롯 bbox·align·groupId + **실측 폰트**) + `default_slots`(인플레이스 특수케이스용) + region.
@@ -421,6 +422,7 @@ stencil/
 - **Phase 0 — 흡수 PoC.** `normalizer`로 템플릿 1장 → 슬롯 매니페스트(실측). ✅ **완료.**
 - **Phase 1 — 조립 PoC (인플레이스 특수케이스).** 손 콘텐츠 → `solver` → `renderer`로 SVG 1장. 비텍스트 보존·텍스트 치환 검증. ✅ **완료.**
 - **Phase 2 — 에셋화.** `extractor`: 토큰 + **디자인 문법**(정렬 그리드·간격 리듬·위계·그룹) + 배치 슬롯 + 레이아웃 + **장식 조각 분리 저장**. 83장 일괄. ✅ **완료.**
+- **Phase 2.5 — LLM 비전 분류.** `classifier`: SVG→PNG 래스터화(resvg-js) + 슬롯 bbox 번호 오버레이 + 구조 메타 → Claude 비전(opus) tool use → 풍부한 역할·이미지 교체성(mediaKind)·아키타입. extractor가 주입받아 role 오버라이드 + layout.archetype. id-규칙은 폴백(키 없으면 `--no-classify`). ✅ **완료(green 검증: body/decoration만 → kpi·label·logo·photo·chart + cover/stat/content 아키타입).**
 - **Phase 3 — 구성(Claude).** `composer`: tool use로 프롬프트 → 구성. 단일 레이아웃부터. → "프롬프트 → 구성 → 조립 → SVG."
 - **Phase 4 — 재합성 조립 + 멀티 슬라이드.** 장식 깔기 + 블록 복제·재배치 + 텍스트 피팅 + 이미지 바인딩. 인플레이스 특수케이스와 통합. → "주제 한 줄 → 여러 장 덱(원본 미조회)."
 - **Phase 5 — 웹앱 셸.** Next.js + Supabase 한 바퀴.

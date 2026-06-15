@@ -31,9 +31,12 @@ for (const theme of Object.keys(THEME_DIR)) {
       const name = L.id.replace(`${theme}_`, "");
       const orig = `../../templates/${THEME_DIR[theme]}/${name}.svg`;
       const deco = `${theme}/decorations/${L.id}.svg`;
-      const slotList = (L.slots ?? []).filter((s) => s.type === "text").map((s) => s.role).join(", ");
+      const slotList = (L.slots ?? [])
+        .map((s) => (s.mediaKind ? `${s.role}:${s.mediaKind}${s.replaceable ? "*" : ""}` : s.role))
+        .join(", ");
+      const arche = L.archetype ? `<span class="arche">${L.archetype}</span>` : "";
       return `<div class="card">
-        <h4>${name} <span class="bg" style="background:${L.background}"></span><code>${L.background}</code></h4>
+        <h4>${name} ${arche}<span class="bg" style="background:${L.background}"></span><code>${L.background}</code></h4>
         <div class="pair">
           <figure><figcaption>original</figcaption><img src="${orig}"></figure>
           <figure><figcaption>decoration</figcaption><img src="${deco}"></figure>
@@ -71,6 +74,7 @@ const html = `<!doctype html><meta charset="utf-8"><title>Stencil — design sys
   .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
   .card{background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:10px}
   .card h4{margin:0 0 8px;font-size:13px;display:flex;align-items:center;gap:6px}
+  .arche{font-size:10px;background:#111;color:#fff;border-radius:4px;padding:1px 6px}
   .bg{width:14px;height:14px;border-radius:3px;border:1px solid #ccc;display:inline-block}
   .pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   figure{margin:0} figcaption{font-size:11px;color:#999} img{width:100%;border:1px solid #eee;border-radius:4px;background:#fff}
