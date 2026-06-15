@@ -3,6 +3,7 @@
   "references": [
     { "path": "packages/ir" },
     { "path": "packages/normalizer" },
+    { "path": "packages/extractor" },
     { "path": "packages/solver" },
     { "path": "packages/renderer" }
   ]

@@ -1,0 +1,29 @@
+{
+  "name": "@stencil/extractor",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "extract": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean"
+  },
+  "dependencies": {
+    "@stencil/ir": "*",
+    "@stencil/normalizer": "*",
+    "@xmldom/xmldom": "^0.9.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0"
+  }
+}

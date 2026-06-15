@@ -12,3 +12,4 @@ coverage/
 .turbo/
 .omc/
 fixtures/out/
+fixtures/assets/

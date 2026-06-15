@@ -118,8 +118,6 @@ export interface TypeToken {
   size: number;
   weight: number;
   lineHeight: number;
-  /** Kept for compatibility; false now that text attributes are measured. */
-  estimated: boolean;
 }
 
 export interface TypeScale {
@@ -169,21 +167,21 @@ export interface Region {
 
 export interface Layout {
   id: string;
+  /** Reference to the decoration-only SVG fragment (text slots stripped). */
+  decorationRef: string;
   regions: Region[];
-}
-
-export interface BaseTemplateRef {
-  layoutId: string;
-  url: string;
+  /**
+   * Original slot ids in authoring order. Used by the assemble stage's
+   * inplace special case (content maps 1:1 onto these slots).
+   */
+  defaultSlots: string[];
 }
 
 export interface DesignSystemIR {
   templateId: string;
   theme: Theme;
-  version: 2;
+  version: 1;
   canvas: Canvas;
-  /** Reference to the original SVG used as the render base. */
-  baseTemplate: BaseTemplateRef;
   tokens: Tokens;
   blocks: Block[];
   layouts: Layout[];
