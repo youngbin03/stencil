@@ -1,87 +1,91 @@
 import type {
-  ManifestSlot,
+  Canvas,
+  Layout,
+  PlacedSlot,
   RenderElement,
+  RenderImageElement,
   RenderSlide,
   RenderTextElement,
-  SlotManifest,
   TextAlign,
+  Tokens,
+  TypeToken,
 } from "@stencil/ir";
 
 /**
- * M4 solver — fixed-slot mode (DEVDOC 6/M4, v1 default).
+ * Assemble stage — solver (DEVDOC ④, re-composition).
  *
- * Each manifest slot keeps its measured geometry; content is placed into that
- * slot. Phase 1 keeps fitting minimal (explicit \n line breaks only); word
- * wrapping / autofit / ellipsis are added in Phase 4 (DEVDOC 8.4).
- *
- * Determinism: same manifest + same content → same RenderSlide.
+ * Takes a layout (decoration ref + measured slots) + content + theme tokens and
+ * produces a deterministic render tree. Coordinates come from the asset's
+ * measured slot bboxes; the original SVG is never read. Phase 3 keeps fitting
+ * minimal (explicit \n only); word wrap / autofit land in Phase 4 (DEVDOC 7.4).
  */
 
-/** Content keyed by slot id (the Figma layer id preserved by M0). */
-export type ContentBySlotId = Record<string, string>;
+/** Content keyed by slot id. Text → string; image → asset url. */
+export type SlotContent = Record<string, string>;
 
 const DEFAULT_LINE_HEIGHT = 1.2;
 
-function toLines(content: string): string[] {
-  return content.split("\n");
+function typeFor(role: string, tokens: Tokens): TypeToken | undefined {
+  return tokens.type[role];
 }
 
-function textElement(slot: ManifestSlot, content: string): RenderTextElement {
+function textElement(slot: PlacedSlot, content: string, tokens: Tokens): RenderTextElement {
+  const t = typeFor(slot.role, tokens);
   const el: RenderTextElement = {
     kind: "text",
     id: slot.id,
     role: slot.role,
     bbox: slot.bbox,
-    lines: toLines(content),
-    fontSize: slot.fontSize ?? 16,
-    fontFamily: slot.fontFamily ?? "sans-serif",
-    fontWeight: slot.fontWeight ?? 400,
-    color: slot.color ?? "#000000",
+    lines: content.split("\n"),
+    fontSize: slot.fontSize ?? t?.size ?? 16,
+    fontFamily: slot.fontFamily ?? t?.family ?? tokens.fontFamily,
+    fontWeight: slot.fontWeight ?? t?.weight ?? 400,
+    color: slot.color ?? tokens.colors.text,
     align: (slot.align ?? "left") satisfies TextAlign,
-    lineHeight: DEFAULT_LINE_HEIGHT,
+    lineHeight: t?.lineHeight ?? DEFAULT_LINE_HEIGHT,
   };
   if (slot.letterSpacing) el.letterSpacing = slot.letterSpacing;
   return el;
 }
 
-export interface SolveResult {
-  slide: RenderSlide;
+function imageElement(slot: PlacedSlot, url: string): RenderImageElement {
+  const el: RenderImageElement = {
+    kind: "image",
+    id: slot.id,
+    role: slot.role,
+    bbox: slot.bbox,
+    assetUrl: url,
+  };
+  if (slot.ratio) el.ratio = slot.ratio;
+  return el;
 }
 
-/**
- * Solve a single slide in fixed-slot mode. Only text slots that have content in
- * `content` are emitted; decoration/divider and content-less slots are left to
- * the base template untouched.
- */
-export function solveFixedSlots(
-  manifest: SlotManifest,
-  content: ContentBySlotId,
-): RenderSlide {
+/** Solve one slide by re-composition. Only slots with content are emitted. */
+export function solveSlide(layout: Layout, content: SlotContent, tokens: Tokens, canvas: Canvas): RenderSlide {
   const warnings: string[] = [];
   const elements: RenderElement[] = [];
 
-  for (const slot of manifest.slots) {
-    if (slot.type !== "text") continue;
+  for (const slot of layout.slots) {
     const value = content[slot.id];
-    if (value === undefined) continue;
+    if (value === undefined || value === "") continue;
     if (slot.role === "decoration" || slot.role === "divider") {
-      warnings.push(`content provided for non-content slot "${slot.id}" (${slot.role})`);
+      warnings.push(`content for non-content slot "${slot.id}" (${slot.role}) ignored`);
       continue;
     }
-    elements.push(textElement(slot, value));
+    elements.push(slot.type === "image" ? imageElement(slot, value) : textElement(slot, value, tokens));
   }
 
   for (const id of Object.keys(content)) {
-    if (!manifest.slots.some((s) => s.id === id)) {
-      warnings.push(`content key "${id}" has no matching slot`);
-    }
+    if (!layout.slots.some((s) => s.id === id)) warnings.push(`content key "${id}" has no slot in layout`);
   }
 
-  return {
-    layoutId: manifest.layoutId,
-    canvas: manifest.canvas,
-    baseTemplateUrl: manifest.baseTemplate,
+  const slide: RenderSlide = {
+    layoutId: layout.id,
+    canvas,
+    decorationUrl: layout.decorationRef,
     elements,
     warnings,
   };
+  if (layout.background) slide.background = layout.background;
+  return slide;
 }

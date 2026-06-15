@@ -1,85 +1,68 @@
-import { DOMParser, XMLSerializer, type Element } from "@xmldom/xmldom";
-import type {
-  RenderAdapter,
-  RenderSlide,
-  RenderTextElement,
-  Tokens,
-} from "@stencil/ir";
+import type { RenderAdapter, RenderImageElement, RenderSlide, RenderTextElement, Tokens } from "@stencil/ir";
 
 /**
- * M5 renderer — "inplace" adapter (DEVDOC 6/M5, v1).
+ * Assemble stage — renderer (DEVDOC ④/⑤, "composite" adapter).
  *
- * Takes the original template SVG as the base and replaces only the text
- * content of matched slots. Font, color, position and every non-text element
- * are left exactly as authored — the design is preserved pixel-for-pixel.
+ * Lays the decoration-only SVG fragment as the base and synthesizes editable
+ * <text> (and user <image>) on top from the solved render tree. The original
+ * template SVG is never read; only the decoration fragment + tokens are used.
  */
 
-const SVG_NS = "http://www.w3.org/2000/svg";
+const SVG_NS_CLOSE = "</svg>";
+const ASCENT = 0.8;
 
-function findTextById(doc: ReturnType<DOMParser["parseFromString"]>, id: string): Element | null {
-  const texts = doc.getElementsByTagName("text");
-  for (let i = 0; i < texts.length; i++) {
-    if (texts[i]!.getAttribute("id") === id) return texts[i]!;
-  }
-  return null;
+function escapeXml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
-interface OrigLine {
-  x: string | null;
-  y: string | null;
+function anchorFor(el: RenderTextElement): { x: number; anchor: string } {
+  if (el.align === "center") return { x: el.bbox.x + el.bbox.w / 2, anchor: "middle" };
+  if (el.align === "right") return { x: el.bbox.x + el.bbox.w, anchor: "end" };
+  return { x: el.bbox.x, anchor: "start" };
 }
 
-function readOrigTspans(textEl: Element): OrigLine[] {
-  const tspans = textEl.getElementsByTagName("tspan");
-  const out: OrigLine[] = [];
-  for (let i = 0; i < tspans.length; i++) {
-    out.push({ x: tspans[i]!.getAttribute("x"), y: tspans[i]!.getAttribute("y") });
-  }
-  return out;
+function renderText(el: RenderTextElement): string {
+  const { x, anchor } = anchorFor(el);
+  const firstBaseline = el.bbox.y + el.fontSize * ASCENT;
+  const step = el.fontSize * el.lineHeight;
+  const tspans = el.lines
+    .map((line, i) => `<tspan x="${x}" y="${(firstBaseline + i * step).toFixed(2)}">${escapeXml(line)}</tspan>`)
+    .join("");
+  const ls = el.letterSpacing ? ` letter-spacing="${el.letterSpacing}"` : "";
+  return (
+    `<text id="${escapeXml(el.id)}" data-role="${el.role}" fill="${el.color}" ` +
+    `font-family="${escapeXml(el.fontFamily)}" font-size="${el.fontSize}" font-weight="${el.fontWeight}"${ls} ` +
+    `text-anchor="${anchor}" style="white-space:pre">${tspans}</text>`
+  );
 }
 
-/** Replace a <text>'s children with new <tspan> lines, reusing original x/y. */
-function replaceText(
-  doc: ReturnType<DOMParser["parseFromString"]>,
-  textEl: Element,
-  el: RenderTextElement,
-): void {
-  const orig = readOrigTspans(textEl);
-  const baseX = orig[0]?.x ?? String(el.bbox.x);
-  const firstY = orig[0]?.y ? Number.parseFloat(orig[0].y) : el.bbox.y + el.fontSize * 0.8;
-  const gap =
-    orig.length >= 2 && orig[0]?.y && orig[1]?.y
-      ? Number.parseFloat(orig[1].y) - Number.parseFloat(orig[0].y)
-      : el.fontSize * el.lineHeight;
+function renderImage(el: RenderImageElement, i: number): string {
+  const clip = `clip_${i}`;
+  const { x, y, w, h } = el.bbox;
+  return (
+    `<clipPath id="${clip}"><rect x="${x}" y="${y}" width="${w}" height="${h}"/></clipPath>` +
+    `<image href="${escapeXml(el.assetUrl)}" x="${x}" y="${y}" width="${w}" height="${h}" ` +
+    `preserveAspectRatio="xMidYMid slice" clip-path="url(#${clip})" data-role="${el.role}"/>`
+  );
+}
 
-  while (textEl.firstChild) textEl.removeChild(textEl.firstChild);
-
-  el.lines.forEach((line, i) => {
-    const tspan = doc.createElementNS(SVG_NS, "tspan");
-    tspan.setAttribute("x", orig[i]?.x ?? baseX);
-    tspan.setAttribute("y", orig[i]?.y ?? String(firstY + i * gap));
-    tspan.appendChild(doc.createTextNode(line));
-    textEl.appendChild(tspan);
+export function renderComposite(slide: RenderSlide, decorationSvg: string): string {
+  const parts: string[] = [];
+  slide.elements.forEach((el, i) => {
+    parts.push(el.kind === "text" ? renderText(el) : renderImage(el, i));
   });
+  const overlay = `<g id="__content__">${parts.join("")}</g>`;
+  const close = decorationSvg.lastIndexOf(SVG_NS_CLOSE);
+  return close === -1 ? decorationSvg + overlay : decorationSvg.slice(0, close) + overlay + decorationSvg.slice(close);
 }
 
-export function renderInplace(slide: RenderSlide, baseSvg: string): string {
-  const doc = new DOMParser().parseFromString(baseSvg, "image/svg+xml");
-
-  for (const el of slide.elements) {
-    if (el.kind !== "text") continue;
-    const textEl = findTextById(doc, el.id);
-    if (!textEl) continue;
-    textEl.setAttribute("data-role", el.role);
-    replaceText(doc, textEl, el);
-  }
-
-  return new XMLSerializer().serializeToString(doc);
-}
-
-export const inplaceAdapter: RenderAdapter = {
-  id: "inplace",
-  render(slide: RenderSlide, baseSvg: string, _tokens: Tokens): string {
-    return renderInplace(slide, baseSvg);
+export const compositeAdapter: RenderAdapter = {
+  id: "composite",
+  render(slide: RenderSlide, decorationSvg: string, _tokens: Tokens): string {
+    return renderComposite(slide, decorationSvg);
   },
 };

@@ -374,8 +374,10 @@ export type RenderElement = RenderTextElement | RenderImageElement;
 export interface RenderSlide {
   layoutId: string;
   canvas: Canvas;
-  /** Original SVG used as the render base; slot text is replaced in place. */
-  baseTemplateUrl: string;
+  /** Decoration-only SVG laid as the base; text is synthesized on top. */
+  decorationUrl: string;
+  /** Layout background fill (drawn if the decoration fragment lacks one). */
+  background?: string;
   elements: RenderElement[];
   warnings: string[];
 }
@@ -385,12 +387,12 @@ export interface RenderSlide {
 // ---------------------------------------------------------------------------
 
 export interface RenderAdapter {
-  /** v1 "inplace" / v2 "resynth", etc. */
+  /** v1 "composite"; future "pptx" etc. */
   readonly id: string;
   /**
-   * @param slide   solved render tree
-   * @param baseSvg original template SVG string (used by "inplace"; ignored by "resynth")
-   * @param tokens  design system tokens
+   * @param slide         solved render tree
+   * @param decorationSvg decoration-only SVG fragment to lay as the base
+   * @param tokens        design system tokens
    */
-  render(slide: RenderSlide, baseSvg: string, tokens: Tokens): string;
+  render(slide: RenderSlide, decorationSvg: string, tokens: Tokens): string;
 }

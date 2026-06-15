@@ -1,5 +1,5 @@
 {
-  "name": "@stencil/renderer",
+  "name": "@stencil/composer",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -16,6 +16,10 @@
     "clean": "tsc --build --clean"
   },
   "dependencies": {
-    "@stencil/ir": "*"
+    "@stencil/ir": "*",
+    "@anthropic-ai/sdk": "^0.39.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0"
   }
 }
