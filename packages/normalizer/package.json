@@ -1,0 +1,29 @@
+{
+  "name": "@stencil/normalizer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "normalize": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean",
+    "normalize": "node ./dist/cli.js"
+  },
+  "dependencies": {
+    "@stencil/ir": "*",
+    "@xmldom/xmldom": "^0.9.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0"
+  }
+}
