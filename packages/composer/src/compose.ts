@@ -66,9 +66,16 @@ function layoutCatalog(system: DesignSystemIR): string {
     .join("\n");
 }
 
-function textSlotsOf(layout: Layout): { id: string; role: string }[] {
+/** Rough character budget for a slot (keeps generated text within its box). */
+function maxChars(slot: { bbox: { w: number }; fontSize?: number }): number {
+  const fs = slot.fontSize ?? 24;
+  const perLine = Math.max(3, Math.floor(slot.bbox.w / (fs * 0.7)));
+  return Math.max(6, perLine * 2); // allow up to ~2 lines
+}
+
+function textSlotsOf(layout: Layout): { id: string; role: string; max: number }[] {
   return layout.slots.filter((s) => s.type === "text" && s.role !== "decoration" && s.role !== "divider")
-    .map((s) => ({ id: s.id, role: s.role }));
+    .map((s) => ({ id: s.id, role: s.role, max: maxChars(s) }));
 }
 
 async function planOutline(
@@ -115,14 +122,16 @@ async function fillSlide(
 ): Promise<Record<string, string>> {
   const slots = textSlotsOf(layout);
   if (slots.length === 0) return {};
-  const list = slots.map((s) => `- ${s.id} (${s.role})`).join("\n");
+  const list = slots.map((s) => `- ${s.id} (${s.role}, ≤${s.max} chars)`).join("\n");
   const filled = await callTool<{ slots: { id: string; text: string }[] }>(
     anthropic, model,
-    `Write the text content for one slide of a deck. Respect each slot's role:
+    `Write the text content for one slide of a deck. Provide text for EVERY listed slot id
+(do not skip any). Respect each slot's role and its character budget:
 title/headline = short and punchy; subtitle/eyebrow = brief; body = 1-2 sentences;
 caption/label = a few words; kpi = a short metric (e.g. +38%, $2.4B, 12%); quote = a sentence.
-Use only the listed slot ids. Keep lengths sensible for a slide. Use \\n for line breaks.`,
-    `Deck: ${deckTitle}\nTopic: ${prompt}\nThis slide's purpose: ${purpose}\nLayout archetype: ${layout.archetype ?? "other"}\n\nText slots:\n${list}`,
+Stay within each slot's ≤chars budget so text fits its box. Use only the listed slot ids.
+Use \\n only for intentional line breaks.`,
+    `Deck: ${deckTitle}\nTopic: ${prompt}\nThis slide's purpose: ${purpose}\nLayout archetype: ${layout.archetype ?? "other"}\n\nText slots (fill all):\n${list}`,
     {
       name: "fill_slide",
       description: "Provide text for each slot id.",

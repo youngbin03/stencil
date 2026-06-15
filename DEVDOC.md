@@ -421,10 +421,11 @@ stencil/
 - **Phase 2 — 에셋화.** `extractor`: 토큰 + **디자인 문법**(정렬 그리드·간격 리듬·위계·그룹) + 배치 슬롯 + 레이아웃 + **장식 조각 분리 저장**. 83장 일괄. ✅ **완료.**
 - **Phase 2.5 — LLM 비전 분류.** `classifier`: SVG→PNG 래스터화(resvg-js) + 슬롯 bbox 번호 오버레이 + 구조 메타 → Claude 비전(opus) tool use → 풍부한 역할·이미지 교체성(mediaKind)·아키타입. extractor가 주입받아 role 오버라이드 + layout.archetype. id-규칙은 폴백(키 없으면 `--no-classify`). ✅ **완료(green 검증: body/decoration만 → kpi·label·logo·photo·chart + cover/stat/content 아키타입).**
 - **Phase 3 — 구성(Claude).** `composer`: tool use로 프롬프트 → 구성. 단일 레이아웃부터. → "프롬프트 → 구성 → 조립 → SVG."
-- **Phase 4 — 재합성 조립 고도화 + 멀티 슬라이드.** 블록 복제·재배치 + 정밀 텍스트 피팅 + 이미지 바인딩 + 멀티 슬라이드 덱. → "주제 한 줄 → 여러 장 덱(원본 미조회)."
+- **Phase 4 — 재합성 조립 고도화.** 텍스트 피팅(줄바꿈·오토핏·말줄임) → 블록 복제·재배치 + 이미지 바인딩 + 멀티 슬라이드 일관성.
+- **Phase 4.5 — 관계 그래프 추출 (RCE 내장).** 에셋화에서 ① 장식 구조화(배경/강조/포인트/이미지홀더/차트/구분선 분해) ② 타입된 관계 그래프(슬롯↔슬롯 above/aligned/coupled/emphasis_rank + 슬롯↔장식 anchored_to/inside/over/avoids)를 결정론 기하 + 비전 보강으로 추출해 에셋에 저장. 생성에선 정렬·앵커만 약하게 사용. → "에셋이 요소 간 조합 관계를 담는다." (제약 솔버 활용은 v2.)
 - **Phase 5 — 웹앱 셸.** Next.js + Supabase 한 바퀴.
 - **Phase 6 — 다듬기.** 3테마 전체·오버플로 엣지·폰트 임베드·경고 UX.
-- **(v2+)** 인브라우저 편집 · 미감 조합 엔진(RCE) · PPTX 어댑터 · 멀티 매체.
+- **(v2+)** 인브라우저 편집 · RCE 생성부(관계→제약 솔버 kiwi.js 좌표 투영 + 렌더-비평-재정제 루프) · PPTX 어댑터 · 멀티 매체.
 
 ---
 
@@ -458,10 +459,11 @@ stencil/
 - **Phase 3 (구성, Claude):** `packages/composer` — 어휘 카탈로그(레이아웃 id·archetype·슬롯 역할) → 2패스 tool use(아웃라인→슬롯 채움), 좌표 없음. **조립 재합성화**: `solver.solveSlide`(layout.slots+content→렌더트리) + `renderer.renderComposite`(장식 조각 위 `<text>` 합성). `scripts/phase3.mjs` E2E. 인플레이스/`default_slots` 폐기.
 - ✅ **검증:** "1분기 성과 보고" → 7장 덱(cover→agenda→stat×3→content→closing), KPI 칸에 +38%/$2.4B 정확 배치, 배경 장식 보존, 원본 SVG 미조회.
 
-**다음 (Phase 4 — 조립 고도화)**
-- **텍스트 피팅**(7.4): 줄바꿈·오토핏 축소·말줄임 — 현재 긴 텍스트가 슬롯을 넘쳐 겹침/잘림.
-- 일부 레이아웃에서 `fill_slide`가 빈 결과(슬롯 id 매칭 실패 추정) → 프롬프트/검증 보강.
-- 블록 복제·repeatable, 이미지 슬롯 바인딩, 멀티 슬라이드 일관성.
+**Phase 4 (조립 고도화) — 진행 중**
+- ✅ **텍스트 피팅**(`solver/fit.ts`): CJK 줄바꿈 + 오토핏 축소 + 말줄임. 슬롯 높이 안에 가둬 겹침 방지(잘림/겹침 해소 검증).
+- ✅ **composer 글자수 예산**: 슬롯 bbox·fontSize로 `≤N chars` 힌트 + "모든 슬롯 채우기" 지시 → 슬롯에 맞는 길이 생성, fill 누락(0 elems) 해소.
+- 남음: 블록 복제·repeatable, 이미지 슬롯 바인딩, 멀티 슬라이드 일관성.
+- 한계(→Phase 4.5): 큰 텍스트가 슬롯 초과 시 축소됨(임팩트↓). 슬롯이 늘면 아래를 미는 흐름 재배치는 관계 그래프 기반으로.
 
 **유의**
 - API 키는 `.env.local`(gitignore). 이 node(22.17)는 `--env-file` 파싱 실패 → `export $(grep -v '^#' .env.local | xargs)` 사용. 모델 `claude-opus-4-8`.

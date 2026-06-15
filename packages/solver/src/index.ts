@@ -10,6 +10,9 @@ import type {
   Tokens,
   TypeToken,
 } from "@stencil/ir";
+import { fitText } from "./fit.js";
+
+export { estimateWidth, wrapLine, fitText } from "./fit.js";
 
 /**
  * Assemble stage — solver (DEVDOC ④, re-composition).
@@ -29,22 +32,34 @@ function typeFor(role: string, tokens: Tokens): TypeToken | undefined {
   return tokens.type[role];
 }
 
-function textElement(slot: PlacedSlot, content: string, tokens: Tokens): RenderTextElement {
+function textElement(slot: PlacedSlot, content: string, tokens: Tokens, canvas: Canvas): RenderTextElement {
   const t = typeFor(slot.role, tokens);
+  const baseFont = slot.fontSize ?? t?.size ?? 16;
+  const lineHeight = t?.lineHeight ?? DEFAULT_LINE_HEIGHT;
+  // Fit within the slot to avoid overlapping neighbors (slot positions are
+  // fixed in v1). Respect the measured width; allow a small height cushion so
+  // a one-line original can take ~2 lines. Reflowing neighbors when a slot
+  // grows is a Phase 4.5 (relation-graph) concern.
+  const availW = slot.bbox.w > 0 ? slot.bbox.w : canvas.w * 0.5;
+  // Stay within the slot's measured height (only guarantee 1 line) so growing
+  // text shrinks instead of overrunning neighbors. Neighbor reflow = Phase 4.5.
+  const availH = Math.max(slot.bbox.h, baseFont * lineHeight);
+  const fit = fitText(content, { w: availW, h: availH }, baseFont, lineHeight);
   const el: RenderTextElement = {
     kind: "text",
     id: slot.id,
     role: slot.role,
     bbox: slot.bbox,
-    lines: content.split("\n"),
-    fontSize: slot.fontSize ?? t?.size ?? 16,
+    lines: fit.lines,
+    fontSize: fit.fontSize,
     fontFamily: slot.fontFamily ?? t?.family ?? tokens.fontFamily,
     fontWeight: slot.fontWeight ?? t?.weight ?? 400,
     color: slot.color ?? tokens.colors.text,
     align: (slot.align ?? "left") satisfies TextAlign,
-    lineHeight: t?.lineHeight ?? DEFAULT_LINE_HEIGHT,
+    lineHeight,
   };
   if (slot.letterSpacing) el.letterSpacing = slot.letterSpacing;
+  if (fit.overflow) el.overflow = true;
   return el;
 }
 
@@ -72,7 +87,7 @@ export function solveSlide(layout: Layout, content: SlotContent, tokens: Tokens,
       warnings.push(`content for non-content slot "${slot.id}" (${slot.role}) ignored`);
       continue;
     }
-    elements.push(slot.type === "image" ? imageElement(slot, value) : textElement(slot, value, tokens));
+    elements.push(slot.type === "image" ? imageElement(slot, value) : textElement(slot, value, tokens, canvas));
   }
 
   for (const id of Object.keys(content)) {

@@ -19,8 +19,17 @@ if (!existsSync(sysPath)) {
 const system = JSON.parse(readFileSync(sysPath, "utf8"));
 const byId = new Map(system.layouts.map((l) => [l.id, l]));
 
-console.log(`composing "${prompt}"\n  theme: ${theme} (${system.layouts.length} layouts)`);
-const plan = await compose(system, prompt, { slides: 6 });
+const planCache = resolve(`fixtures/out/plan_${theme}.json`);
+let plan;
+if (process.argv.includes("--cached") && existsSync(planCache)) {
+  plan = JSON.parse(readFileSync(planCache, "utf8"));
+  console.log(`using cached plan (${planCache})`);
+} else {
+  console.log(`composing "${prompt}"\n  theme: ${theme} (${system.layouts.length} layouts)`);
+  plan = await compose(system, prompt, { slides: 6 });
+  mkdirSync(resolve("fixtures/out"), { recursive: true });
+  writeFileSync(planCache, JSON.stringify(plan, null, 2));
+}
 console.log(`deck: "${plan.title}" — ${plan.slides.length} slides`);
 
 const outDir = resolve("fixtures/out/deck");
