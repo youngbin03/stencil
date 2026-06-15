@@ -1,0 +1,32 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="black"/>
+<text id="H2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="48" font-weight="bold" letter-spacing="-0.02em"><tspan x="128" y="555.455">Key Metrics</tspan></text>
+<g id="Text block" clip-path="url(#clip0_668_599)">
+<text id="H3 Medium" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="36" font-weight="bold" letter-spacing="-0.02em"><tspan x="1164" y="362.091">Metric 1</tspan></text>
+<text id="Body" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="1164" y="405.727">Add a description or highlight changes</tspan></text>
+</g>
+<g id="Text block_2" clip-path="url(#clip1_668_599)">
+<text id="H3 Medium_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="36" font-weight="bold" letter-spacing="-0.02em"><tspan x="1164" y="532.091">Metric 2</tspan></text>
+<text id="Body_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="1164" y="575.727">Add a description or highlight changes</tspan></text>
+</g>
+<g id="Text block_3" clip-path="url(#clip2_668_599)">
+<text id="H3 Medium_3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="36" font-weight="bold" letter-spacing="-0.02em"><tspan x="1164" y="702.091">Metric 3</tspan></text>
+<text id="Body_3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="1164" y="745.727">Add a description or highlight changes</tspan></text>
+</g>
+<text id="H3 Medium_4" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="60" font-weight="bold" letter-spacing="-0.022em"><tspan x="968" y="382.818">XX%</tspan></text>
+<text id="H3 Medium_5" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="60" font-weight="bold" letter-spacing="-0.022em"><tspan x="968" y="552.818">XX%</tspan></text>
+<text id="H3 Medium_6" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="60" font-weight="bold" letter-spacing="-0.022em"><tspan x="968" y="722.818">XX%</tspan></text>
+</g>
+<defs>
+<clipPath id="clip0_668_599">
+<rect width="628" height="88" fill="white" transform="translate(1164 325)"/>
+</clipPath>
+<clipPath id="clip1_668_599">
+<rect width="628" height="88" fill="white" transform="translate(1164 495)"/>
+</clipPath>
+<clipPath id="clip2_668_599">
+<rect width="628" height="88" fill="white" transform="translate(1164 665)"/>
+</clipPath>
+</defs>
+</svg>

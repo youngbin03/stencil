@@ -1,0 +1,36 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame" clip-path="url(#clip0_668_84)">
+<rect width="1920" height="1080" fill="#F3F3F3"/>
+<text id="Subtitle" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="120" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="153.6">AGENDA</tspan></text>
+<g id="Decorative">
+<path d="M978 329.999C1549.14 215.209 1590.45 -197 2060 -197C2254.01 -197 2411 -78.5273 2411 66.9996C2411 212.526 2254.01 329.999 2060 329.999C1865.99 329.999 1390.16 330.001 978 329.999Z" fill="#D2B7E9"/>
+</g>
+<text id="Caption" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="64" y="1020.18">CAPTION</tspan></text>
+<text id="Caption_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="1283" y="1020.18">CAPTION</tspan></text>
+<text id="Number" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="463.4">001 </tspan></text>
+<text id="List item" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="364" y="463.4">LIST ITEM</tspan></text>
+<text id="Number_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="942" y="463.4">005</tspan></text>
+<text id="List item_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="1242" y="463.4">LIST ITEM</tspan></text>
+<line id="Line" x1="64" y1="503.5" x2="1797" y2="503.5" stroke="#5FA0FB" stroke-width="3"/>
+<text id="Number_3" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="604.4">002</tspan></text>
+<text id="List item_3" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="364" y="604.4">LIST ITEM</tspan></text>
+<text id="Number_4" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="942" y="604.4">006</tspan></text>
+<text id="List item_4" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="1242" y="604.4">LIST ITEM</tspan></text>
+<line id="Line_2" x1="64" y1="644.5" x2="1797" y2="644.5" stroke="#5FA0FB" stroke-width="3"/>
+<text id="Number_5" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="745.4">003 </tspan></text>
+<text id="List item_5" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="364" y="745.4">LIST ITEM</tspan></text>
+<text id="Number_6" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="942" y="745.4">007</tspan></text>
+<text id="List item_6" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="1242" y="745.4">LIST ITEM</tspan></text>
+<line id="Line_3" x1="64" y1="785.5" x2="1797" y2="785.5" stroke="#5FA0FB" stroke-width="3"/>
+<text id="Number_7" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="886.4">004</tspan></text>
+<text id="List item_7" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="364" y="886.4">LIST ITEM</tspan></text>
+<text id="Number_8" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="942" y="886.4">008</tspan></text>
+<text id="List item_8" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="1242" y="886.4">LIST ITEM</tspan></text>
+<line id="Line_4" x1="64" y1="926.5" x2="1797" y2="926.5" stroke="#5FA0FB" stroke-width="3"/>
+</g>
+<defs>
+<clipPath id="clip0_668_84">
+<rect width="1920" height="1080" fill="white"/>
+</clipPath>
+</defs>
+</svg>

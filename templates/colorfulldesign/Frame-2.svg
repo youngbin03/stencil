@@ -1,0 +1,17 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame" clip-path="url(#clip0_668_63)">
+<rect width="1920" height="1080" fill="#F3F3F3"/>
+<g id="Decorative">
+<path d="M2340 633.128C2554.46 633.128 2729 749.505 2729 893.064C2729 1036.62 2554.46 1153 2340 1153C1893.06 1153 1797.06 851.178 1376 695.113C1459.29 742.788 1513 813.956 1513 893.064C1513 1036.62 1338.46 1153 1124 1153C909.535 1153 384.607 1152 -71 1152C560.343 1038.76 604.955 633.128 1124 633.128C1131.59 633.128 1139.52 632.84 1147 633.128C1146.2 632.984 1144.8 633.271 1144 633.128C1599.61 633.126 2125.53 633.128 2340 633.128Z" fill="#5FA0FB"/>
+</g>
+<text id="Chapter title" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="180" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="318.4">CHAPTER TITLE EASILY </tspan><tspan x="64" y="498.4">TAKES UP ROOM</tspan></text>
+<text id="Body" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" letter-spacing="0em"><tspan x="64" y="691.182">Bright and descriptive words, followed by an additional </tspan><tspan x="64" y="725.182">phrase of note.</tspan></text>
+<text id="Caption" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="64" y="88.1818">CAPTION</tspan></text>
+<text id="Caption_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="1283" y="88.1818">CAPTION</tspan></text>
+</g>
+<defs>
+<clipPath id="clip0_668_63">
+<rect width="1920" height="1080" fill="white"/>
+</clipPath>
+</defs>
+</svg>

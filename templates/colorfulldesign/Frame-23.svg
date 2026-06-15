@@ -1,0 +1,18 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame" clip-path="url(#clip0_668_333)">
+<rect width="1920" height="1080" fill="#F3F3F3"/>
+<g id="Decorative">
+<path d="M1073 1146C1073 1562.31 1245.54 1824 1586 1824C1984.28 1824 2012.48 1419.28 2276 1309L1678 1309L1678 628L2285 628C2344.58 261.719 2456.41 -136.92 2862 -441C2265.33 -375.143 1073 59.3645 1073 1146Z" fill="#237267"/>
+<path d="M2013 1311C2198.13 1311 2348 1158.12 2348 969C2348 779.884 2198.13 626 2013 626C1827.87 626 1678 779.885 1678 969C1678 1158.12 1827.87 1311 2013 1311Z" fill="#237267"/>
+</g>
+<text id="Caption" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="64" y="88.1818">CAPTION</tspan></text>
+<text id="Caption_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="1283" y="88.1818">CAPTION</tspan></text>
+<text id="Quote" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="120" font-weight="200" letter-spacing="-0.03em"><tspan x="36.0766" y="565.6">&#x201c;EVERY ONE OF US IS, </tspan><tspan x="64" y="685.6">IN THE COSMIC </tspan><tspan x="64" y="805.6">PERSPECTIVE, </tspan><tspan x="64" y="925.6">PRECIOUS.</tspan></text>
+<text id="Caption_3" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="64" y="1012.18">CAPTION</tspan></text>
+</g>
+<defs>
+<clipPath id="clip0_668_333">
+<rect width="1920" height="1080" fill="white"/>
+</clipPath>
+</defs>
+</svg>

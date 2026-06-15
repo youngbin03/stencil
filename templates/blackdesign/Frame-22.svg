@@ -1,0 +1,31 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="black"/>
+<g id="V Axis">
+<text id="Body 3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="929.443" y="120.727">Label</tspan></text>
+<path id="Line" d="M960 144L960 935" stroke="white" stroke-width="4" stroke-linecap="round"/>
+<text id="Body 3_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="929.443" y="975.727">Label</tspan></text>
+</g>
+<g id="V Axis_2">
+<text id="Body 3_3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="128.443" y="547.727">Label</tspan></text>
+<path id="Line_2" d="M206 539H1714" stroke="white" stroke-width="4" stroke-linecap="round"/>
+<text id="Body 3_4" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="1730.44" y="547.727">Label</tspan></text>
+</g>
+<g id="Label">
+<circle id="Shape" cx="552" cy="298" r="75" fill="#424242"/>
+<text id="Text" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="20" letter-spacing="0em"><tspan x="526.336" y="305.273">Label</tspan></text>
+</g>
+<g id="Label_2">
+<circle id="Shape_2" cx="768" cy="728" r="75" fill="#424242"/>
+<text id="Text_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="20" letter-spacing="0em"><tspan x="742.336" y="735.273">Label</tspan></text>
+</g>
+<g id="Label_3">
+<circle id="Shape_3" cx="1275" cy="282" r="75" fill="#424242"/>
+<text id="Text_3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="20" letter-spacing="0em"><tspan x="1249.34" y="289.273">Label</tspan></text>
+</g>
+<g id="Label_4">
+<circle id="Shape_4" cx="1474" cy="669" r="75" fill="#424242"/>
+<text id="Text_4" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="20" letter-spacing="0em"><tspan x="1448.34" y="676.273">Label</tspan></text>
+</g>
+</g>
+</svg>

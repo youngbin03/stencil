@@ -1,0 +1,16 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="#003310"/>
+<text id="Q&#38;A" fill="#C7EF4E" style="white-space: pre" xml:space="preserve" font-family="Neuton" font-size="200" font-weight="300" letter-spacing="-0.022em"><tspan x="246" y="619.15">Q&#38;A</tspan></text>
+<text id="Alison Lee" fill="#C7EF4E" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="36" letter-spacing="-0.022em"><tspan x="975" y="511.466">Alison Lee</tspan></text>
+<text id="Emma Chen" fill="#C7EF4E" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="36" letter-spacing="-0.022em"><tspan x="1413" y="512.466">Emma Chen</tspan></text>
+<g id="Body Medium">
+<text fill="white" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="24" letter-spacing="0em"><tspan x="975" y="615.811">Head of Product Design</tspan></text>
+<text fill="white" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="24" font-weight="bold" letter-spacing="-0.022em"><tspan x="975" y="565.811">Alison@company.com&#10;</tspan></text>
+</g>
+<g id="Body Medium_2">
+<text fill="white" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="24" letter-spacing="0em"><tspan x="1413" y="616.811">Project Lead</tspan></text>
+<text fill="white" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="24" font-weight="bold" letter-spacing="-0.022em"><tspan x="1413" y="566.811">Emma@company.com&#10;</tspan></text>
+</g>
+</g>
+</svg>

@@ -1,0 +1,23 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame" clip-path="url(#clip0_668_188)">
+<rect width="1920" height="1080" fill="#237267"/>
+<g id="Decorative">
+<path d="M1025 622C1025 1038.31 1197.54 1300 1538 1300C1936.28 1300 1964.48 895.282 2228 785L1630 785L1630 104L2237 104C2296.58 -262.281 2408.41 -660.92 2814 -965C2217.33 -899.143 1025 -464.635 1025 622Z" fill="#5FA0FB"/>
+<path d="M1965 787C2150.13 787 2300 634.115 2300 445C2300 255.884 2150.13 102 1965 102C1779.87 102 1630 255.885 1630 445C1630 634.115 1779.87 787 1965 787Z" fill="#5FA0FB"/>
+</g>
+<text id="Subtitle" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="120" font-weight="200" letter-spacing="-0.03em"><tspan x="1126" y="794.6">SUBTITLE </tspan><tspan x="1126" y="914.6">CUTE THREE </tspan><tspan x="1126" y="1034.6">LINES</tspan></text>
+<text id="Caption" fill="#F3F3F3" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="64" y="88.1818">CAPTION</tspan></text>
+<text id="Caption_2" fill="#F3F3F3" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="1283" y="88.1818">CAPTION</tspan></text>
+<text id="Metric" fill="#F3F3F3" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="120" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="489.6">1/4000T</tspan></text>
+<text id="Headline" fill="#F3F3F3" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="64" y="570.182">CAPTION</tspan></text>
+<line id="Line" x1="64" y1="600.5" x2="1094" y2="600.5" stroke="#5FA0FB" stroke-width="3"/>
+<text id="Metric_2" fill="#F3F3F3" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="120" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="809.6">1/4000T</tspan></text>
+<text id="Headline_2" fill="#F3F3F3" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="64" y="890.182">CAPTION</tspan></text>
+<line id="Line_2" x1="64" y1="920.5" x2="1094" y2="920.5" stroke="#5FA0FB" stroke-width="3"/>
+</g>
+<defs>
+<clipPath id="clip0_668_188">
+<rect width="1920" height="1080" fill="white"/>
+</clipPath>
+</defs>
+</svg>

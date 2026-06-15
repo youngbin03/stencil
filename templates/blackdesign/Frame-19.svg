@@ -1,0 +1,32 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="black"/>
+<g id="Subtitle+Body">
+<text id="H1 2025" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="29" font-weight="500" letter-spacing="0px"><tspan x="460" y="335.545">H1 2025</tspan></text>
+<text id="Body 3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="460" y="381.727">Use this paragraph space to </tspan><tspan x="460" y="413.727">say a bit more about each </tspan><tspan x="460" y="445.727">one&#x2014;specific goals, </tspan><tspan x="460" y="477.727">definitions, etc.</tspan></text>
+<path id="Vector 5" d="M460 497V553" stroke="#424242" stroke-width="2" stroke-linecap="round"/>
+</g>
+<g id="Subtitle+Body_2">
+<text id="H1 2025_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="29" font-weight="500" letter-spacing="0px"><tspan x="1124" y="367.545">H1 2025</tspan></text>
+<text id="Body 3_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="1124" y="413.727">If you only have a few </tspan><tspan x="1124" y="445.727">milestones, just chop what </tspan><tspan x="1124" y="477.727">you don&#x2019;t need. </tspan></text>
+<path id="Vector 5_2" d="M1124 497V553" stroke="#424242" stroke-width="2" stroke-linecap="round"/>
+</g>
+<g id="Subtitle+Body_3">
+<path id="Vector 4" d="M792 553V609" stroke="#424242" stroke-width="2" stroke-linecap="round"/>
+<text id="H2 2025" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="29" font-weight="500" letter-spacing="0px"><tspan x="792" y="651.545">H2 2025</tspan></text>
+<text id="Body 3_3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="792" y="697.727">If you need to squeeze in </tspan><tspan x="792" y="729.727">more than five milestones, </tspan><tspan x="792" y="761.727">you can duplicate and move </tspan><tspan x="792" y="793.727">around these text blocks as </tspan><tspan x="792" y="825.727">needed.</tspan></text>
+</g>
+<g id="Subtitle+Body_4">
+<path id="Vector 5_3" d="M1456 553V609" stroke="#424242" stroke-width="2" stroke-linecap="round"/>
+<text id="June 2024" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="29" font-weight="500" letter-spacing="0px"><tspan x="1456" y="651.545">June 2024</tspan></text>
+<text id="Body 3_4" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="1456" y="697.727">We ran out of stuff to write </tspan><tspan x="1456" y="729.727">here&#x2014;you get the idea.</tspan></text>
+</g>
+<g id="Subtitle+Body_5">
+<path id="Vector 4_2" d="M128 553V609" stroke="#424242" stroke-width="2" stroke-linecap="round"/>
+<text id="H2 2024" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="29" font-weight="500" letter-spacing="0px"><tspan x="128" y="651.545">H2 2024</tspan></text>
+<text id="Body 3_5" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="128" y="697.727">This slide is for mapping out </tspan><tspan x="128" y="729.727">important dates, checkpoints, </tspan><tspan x="128" y="761.727">or other sequential bits. </tspan></text>
+</g>
+<text id="H2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="36" font-weight="bold" letter-spacing="-0.02em"><tspan x="128" y="165.091">Timeline</tspan></text>
+<path id="Line" d="M129 553L1792 553" stroke="white" stroke-width="4" stroke-linecap="round"/>
+</g>
+</svg>

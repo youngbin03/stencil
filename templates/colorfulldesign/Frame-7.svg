@@ -1,0 +1,17 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame" clip-path="url(#clip0_668_129)">
+<rect width="1920" height="1080" fill="#F3F3F3"/>
+<g id="Decorative">
+<path d="M1958 1092H1229C1409.11 1075.98 1524.61 992.064 1606 886C1270.78 996.88 1202.04 1094 1101 1094C998.602 1094 978 1027.08 978 987C978 946.918 1017.16 882 1101 882H1609C1776.06 660.468 1799.89 346 1958 346V1092Z" fill="#D2B7E9"/>
+</g>
+<text id="Subtitle" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="120" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="430.6">SUBTITLE TWO </tspan><tspan x="64" y="550.6">LINES</tspan></text>
+<text id="Body" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" letter-spacing="0em"><tspan x="830" y="358.182">Body copy can flow here in a meaningful way. There is </tspan><tspan x="830" y="392.182">room for a statement. Body copy can flow here in a </tspan><tspan x="830" y="426.182">meaningful way. There is room for a statement. Body </tspan><tspan x="830" y="460.182">copy can flow here in a meaningful way. There is room </tspan><tspan x="830" y="494.182">for a statement.&#10;</tspan><tspan x="830" y="528.182">&#10;</tspan><tspan x="830" y="562.182">A quick note that brings the main idea to life in 3-4 </tspan><tspan x="830" y="596.182">sentences&#x2014;adding texture, personality, or a bit of </tspan><tspan x="830" y="630.182">story to deepen the point. You can use this space to </tspan><tspan x="830" y="664.182">show how the idea translates visually or emotionally, </tspan><tspan x="830" y="698.182">helping your audience imagine it in action. This is a </tspan><tspan x="830" y="732.182">bright and descriptive sentence, followed by an </tspan><tspan x="830" y="766.182">additional phrase of note. Body copy can flow here in </tspan><tspan x="830" y="800.182">a meaningful way.</tspan></text>
+<text id="Caption" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="64" y="88.1818">CAPTION</tspan></text>
+<text id="Caption_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="1283" y="88.1818">CAPTION</tspan></text>
+</g>
+<defs>
+<clipPath id="clip0_668_129">
+<rect width="1920" height="1080" fill="white"/>
+</clipPath>
+</defs>
+</svg>

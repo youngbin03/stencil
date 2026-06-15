@@ -1,0 +1,29 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="black"/>
+<text id="H2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="48" font-weight="bold" letter-spacing="-0.02em"><tspan x="128" y="557.455">Simple list</tspan></text>
+<g id="Text block" clip-path="url(#clip0_668_489)">
+<text id="H3 Medium" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="36" font-weight="bold" letter-spacing="-0.02em"><tspan x="968" y="310.091">First thing</tspan></text>
+<text id="Body" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="968" y="361.727">Add a quick description of each thing, with enough context </tspan><tspan x="968" y="393.727">to understand what&#x2019;s up.</tspan></text>
+</g>
+<g id="Text block_2" clip-path="url(#clip1_668_489)">
+<text id="H3 Medium_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="36" font-weight="bold" letter-spacing="-0.02em"><tspan x="968" y="512.091">Second thing</tspan></text>
+<text id="Body_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="968" y="563.727">Keep &#x2018;em short and sweet, so they&#x2019;re easy to scan and </tspan><tspan x="968" y="595.727">remember. </tspan></text>
+</g>
+<g id="Text block_3" clip-path="url(#clip2_668_489)">
+<text id="H3 Medium_3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="36" font-weight="bold" letter-spacing="-0.02em"><tspan x="968" y="714.091">Third thing</tspan></text>
+<text id="Body_3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="968" y="765.727">If you&#x2019;ve got a bunch, add another row, or use multiple </tspan><tspan x="968" y="797.727">copies of this slide. </tspan></text>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_668_489">
+<rect width="680" height="128" fill="white" transform="translate(968 273)"/>
+</clipPath>
+<clipPath id="clip1_668_489">
+<rect width="680" height="128" fill="white" transform="translate(968 475)"/>
+</clipPath>
+<clipPath id="clip2_668_489">
+<rect width="680" height="128" fill="white" transform="translate(968 677)"/>
+</clipPath>
+</defs>
+</svg>

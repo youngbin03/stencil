@@ -1,0 +1,28 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame" clip-path="url(#clip0_668_69)">
+<rect width="1920" height="1080" fill="#F3F3F3"/>
+<g id="Decorative">
+<path d="M1727 725C1727 982 1597.37 1080 1342 1080C1320.7 1080 1283 1083 1283 1083L1283 -1.94079e-05C1534.78 151.274 1727 468 1727 725Z" fill="#5FA0FB"/>
+</g>
+<text id="Headline" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="180" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="203.4">AGENDA</tspan></text>
+<text id="Caption" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="64" y="1020.18">CAPTION</tspan></text>
+<text id="Caption_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="1283" y="1020.18">CAPTION</tspan></text>
+<text id="Number" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="441.4">001</tspan></text>
+<text id="List item" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="365" y="441.4">LIST ITEM</tspan></text>
+<line id="Line" x1="64" y1="481.5" x2="1094" y2="481.5" stroke="#5FA0FB" stroke-width="3"/>
+<text id="Number_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="577.4">002</tspan></text>
+<text id="List item_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="365" y="577.4">LIST ITEM</tspan></text>
+<line id="Line_2" x1="64" y1="617.5" x2="1094" y2="617.5" stroke="#5FA0FB" stroke-width="3"/>
+<text id="Number_3" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="713.4">003</tspan></text>
+<text id="List item_3" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="365" y="713.4">LIST ITEM</tspan></text>
+<line id="Line_3" x1="64" y1="753.5" x2="1094" y2="753.5" stroke="#5FA0FB" stroke-width="3"/>
+<g id="Decorative_2">
+<path d="M1727 256C1815 584.416 2130 608 2130 878C2130 989.561 2039.56 1080 1928 1080C1816.44 1080 1727 989.562 1727 878C1727 766.438 1727 493 1727 256Z" fill="#5FA0FB"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_668_69">
+<rect width="1920" height="1080" fill="white"/>
+</clipPath>
+</defs>
+</svg>

@@ -1,0 +1,29 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="black"/>
+<text id="H2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="48" font-weight="bold" letter-spacing="-0.02em"><tspan x="128" y="174.455">Simple list</tspan></text>
+<g id="Text block" clip-path="url(#clip0_668_514)">
+<text id="H3 Medium" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="36" font-weight="bold" letter-spacing="-0.02em"><tspan x="127" y="482.091">First thing</tspan></text>
+<text id="Body" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="30" letter-spacing="-0.01em"><tspan x="127" y="540.409">Add a quick description of each </tspan><tspan x="127" y="581.409">thing, with enough context to </tspan><tspan x="127" y="622.409">understand what&#x2019;s up.</tspan></text>
+</g>
+<g id="Text block_2" clip-path="url(#clip1_668_514)">
+<text id="H3 Medium_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="36" font-weight="bold" letter-spacing="-0.02em"><tspan x="703.333" y="482.091">Second thing</tspan></text>
+<text id="Body_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="30" letter-spacing="-0.01em"><tspan x="703.333" y="540.409">Keep &#x2018;em short and sweet, so </tspan><tspan x="703.333" y="581.409">they&#x2019;re easy to scan and remember. </tspan></text>
+</g>
+<g id="Text block_3" clip-path="url(#clip2_668_514)">
+<text id="H3 Medium_3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="36" font-weight="bold" letter-spacing="-0.02em"><tspan x="1279.67" y="482.091">Third thing</tspan></text>
+<text id="Body_3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="30" letter-spacing="-0.01em"><tspan x="1279.67" y="540.409">If you&#x2019;ve got a bunch, add another </tspan><tspan x="1279.67" y="581.409">row, or use multiple copies of this </tspan><tspan x="1279.67" y="622.409">slide. </tspan></text>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_668_514">
+<rect width="512.333" height="187" fill="white" transform="translate(127 445)"/>
+</clipPath>
+<clipPath id="clip1_668_514">
+<rect width="512.333" height="146" fill="white" transform="translate(703.333 445)"/>
+</clipPath>
+<clipPath id="clip2_668_514">
+<rect width="512.333" height="187" fill="white" transform="translate(1279.67 445)"/>
+</clipPath>
+</defs>
+</svg>

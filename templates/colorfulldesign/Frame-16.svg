@@ -1,0 +1,30 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame" clip-path="url(#clip0_668_235)">
+<rect width="1920" height="1080" fill="#F3F3F3"/>
+<g id="Decorative">
+<path d="M836.032 1383C451.647 1383 273.497 1275.7 236.042 1136L799.032 1136L799.032 703C1281.45 721.59 1983.01 940.596 2610 665C2332.04 891.447 1586.52 1383 836.032 1383Z" fill="#FF542D"/>
+<path d="M-16.9534 698C-220.429 698 -297.285 785.879 -294.948 890L-30.9531 890L-30.9531 1113C189.996 1100.61 509.037 963.582 795.032 1131C667.671 992.817 326.922 698 -16.9534 698Z" fill="#FF542D"/>
+</g>
+<path id="Decorative_2" d="M1848 627C1848 631.418 1851.58 635 1856 635C1860.42 635 1864 631.418 1864 627C1864 622.582 1860.42 619 1856 619C1851.58 619 1848 622.582 1848 627ZM0 627V628.5H1856V627V625.5H0V627Z" fill="#FF542D"/>
+<text id="Subtitle" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="120" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="163.6">TIMELINE</tspan></text>
+<text id="Caption" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="64" y="1020.18">CAPTION</tspan></text>
+<text id="Caption_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="1283" y="1020.18">CAPTION</tspan></text>
+<text id="Date" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="367.4">2017</tspan></text>
+<text id="Caption_3" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="64" y="424.182">OCCURRENCE</tspan></text>
+<text id="Body" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" letter-spacing="0em"><tspan x="64" y="474.182">Brief description of the </tspan><tspan x="64" y="508.182">importance of occurrence </tspan><tspan x="64" y="542.182">or data point.  </tspan></text>
+<text id="Date_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="521" y="367.4">2018</tspan></text>
+<text id="Caption_4" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="521" y="424.182">OCCURRENCE</tspan></text>
+<text id="Body_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" letter-spacing="0em"><tspan x="521" y="474.182">Brief description of the </tspan><tspan x="521" y="508.182">importance of occurrence </tspan><tspan x="521" y="542.182">or data point.  </tspan></text>
+<text id="Date_3" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="978" y="367.4">2019</tspan></text>
+<text id="Caption_5" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="978" y="424.182">OCCURRENCE</tspan></text>
+<text id="Body_3" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" letter-spacing="0em"><tspan x="978" y="474.182">Brief description of the </tspan><tspan x="978" y="508.182">importance of occurrence </tspan><tspan x="978" y="542.182">or data point.  </tspan></text>
+<text id="Date_4" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="80" font-weight="200" letter-spacing="-0.03em"><tspan x="1435" y="367.4">2020</tspan></text>
+<text id="Caption_6" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="1435" y="424.182">OCCURRENCE</tspan></text>
+<text id="Body_4" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" letter-spacing="0em"><tspan x="1435" y="474.182">Brief description of the </tspan><tspan x="1435" y="508.182">importance of occurrence </tspan><tspan x="1435" y="542.182">or data point.  </tspan></text>
+</g>
+<defs>
+<clipPath id="clip0_668_235">
+<rect width="1920" height="1080" fill="white"/>
+</clipPath>
+</defs>
+</svg>

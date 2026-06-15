@@ -1,0 +1,42 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame" clip-path="url(#clip0_668_273)">
+<rect width="1920" height="1080" fill="#F3F3F3"/>
+<g id="Decorative">
+<path d="M1661 824C1894.11 824 2041 920.478 2041 1111C2041 1126.89 2039.16 1142.09 2037 1156H1034C1175.05 968.154 1378.3 824 1661 824Z" fill="#237267"/>
+</g>
+<text id="Subtitle" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="120" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="163.6">SUBTITLE</tspan></text>
+<g id="Pie chart">
+<g id="Pie slice">
+<path d="M179 544C179 601.195 224.976 647 281 647V747C169.13 747 79 655.804 79 544H179Z" fill="#5FA0FB"/>
+</g>
+<g id="Pie slice_2">
+<path d="M384 544C384 487.115 337.885 441 281 441L281 341C393.114 341 484 431.886 484 544L384 544Z" fill="#237267"/>
+</g>
+<g id="Pie slice_3">
+<path d="M281 647C337.885 647 384 600.885 384 544L484 544C484 656.114 393.114 747 281 747L281 647Z" fill="#D2B7E9"/>
+</g>
+<g id="Pie slice_4">
+<path d="M281 441C224.976 441 179 486.805 179 544L79 544C79 432.196 169.13 341 281 341L281 441Z" fill="#FF542D"/>
+</g>
+</g>
+<circle id="Vector" cx="605.5" cy="374.5" r="31.5" fill="#FF542D"/>
+<text id="Caption" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="674" y="367.182">DATA POINT</tspan></text>
+<text id="Body" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" letter-spacing="0em"><tspan x="674" y="414.182">Brief description of the </tspan><tspan x="674" y="448.182">importance of occurrence </tspan><tspan x="674" y="482.182">or data point.  </tspan></text>
+<circle id="Vector_2" cx="605.5" cy="615.5" r="31.5" fill="#5FA0FB"/>
+<text id="Caption_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="674" y="608.182">DATA POINT</tspan></text>
+<text id="Body_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" letter-spacing="0em"><tspan x="674" y="655.182">Brief description of the </tspan><tspan x="674" y="689.182">importance of occurrence </tspan><tspan x="674" y="723.182">or data point.  </tspan></text>
+<circle id="Vector_3" cx="1215.5" cy="374.5" r="31.5" fill="#237267"/>
+<text id="Caption_3" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="1284" y="367.182">DATA POINT</tspan></text>
+<text id="Body_3" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" letter-spacing="0em"><tspan x="1284" y="414.182">Brief description of the </tspan><tspan x="1284" y="448.182">importance of occurrence </tspan><tspan x="1284" y="482.182">or data point.  </tspan></text>
+<circle id="Vector_4" cx="1215.5" cy="615.5" r="31.5" fill="#D2B7E9"/>
+<text id="Caption_4" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="1284" y="608.182">DATA POINT</tspan></text>
+<text id="Body_4" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" letter-spacing="0em"><tspan x="1284" y="655.182">Brief description of the </tspan><tspan x="1284" y="689.182">importance of occurrence </tspan><tspan x="1284" y="723.182">or data point.  </tspan></text>
+<text id="Caption_5" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="64" y="1020.18">CAPTION</tspan></text>
+<text id="Caption_6" fill="#F3F3F3" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="1283" y="1020.18">CAPTION</tspan></text>
+</g>
+<defs>
+<clipPath id="clip0_668_273">
+<rect width="1920" height="1080" fill="white"/>
+</clipPath>
+</defs>
+</svg>

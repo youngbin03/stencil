@@ -1,0 +1,41 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="black"/>
+<g id="Funnel">
+<mask id="mask0_668_719" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="914" y="190" width="876" height="700">
+<path id="Mask" d="M914.739 195.726C913.469 193.071 915.404 190 918.347 190H1785.65C1788.6 190 1790.53 193.071 1789.26 195.726L1458.83 886.589C1457.83 888.673 1455.72 890 1453.41 890H1250.59C1248.28 890 1246.17 888.673 1245.17 886.589L914.739 195.726Z" fill="#D9D9D9"/>
+</mask>
+<g mask="url(#mask0_668_719)">
+<g id="Textbox 1">
+<rect width="880" height="136.8" transform="translate(912 190)" fill="#424242"/>
+<text id="Label" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" font-weight="600" letter-spacing="0em"><tspan x="1320.51" y="267.128">Label</tspan></text>
+</g>
+<g id="Textbox 2">
+<rect width="880" height="136.8" transform="translate(912 330.8)" fill="#424242"/>
+<text id="Label_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" font-weight="600" letter-spacing="0em"><tspan x="1320.51" y="407.927">Label</tspan></text>
+</g>
+<g id="Textbox 3">
+<rect width="880" height="136.8" transform="translate(912 471.6)" fill="#424242"/>
+<text id="Label_3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" font-weight="600" letter-spacing="0em"><tspan x="1320.51" y="548.727">Label</tspan></text>
+</g>
+<g id="Textbox 4">
+<rect width="880" height="136.8" transform="translate(912 612.4)" fill="#424242"/>
+<text id="Label_4" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" font-weight="600" letter-spacing="0em"><tspan x="1320.51" y="689.528">Label</tspan></text>
+</g>
+<g id="Textbox 5">
+<rect width="880" height="136.8" transform="translate(912 753.2)" fill="#424242"/>
+<text id="Label_5" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" font-weight="600" letter-spacing="0em"><tspan x="1320.51" y="830.328">Label</tspan></text>
+</g>
+</g>
+</g>
+<g id="Text block" clip-path="url(#clip0_668_719)">
+<text id="H2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="48" font-weight="bold" letter-spacing="-0.02em"><tspan x="128" y="503.955">Top of funnel</tspan></text>
+<text id="H3 Regular" fill="#EEEEEE" fill-opacity="0.5" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="30" letter-spacing="-0.01em"><tspan x="128" y="570.909">Show how a few concepts relate </tspan><tspan x="128" y="611.909">sequentially, from top to bottom.</tspan></text>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_668_719">
+<rect width="600" height="164" fill="white" transform="translate(128 457.5)"/>
+</clipPath>
+</defs>
+</svg>

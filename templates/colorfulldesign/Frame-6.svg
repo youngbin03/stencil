@@ -1,0 +1,18 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame" clip-path="url(#clip0_668_123)">
+<rect width="1920" height="1080" fill="#F3F3F3"/>
+<g id="Decorative">
+<path d="M1808 -128C2095.46 -128 2276 1.35953 2276 293C2276 484.547 2116.23 575.814 1921 628V289H1450V709C1197.08 750.14 921.969 827.94 712 1108C757.475 696 1057.67 -128 1808 -128Z" fill="#237267"/>
+<path d="M1922 521C1922 648.832 1815.59 752 1685 752C1554.41 752 1449 648.832 1449 521C1449 393.168 1554.41 289 1685 289C1815.59 289 1922 393.168 1922 521Z" fill="#237267"/>
+</g>
+<text id="Headline" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="180" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="242.4">TITLE TWO </tspan><tspan x="64" y="422.4">LINES</tspan></text>
+<text id="Body" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" letter-spacing="0em"><tspan x="64" y="534.182">Something human and wonderful to introduce </tspan><tspan x="64" y="568.182">your subject to the world (or your small circle </tspan><tspan x="64" y="602.182">of friends). A collection of sentences that </tspan><tspan x="64" y="636.182">support the aforementioned point. &#10;</tspan><tspan x="64" y="670.182">&#10;</tspan><tspan x="64" y="704.182">Two to three sentences that support the </tspan><tspan x="64" y="738.182">aforementioned point. &#10;</tspan><tspan x="64" y="772.182">&#10;</tspan><tspan x="64" y="806.182">Write a few sentences that set the scene and </tspan><tspan x="64" y="840.182">guide the viewer through the content. Describe </tspan><tspan x="64" y="874.182">what&#x2019;s happening and why it&#x2019;s relevant. This </tspan><tspan x="64" y="908.182">space should feel approachable.</tspan></text>
+<text id="Caption" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="64" y="1020.18">CAPTION</tspan></text>
+<text id="Caption_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="1283" y="1020.18">CAPTION</tspan></text>
+</g>
+<defs>
+<clipPath id="clip0_668_123">
+<rect width="1920" height="1080" fill="white"/>
+</clipPath>
+</defs>
+</svg>

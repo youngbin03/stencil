@@ -1,0 +1,21 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="black"/>
+<text id="H1" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="48" font-weight="bold" letter-spacing="-0.02em"><tspan x="128" y="174.455">Principles</tspan></text>
+<g id="1">
+<rect x="128" y="274" width="512" height="678" rx="16" fill="#424242"/>
+<text id="Header 3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="36" font-weight="bold" letter-spacing="-0.02em"><tspan x="176" y="351.091">Principle 1</tspan></text>
+<text id="Header 2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="48" font-weight="bold" letter-spacing="-0.02em"><tspan x="176" y="826.455">This is what we </tspan><tspan x="176" y="884.455">believe.</tspan></text>
+</g>
+<g id="2">
+<rect x="704" y="274" width="512" height="678" rx="16" fill="#424242"/>
+<text id="Header 3_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="36" font-weight="bold" letter-spacing="-0.02em"><tspan x="752" y="351.091">Principle 2</tspan></text>
+<text id="Header 2_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="48" font-weight="bold" letter-spacing="-0.02em"><tspan x="752" y="826.455">It&#x2019;s how we make </tspan><tspan x="752" y="884.455">decisions.</tspan></text>
+</g>
+<g id="3">
+<rect x="1280" y="274" width="512" height="678" rx="16" fill="#424242"/>
+<text id="Header 3_3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="36" font-weight="bold" letter-spacing="-0.02em"><tspan x="1328" y="351.091">Principle 3</tspan></text>
+<text id="Header 2_3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="48" font-weight="bold" letter-spacing="-0.02em"><tspan x="1328" y="826.455">And what we aim </tspan><tspan x="1328" y="884.455">to achieve.</tspan></text>
+</g>
+</g>
+</svg>

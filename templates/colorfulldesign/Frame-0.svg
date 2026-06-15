@@ -1,0 +1,18 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame" clip-path="url(#clip0_668_51)">
+<rect width="1920" height="1080" fill="#F3F3F3"/>
+<g id="Decorative">
+<path d="M1293.97 606C1608.78 606 1754.29 693.592 1784.97 808H1323.97V1163C928.876 1147.78 354.502 968.304 -159 1194C68.6467 1008.55 679.328 606 1293.97 606Z" fill="#FF542D"/>
+<path d="M1992.96 1167C2159.61 1167 2221.87 1095.27 2219.96 1010H2003.96V827C1823 837.143 1562.2 949.105 1327.97 812C1432.28 925.164 1711.33 1167 1992.96 1167Z" fill="#FF542D"/>
+</g>
+<text id="Caption" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="64" y="88.1818">CAPTION</tspan></text>
+<text id="Caption_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="1283" y="88.1818">CAPTION</tspan></text>
+<text id="Body" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" letter-spacing="0em"><tspan x="1283" y="149.182">Bright and descriptive words, followed by </tspan><tspan x="1283" y="183.182">an additional phrase of note.</tspan></text>
+<text id="Presentation title" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="180" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="318.4">CURVE STUDY </tspan><tspan x="64" y="498.4">PRESENTATION </tspan><tspan x="64" y="678.4">THEME</tspan></text>
+</g>
+<defs>
+<clipPath id="clip0_668_51">
+<rect width="1920" height="1080" fill="white"/>
+</clipPath>
+</defs>
+</svg>

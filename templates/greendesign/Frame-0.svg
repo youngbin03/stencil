@@ -1,0 +1,16 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="#003310"/>
+<text id="Header" fill="#C7EF4E" style="white-space: pre" xml:space="preserve" font-family="Neuton" font-size="200" font-weight="300" letter-spacing="-0.022em"><tspan x="66" y="265.15">Project Status</tspan></text>
+<g id="Frame 39">
+<text id="Project Aero" fill="#C7EF4E" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="36" letter-spacing="-0.022em"><tspan x="100" y="931.466">Project Aero</tspan></text>
+<text id="Body Medium" fill="white" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="24" letter-spacing="0em"><tspan x="100" y="963.811">Next-Gen Smart Home Appliances</tspan></text>
+</g>
+<g id="Frame 38">
+<text id="Alison Lee" fill="#C7EF4E" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="36" letter-spacing="-0.022em"><tspan x="683" y="931.466">Alison Lee</tspan></text>
+<text id="Body Medium_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="24" letter-spacing="0em"><tspan x="683" y="963.811">Head of Product Design</tspan></text>
+</g>
+<text id="[Company Logo]" fill="white" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="36" letter-spacing="-0.022em"><tspan x="1558" y="965.466">[Company Logo]</tspan></text>
+<line id="Line 1" x1="100" y1="865.5" x2="1820" y2="865.5" stroke="white"/>
+</g>
+</svg>

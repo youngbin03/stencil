@@ -1,0 +1,36 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="black"/>
+<text id="H2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="48" font-weight="bold" letter-spacing="-0.02em"><tspan x="128" y="174.455">Simple list</tspan></text>
+<g id="Text block" clip-path="url(#clip0_668_525)">
+<text id="H3 Medium" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="36" font-weight="bold" letter-spacing="-0.02em"><tspan x="128" y="496.091">First thing</tspan></text>
+<text id="Body" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="128" y="547.727">Add a quick description of each </tspan><tspan x="128" y="579.727">thing, with enough context to </tspan><tspan x="128" y="611.727">understand what&#x2019;s up.</tspan></text>
+</g>
+<g id="Text block_2" clip-path="url(#clip1_668_525)">
+<text id="H3 Medium_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="36" font-weight="bold" letter-spacing="-0.02em"><tspan x="559.75" y="496.091">Second thing</tspan></text>
+<text id="Body_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="559.75" y="547.727">Keep &#x2018;em short and sweet, so </tspan><tspan x="559.75" y="579.727">they&#x2019;re easy to scan and </tspan><tspan x="559.75" y="611.727">remember. </tspan></text>
+</g>
+<g id="Text block_3" clip-path="url(#clip2_668_525)">
+<text id="H3 Medium_3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="36" font-weight="bold" letter-spacing="-0.02em"><tspan x="991.5" y="496.091">Third thing</tspan></text>
+<text id="Body_3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="991.5" y="547.727">If you&#x2019;ve got a bunch, add </tspan><tspan x="991.5" y="579.727">another row, or use multiple </tspan><tspan x="991.5" y="611.727">copies of this slide. </tspan></text>
+</g>
+<g id="Text block_4" clip-path="url(#clip3_668_525)">
+<text id="H3 Medium_4" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="36" font-weight="bold" letter-spacing="-0.02em"><tspan x="1423.25" y="496.091">Fourth thing</tspan></text>
+<text id="Body_4" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="1423.25" y="547.727">Keep &#x2018;em short and sweet, so </tspan><tspan x="1423.25" y="579.727">they&#x2019;re easy to scan and </tspan><tspan x="1423.25" y="611.727">remember. </tspan></text>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_668_525">
+<rect width="367.75" height="160" fill="white" transform="translate(128 459)"/>
+</clipPath>
+<clipPath id="clip1_668_525">
+<rect width="367.75" height="160" fill="white" transform="translate(559.75 459)"/>
+</clipPath>
+<clipPath id="clip2_668_525">
+<rect width="367.75" height="160" fill="white" transform="translate(991.5 459)"/>
+</clipPath>
+<clipPath id="clip3_668_525">
+<rect width="367.75" height="160" fill="white" transform="translate(1423.25 459)"/>
+</clipPath>
+</defs>
+</svg>

@@ -1,0 +1,42 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="black"/>
+<g id="V Axis">
+<text id="Body 3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="1317.44" y="120.727">Label</tspan></text>
+<path id="Line" d="M1348 144L1348 937" stroke="#424242" stroke-width="4" stroke-linecap="round"/>
+<text id="Body 3_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="1317.44" y="977.727">Label</tspan></text>
+</g>
+<g id="V Axis_2">
+<text id="Body 3_3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="904.443" y="548.727">Label</tspan></text>
+<path id="Line_2" d="M982 540H1714" stroke="#424242" stroke-width="4" stroke-linecap="round"/>
+<text id="Body 3_4" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="1730.44" y="548.727">Label</tspan></text>
+</g>
+<g id="Text block" clip-path="url(#clip0_668_676)">
+<text id="H2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="48" font-weight="bold" letter-spacing="-0.02em"><tspan x="128" y="503.955">2 x 2 Matrix</tspan></text>
+<g id="H3 Regular">
+<text fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="30" letter-spacing="-0.01em"><tspan x="128" y="570.909">Show where a few concepts live on 2 </tspan><tspan x="128" y="611.909">different scales.</tspan></text>
+</g>
+</g>
+<g id="Label">
+<circle id="Shape" cx="1129" cy="345" r="75" fill="#424242"/>
+<text id="Text" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="20" letter-spacing="0em"><tspan x="1103.34" y="352.273">Label</tspan></text>
+</g>
+<g id="Label_2">
+<circle id="Shape_2" cx="1129" cy="687" r="75" fill="#424242"/>
+<text id="Text_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="20" letter-spacing="0em"><tspan x="1103.34" y="694.273">Label</tspan></text>
+</g>
+<g id="Label_3">
+<circle id="Shape_3" cx="1486" cy="345" r="51" fill="#424242"/>
+<text id="Text_3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="20" letter-spacing="0em"><tspan x="1460.34" y="352.273">Label</tspan></text>
+</g>
+<g id="Label_4">
+<circle id="Shape_4" cx="1510" cy="687" r="75" fill="#424242"/>
+<text id="Text_4" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="20" letter-spacing="0em"><tspan x="1484.34" y="694.273">Label</tspan></text>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_668_676">
+<rect width="600" height="164" fill="white" transform="translate(128 457.5)"/>
+</clipPath>
+</defs>
+</svg>

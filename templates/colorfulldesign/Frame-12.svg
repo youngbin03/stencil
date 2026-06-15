@@ -1,0 +1,22 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame" clip-path="url(#clip0_668_165)">
+<rect width="1920" height="1080" fill="#F3F3F3"/>
+<g id="Decorative">
+<path d="M1513 1211C1140.8 1211 907 1056.32 907 752C907 396 1268.4 370.551 1367 135L1367 671L1976 671V128C2303.47 74.7437 2660.14 -26.4629 2932 -389C2873.12 144.333 2484.5 1211 1513 1211Z" fill="#5FA0FB"/>
+<path d="M1366 371C1366 205.521 1502.92 71 1672 71C1841.08 71 1978 205.521 1978 371C1978 536.479 1841.08 671 1672 671C1502.92 671 1366 536.479 1366 371Z" fill="#5FA0FB"/>
+</g>
+<text id="Caption" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="64" y="1020.18">CAPTION</tspan></text>
+<text id="Caption_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="1283" y="1020.18">CAPTION</tspan></text>
+<text id="Metric" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="120" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="226.6">1/4000T</tspan></text>
+<text id="Caption_3" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="64" y="307.182">LIST ITEM</tspan></text>
+<line id="Line" x1="64" y1="337.5" x2="1094" y2="337.5" stroke="#5FA0FB" stroke-width="3"/>
+<text id="Metric_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="120" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="546.6">2/900M</tspan></text>
+<text id="Caption_4" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="64" y="627.182">LIST ITEM</tspan></text>
+<line id="Line_2" x1="64" y1="657.5" x2="1094" y2="657.5" stroke="#5FA0FB" stroke-width="3"/>
+</g>
+<defs>
+<clipPath id="clip0_668_165">
+<rect width="1920" height="1080" fill="white"/>
+</clipPath>
+</defs>
+</svg>

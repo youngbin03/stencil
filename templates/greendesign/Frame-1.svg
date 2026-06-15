@@ -1,0 +1,22 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="#C7EF4E"/>
+<text id="Header" fill="#003310" style="white-space: pre" xml:space="preserve" font-family="Neuton" font-size="200" font-weight="300" letter-spacing="-0.022em"><tspan x="100" y="614.15">Agenda</tspan></text>
+<text id="PROJECT NAME" fill="black" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="20" font-weight="600" letter-spacing="0.02em"><tspan x="100" y="65.7588">PROJECT NAME</tspan></text>
+<text id="01" fill="black" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="20" font-weight="600" letter-spacing="0.02em"><tspan x="1793.71" y="65.7588">01</tspan></text>
+<g id="Frame 1">
+<text id="Project Overview &#38; Objectives" fill="black" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="36" letter-spacing="-0.022em"><tspan x="1118" y="363.466">Project Overview &#38; Objectives </tspan></text>
+<line id="Line 2" x1="1118" y1="396.5" x2="1817" y2="396.5" stroke="black"/>
+<text id="Milestones &#38; Status" fill="black" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="36" letter-spacing="-0.022em"><tspan x="1118" y="458.466">Milestones &#38; Status</tspan></text>
+<line id="Line 3" x1="1118" y1="491.5" x2="1817" y2="491.5" stroke="black"/>
+<text id="Timeline" fill="black" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="36" letter-spacing="-0.022em"><tspan x="1118" y="553.466">Timeline</tspan></text>
+<line id="Line 4" x1="1118" y1="586.5" x2="1817" y2="586.5" stroke="black"/>
+<text id="Budget" fill="black" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="36" letter-spacing="-0.022em"><tspan x="1118" y="648.466">Budget</tspan></text>
+<line id="Line 5" x1="1118" y1="681.5" x2="1817" y2="681.5" stroke="black"/>
+<text id="Issues &#38; Risks" fill="black" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="36" letter-spacing="-0.022em"><tspan x="1118" y="743.466">Issues &#38; Risks</tspan></text>
+<line id="Line 6" x1="1118" y1="776.5" x2="1817" y2="776.5" stroke="black"/>
+<text id="Next Steps" fill="black" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="36" letter-spacing="-0.022em"><tspan x="1118" y="838.466">Next Steps</tspan></text>
+</g>
+<line id="Line 7" x1="100" y1="99.5" x2="1817" y2="99.5" stroke="black"/>
+</g>
+</svg>

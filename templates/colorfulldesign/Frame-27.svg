@@ -1,0 +1,17 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame" clip-path="url(#clip0_668_367)">
+<rect width="1920" height="1080" fill="#237267"/>
+<g id="Decorative">
+<path d="M773 962C773 1378.31 945.544 1640 1286 1640C1684.28 1640 1712.48 1235.28 1976 1125L1378 1125L1378 444L1985 444C2044.58 77.7185 2156.41 -320.92 2562 -625C1965.33 -559.143 773 -124.635 773 962Z" fill="#FCB9EF"/>
+<path d="M1713 1127C1898.13 1127 2048 974.115 2048 785C2048 595.884 1898.13 442 1713 442C1527.87 442 1378 595.885 1378 785C1378 974.115 1527.87 1127 1713 1127Z" fill="#FCB9EF"/>
+</g>
+<text id="Quote" fill="#F3F3F3" style="white-space: pre" xml:space="preserve" font-family="Bricolage Grotesque" font-size="150" font-weight="200" letter-spacing="-0.03em"><tspan x="64" y="236.5">ONE MORE </tspan><tspan x="64" y="356.5">THING...</tspan></text>
+<text id="Caption" fill="#F3F3F3" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="64" y="88.1818">CAPTION</tspan></text>
+<text id="Caption_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="28" font-weight="600" letter-spacing="0em"><tspan x="1283" y="88.1818">CAPTION</tspan></text>
+</g>
+<defs>
+<clipPath id="clip0_668_367">
+<rect width="1920" height="1080" fill="white"/>
+</clipPath>
+</defs>
+</svg>

@@ -1,0 +1,7 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="black"/>
+<text id="H2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="60" font-weight="bold" letter-spacing="-0.022em"><tspan x="128" y="561.818">Highlight</tspan></text>
+<text id="H3 Regular" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="36" letter-spacing="-0.01em"><tspan x="968" y="478.091">Use this slide to highlight a single, </tspan><tspan x="968" y="528.091">important thing. To keep it short and </tspan><tspan x="968" y="578.091">sweet, you might link away to relevant </tspan><tspan x="968" y="628.091">doc or file.</tspan></text>
+</g>
+</svg>

@@ -1,0 +1,56 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="white"/>
+<g id="Rectangle 2">
+<rect x="100" y="974" width="1720" height="32" fill="#C7EF4E"/>
+<rect x="100" y="974" width="1720" height="32" stroke="#003310"/>
+</g>
+<text id="Title" fill="black" stroke="black" style="white-space: pre" xml:space="preserve" font-family="Neuton" font-size="80" font-weight="300" letter-spacing="-0.02em"><tspan x="100" y="289.66">Current Status</tspan></text>
+<g id="Frame 2">
+<rect x="700" y="278" width="146" height="43" rx="21.5" fill="#003310"/>
+<text id="Complete" fill="#C7EF4E" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="18" letter-spacing="0em"><tspan x="732" y="306.483">Complete</tspan></text>
+</g>
+<g id="Frame 3">
+<rect x="700" y="507" width="146" height="43" rx="21.5" fill="#C7EF4E"/>
+<text id="In Progress" fill="black" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="18" letter-spacing="0em"><tspan x="725.5" y="535.483">In Progress</tspan></text>
+</g>
+<g id="Frame 14">
+<rect x="700" y="339" width="146" height="43" rx="21.5" fill="#C7EF4E"/>
+<text id="In Progress_2" fill="black" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="18" letter-spacing="0em"><tspan x="725.5" y="367.483">In Progress</tspan></text>
+</g>
+<g id="Frame 12">
+<rect x="700" y="797" width="146" height="43" rx="21.5" fill="black"/>
+<text id="Not Started" fill="white" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="18" letter-spacing="0em"><tspan x="724.5" y="825.483">Not Started</tspan></text>
+</g>
+<g id="Frame 10">
+<rect x="700" y="562" width="146" height="43" rx="21.5" fill="#C7EF4E"/>
+<text id="In Progress_3" fill="black" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="18" letter-spacing="0em"><tspan x="725.5" y="590.483">In Progress</tspan></text>
+</g>
+<g id="Frame 13">
+<rect x="700" y="736" width="146" height="43" rx="21.5" fill="#C7EF4E"/>
+<text id="In Progress_4" fill="black" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="18" letter-spacing="0em"><tspan x="725.5" y="764.483">In Progress</tspan></text>
+</g>
+<rect id="Rectangle 1" x="100" y="974" width="1283" height="32" fill="#003310"/>
+<text id="JAN 2025" fill="black" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="20" font-weight="600" letter-spacing="0.02em"><tspan x="100" y="939.759">JAN 2025</tspan></text>
+<text id="MAR 2027" fill="black" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="20" font-weight="600" letter-spacing="0.02em"><tspan x="1721.79" y="939.759">MAR 2027</tspan></text>
+<text id="tODAY" fill="black" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="20" font-weight="600" letter-spacing="0.02em"><tspan x="1348.81" y="939.759">TODAY</tspan></text>
+<text id="UI Design" fill="black" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="20" font-weight="600" letter-spacing="0.02em"><tspan x="700" y="242.759">UI DESIGN</tspan></text>
+<text id="Retail Partnership Negotiations" fill="black" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="20" font-weight="600" letter-spacing="0.02em"><tspan x="700" y="473.759">RETAIL PARTNERSHIP NEGOTIATIONS</tspan></text>
+<text id="Product Marketing Campaign Planning:" fill="black" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="20" font-weight="600" letter-spacing="0.02em"><tspan x="700" y="696.759">PRODUCT MARKETING CAMPAIGN PLANNING:</tspan></text>
+<g id="Frame 6">
+<text id="Body Medium" fill="#7A7A7A" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="24" letter-spacing="0em"><tspan x="878" y="308.811">Develop wireframes and mockups for the user interface of smart home appliances.</tspan></text>
+<text id="Body Medium_2" fill="#7A7A7A" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="24" letter-spacing="0em"><tspan x="878" y="369.811">Incorporate feedback from usability testing sessions to refine interface designs.</tspan></text>
+</g>
+<g id="Frame 7">
+<text id="Body Medium_3" fill="#7A7A7A" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="24" letter-spacing="0em"><tspan x="878" y="531.811">Initiate discussions with retail chains to secure partnerships for product placement.</tspan></text>
+<text id="Body Medium_4" fill="#7A7A7A" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="24" letter-spacing="0em"><tspan x="878" y="592.811">Negotiate terms, pricing, and promotional strategies with retail partners.</tspan></text>
+</g>
+<g id="Frame 8">
+<text id="Body Medium_5" fill="#7A7A7A" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="24" letter-spacing="0em"><tspan x="878" y="766.811">Develop a comprehensive marketing strategy for the product launch.</tspan></text>
+<text id="Body Medium_6" fill="#7A7A7A" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="24" letter-spacing="0em"><tspan x="878" y="827.811">Define target audience segments and messaging strategies for each channel.</tspan></text>
+</g>
+<text id="PROJECT NAME" fill="#7A7A7A" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="20" font-weight="600" letter-spacing="0.02em"><tspan x="100" y="65.7588">PROJECT NAME</tspan></text>
+<text id="05" fill="#7A7A7A" style="white-space: pre" xml:space="preserve" font-family="Open Sans" font-size="20" font-weight="600" letter-spacing="0.02em"><tspan x="1793.71" y="65.7588">05</tspan></text>
+<line id="Line 7" x1="100" y1="99.5" x2="1817" y2="99.5" stroke="#7A7A7A"/>
+</g>
+</svg>

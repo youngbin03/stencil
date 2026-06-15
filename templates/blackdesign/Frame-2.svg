@@ -1,0 +1,9 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="black"/>
+<g id="Frame 2">
+<text id="H1" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="36" font-weight="bold" letter-spacing="-0.02em"><tspan x="128" y="794.091">Quick description about the section.</tspan></text>
+<text id="H1_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="96" font-weight="bold" letter-spacing="-0.02em"><tspan x="128" y="929.409">Section Title</tspan></text>
+</g>
+</g>
+</svg>

@@ -1,0 +1,35 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="black"/>
+<g id="Venn Diagram 2">
+<g id="Diagram">
+<rect x="1032" y="160" width="760" height="760" rx="380" stroke="white" stroke-width="4"/>
+<text id="Body 3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="1381.94" y="857.727">Label</tspan></text>
+</g>
+<g id="Diagram_2">
+<rect x="1102" y="160" width="620" height="620" rx="310" stroke="white" stroke-width="4"/>
+<text id="Body 3_2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="1381.5" y="704.727">Label </tspan></text>
+</g>
+<g id="Diagram_3">
+<rect x="1182" y="160" width="460" height="460" rx="230" stroke="white" stroke-width="4"/>
+<text id="Body 3_3" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="1381.5" y="533.727">Label </tspan></text>
+</g>
+<g id="Diagram_4">
+<rect x="1262" y="160" width="300" height="300" rx="150" fill="#424242"/>
+<rect x="1262" y="160" width="300" height="300" rx="150" stroke="white" stroke-width="4"/>
+<text id="Body 3_4" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="24" letter-spacing="-0.005em"><tspan x="1381.44" y="318.727">Label</tspan></text>
+</g>
+</g>
+<g id="Text block" clip-path="url(#clip0_668_663)">
+<text id="H2" fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="48" font-weight="bold" letter-spacing="-0.02em"><tspan x="128" y="503.955">Overlaps</tspan></text>
+<g id="H3 Regular">
+<text fill="white" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="30" letter-spacing="-0.01em"><tspan x="128" y="570.909">Show how a few nested concepts relate to </tspan><tspan x="128" y="611.909">one another.</tspan></text>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_668_663">
+<rect width="600" height="164" fill="white" transform="translate(128 457.5)"/>
+</clipPath>
+</defs>
+</svg>
