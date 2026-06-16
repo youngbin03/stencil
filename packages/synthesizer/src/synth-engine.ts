@@ -35,6 +35,21 @@ const ZONE_ROLES: Record<string, Role[]> = {
   footer: ["footer", "pagenum", "caption", "label"],
 };
 
+/** The content an archetype expects — single roles + card roles + image count.
+ * Drives the LLM content planner so it writes exactly what the layout needs. */
+export function archetypeSchema(spec: GrammarSpec, archetype: string): { archetype: string; singles: Role[]; cardRoles: Role[]; images: number } {
+  const sk = spec.archetypes.find((a) => a.archetype === archetype) ?? spec.archetypes[0]!;
+  const singles: Role[] = [];
+  for (const z of sk.zones) {
+    if (z.id === "cards") continue;
+    const role = (ZONE_ROLES[z.id] ?? []).find((r) => !singles.includes(r));
+    if (role) singles.push(role);
+  }
+  const cardsZone = sk.zones.find((z) => z.block);
+  const cardRoles = cardsZone ? (spec.blocks.find((b) => b.id === cardsZone.block)?.slots.map((s) => s.role) ?? []) : [];
+  return { archetype, singles, cardRoles, images: sk.imageZones.length };
+}
+
 function snap(guides: number[], v: number, tol: number): number {
   let best = v, bestD = tol;
   for (const g of guides) { const d = Math.abs(g - v); if (d < bestD) { best = g; bestD = d; } }
