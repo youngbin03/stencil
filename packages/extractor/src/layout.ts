@@ -141,6 +141,7 @@ function flowOf(slots: ManifestSlot[]): FlowDirection {
 /** Semantic zones: header / title / cards / body / footer. */
 export function extractRegions(
   slots: ManifestSlot[], graph: RelationGraph | undefined, grammar: DesignGrammar, canvas: Canvas,
+  decoration?: DecorationModel,
 ): Region[] {
   const content = slots.filter((s) => s.type === "text" || s.type === "image");
   const gap = grammar.spacingRhythm.gaps.normal;
@@ -177,12 +178,22 @@ export function extractRegions(
   add("body", body, flowOf(body));
   add("footer", footer, "row");
 
-  // Growth limits: each region may reflow down until it meets an obstacle —
-  // the canvas safe margin, the next region below, or an image slot (text must
-  // never flow onto an image). Decoration is left out of v1 (text often sits
-  // over it by design). x-span follows the region's own column.
+  // Growth limits: each region may reflow down until it meets an obstacle — the
+  // canvas safe margin, the next region below, an image slot (text must never
+  // flow onto an image), or a solid bounded decoration the region does NOT sit
+  // over (text often sits over decoration by design — those are excluded via the
+  // `over` relation). x-span follows the region's own column.
   const margin = grammar.alignmentGrid.margin;
   const imageBoxes = slots.filter((s) => s.type === "image").map((s) => s.bbox);
+  const overDecoIds = new Set(
+    (graph?.edges ?? []).filter((e) => e.type === "over" && e.decoration).map((e) => e.decoration!),
+  );
+  const SOLID: ReadonlySet<string> = new Set(["emphasis", "image_holder", "chart", "frame"]);
+  const decoBoxes = (decoration?.elements ?? [])
+    .filter((d) => SOLID.has(d.kind) && !overDecoIds.has(d.id) && (d.salience ?? 0) >= 0.3)
+    .filter((d) => d.bbox.w < canvas.w * 0.8) // skip full-bleed (no side to clear)
+    .map((d) => d.bbox);
+  const obstacles = [...imageBoxes, ...decoBoxes];
   for (const r of regions) {
     const below = r.bbox.y + r.bbox.h;
     let bottom = canvas.h - margin;
@@ -190,9 +201,9 @@ export function extractRegions(
       if (o.id === r.id || o.bbox.y < below || !xOverlaps(r.bbox, o.bbox)) continue;
       bottom = Math.min(bottom, o.bbox.y - gap);
     }
-    for (const ib of imageBoxes) {
-      if (ib.y < below || !xOverlaps(r.bbox, ib)) continue;
-      bottom = Math.min(bottom, ib.y - gap);
+    for (const ob of obstacles) {
+      if (ob.y < below || !xOverlaps(r.bbox, ob)) continue;
+      bottom = Math.min(bottom, ob.y - gap);
     }
     bottom = Math.max(below, bottom); // never above the region's own bottom
     r.safeArea = { x: r.bbox.x, y: r.bbox.y, w: r.bbox.w, h: bottom - r.bbox.y };
