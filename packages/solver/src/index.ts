@@ -98,7 +98,7 @@ function xOverlaps(a: { x: number; w: number }, b: { x: number; w: number }): bo
  * overlaps horizontally. Blocks that already fit keep their authored position
  * (fidelity); only genuine encroachment shifts a block, by exactly the overflow.
  */
-function resolveVerticalOverlaps(texts: RenderTextElement[]): void {
+function resolveVerticalOverlaps(texts: RenderTextElement[], maxBottom?: number): void {
   if (texts.length < 2) return;
   const order = [...texts].sort((a, b) => a.bbox.y - b.bbox.y || a.bbox.x - b.bbox.x);
   for (let i = 1; i < order.length; i++) {
@@ -109,6 +109,12 @@ function resolveVerticalOverlaps(texts: RenderTextElement[]): void {
       if (!xOverlaps(cur.bbox, prev.bbox)) continue;
       const prevBottom = renderedBottom(prev); // prev already finalized (ascending pass)
       if (prevBottom > top) top = prevBottom + Math.round(cur.fontSize * 0.2);
+    }
+    // Clamp to the region's growth limit: don't push a block off its safe area.
+    // If it cannot fit, leaving it at the limit lets self-check flag the overflow.
+    if (maxBottom !== undefined) {
+      const h = cur.lines.length * cur.fontSize * cur.lineHeight;
+      top = Math.min(top, Math.max(cur.bbox.y, maxBottom - h));
     }
     if (top !== cur.bbox.y) cur.bbox = { ...cur.bbox, y: top };
   }
@@ -196,7 +202,8 @@ export function solveDeckSlide(layout: Layout, plan: PlacementPlan, tokens: Toke
       // Keep authored positions (1:1 fidelity) — or row handled below for partial.
       if (allFilled || filled.length === 1) {
         const els = filled.map((s) => textElement(s, plan.singles[s.id]!, tokens, canvas));
-        resolveVerticalOverlaps(els); // push down where grown text encroaches the block below
+        const limit = region.safeArea ? region.safeArea.y + region.safeArea.h : undefined;
+        resolveVerticalOverlaps(els, limit); // push down where grown text encroaches the block below
         for (const el of els) elements.push(el);
         continue;
       }

@@ -25,6 +25,7 @@ function union(boxes: BBox[]): BBox {
   return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
 }
 function area(b: BBox): number { return b.w * b.h; }
+function xOverlaps(a: BBox, b: BBox): boolean { return a.x < b.x + b.w && b.x < a.x + a.w; }
 function overlapArea(a: BBox, b: BBox): number {
   const w = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
   const h = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
@@ -175,5 +176,26 @@ export function extractRegions(
   }
   add("body", body, flowOf(body));
   add("footer", footer, "row");
+
+  // Growth limits: each region may reflow down until it meets an obstacle —
+  // the canvas safe margin, the next region below, or an image slot (text must
+  // never flow onto an image). Decoration is left out of v1 (text often sits
+  // over it by design). x-span follows the region's own column.
+  const margin = grammar.alignmentGrid.margin;
+  const imageBoxes = slots.filter((s) => s.type === "image").map((s) => s.bbox);
+  for (const r of regions) {
+    const below = r.bbox.y + r.bbox.h;
+    let bottom = canvas.h - margin;
+    for (const o of regions) {
+      if (o.id === r.id || o.bbox.y < below || !xOverlaps(r.bbox, o.bbox)) continue;
+      bottom = Math.min(bottom, o.bbox.y - gap);
+    }
+    for (const ib of imageBoxes) {
+      if (ib.y < below || !xOverlaps(r.bbox, ib)) continue;
+      bottom = Math.min(bottom, ib.y - gap);
+    }
+    bottom = Math.max(below, bottom); // never above the region's own bottom
+    r.safeArea = { x: r.bbox.x, y: r.bbox.y, w: r.bbox.w, h: bottom - r.bbox.y };
+  }
   return regions;
 }

@@ -195,6 +195,13 @@ export interface Region {
   slotIds?: string[];
   /** If this region is a repeatable block row, its block id. */
   blockId?: string;
+  /**
+   * Growth limit (assemble): the box the region's text may reflow/grow into
+   * before hitting an obstacle — the canvas safe margin, the next region below,
+   * or an image slot. Distinct from `bbox` (the union of the authored slots =
+   * current placement). The assembler clamps vertical push-down to this.
+   */
+  safeArea?: BBox;
 }
 
 // ---------------------------------------------------------------------------
