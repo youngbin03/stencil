@@ -1,4 +1,5 @@
 import type { BBox, Layout, RenderSlide, RenderTextElement, Tokens } from "@stencil/ir";
+import { estimateWidth } from "./fit.js";
 
 /**
  * Self-check gate (deterministic). Inspects the assembled slide before output:
@@ -29,6 +30,29 @@ function overlapArea(a: BBox, b: BBox): number {
   const w = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
   const h = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
   return w * h;
+}
+
+/**
+ * Actual rendered ink box of a text element (not the reserved slot bbox). Text
+ * slots reserve generous width for long content; fitText guarantees the wrapped
+ * glyphs stay within bbox.w and the chosen alignment, so the real ink can be far
+ * narrower than the slot. Out-of-bounds must judge the ink, not the reservation,
+ * else wide display slots near the canvas edge raise false positives.
+ */
+function textInk(t: RenderTextElement): BBox {
+  const lh = t.lineHeight ?? 1.2;
+  const h = t.lines.length * t.fontSize * lh;
+  const ls = typeof t.letterSpacing === "number" ? t.letterSpacing : parseFloat(String(t.letterSpacing ?? 0)) || 0;
+  let w = 0;
+  for (const line of t.lines) {
+    const lw = estimateWidth(line, t.fontSize, t.fontFamily) + ls * Math.max(0, line.length - 1);
+    if (lw > w) w = lw;
+  }
+  w = Math.min(w, t.bbox.w); // fitText never exceeds the slot width
+  const x = t.align === "center" ? t.bbox.x + (t.bbox.w - w) / 2
+    : t.align === "right" ? t.bbox.x + t.bbox.w - w
+    : t.bbox.x;
+  return { x, y: t.bbox.y, w, h };
 }
 
 /** The fill a text element sits on: top-most cloned rect → decoration → background. */
@@ -103,7 +127,7 @@ export function selfCheck(slide: RenderSlide, layout: Layout, tokens: Tokens): S
   // 4) Out of bounds. Cloned card rects that blow past the canvas indicate a
   //    bad repeat/decoration match (they cover real content) → high severity.
   for (const e of slide.elements) {
-    const b = e.bbox;
+    const b = e.kind === "text" ? textInk(e) : e.bbox;
     const oob = b.x < -2 || b.y < -2 || b.x + b.w > slide.canvas.w + 2 || b.y + b.h > slide.canvas.h + 2;
     if (!oob) continue;
     if (e.kind === "rect") {
