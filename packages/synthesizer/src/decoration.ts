@@ -83,7 +83,12 @@ export function chooseDecoration(spec: GrammarSpec, slide: RenderSlide, archetyp
   // Target radius from the theme's coverage (area of a quarter-disc ≈ πr²/4),
   // capped by the clearance so it never overlaps content.
   const target = Math.sqrt((profile.coverage * w * h * 4) / Math.PI);
-  const r = Math.round(Math.min(bestR * 0.95, target, h * 0.85));
+  // Don't let decoration overwhelm sparse content: tie the cap to how much of the
+  // canvas the content actually fills, so a near-empty slide gets a modest accent,
+  // not a giant shape (e.g. a one-line stat shouldn't sit under a half-canvas disc).
+  const contentCover = content.reduce((s, b) => s + Math.min(b.w * b.h, w * h), 0) / (w * h);
+  const contentCap = h * (contentCover < 0.06 ? 0.30 : contentCover < 0.14 ? 0.45 : 0.7);
+  const r = Math.round(Math.min(bestR * 0.95, target, contentCap));
   const shape = r > 50 ? `<circle cx="${best.x}" cy="${best.y}" r="${r}" fill="${c}"/>` : "";
   const reason = r > 50
     ? `theme decorates '${archetype}' ~${(profile.coverage * 100).toFixed(0)}% → ${best.name} blob r=${r}px (clear), fill ${c}`

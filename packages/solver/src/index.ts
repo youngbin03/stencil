@@ -48,7 +48,10 @@ function textElement(slot: PlacedSlot, content: string, tokens: Tokens, canvas: 
   // ~2 lines. Neighbor reflow on growth is handled by the card reflow path.
   const availW = slot.bbox.w > 0 ? slot.bbox.w : canvas.w * 0.5;
   const availH = Math.max(slot.bbox.h, baseFont * lineHeight);
-  const fit = fitText(content, { w: availW, h: availH }, baseFont, lineHeight, family);
+  // Readability floor: never shrink below ~14px (at 1080p) even in tight cards, so
+  // captions stay legible (an overflow is flagged rather than rendered illegibly).
+  const minFont = Math.max(Math.round(canvas.h * 0.013), Math.min(baseFont, 12));
+  const fit = fitText(content, { w: availW, h: availH }, baseFont, lineHeight, family, minFont);
   const el: RenderTextElement = {
     kind: "text",
     id: slot.id,
