@@ -15,7 +15,7 @@ import type {
 import { normalizeSvg } from "@stencil/normalizer";
 import { extractGroups, extractThemeGrammar, placeSlots, textSlots, type SlotLabelLite } from "./grammar.js";
 import { buildRelationGraph, extractDecorationModel, relationConventions } from "./relations.js";
-import { extractBlocks, extractRegions } from "./layout.js";
+import { extractBlocks, extractCardSpec, extractRegions } from "./layout.js";
 import type { Block, RelationGraph } from "@stencil/ir";
 
 /** Injected vision classifier (Phase 2.5). Returns null on failure → id-rule fallback. */
@@ -270,6 +270,8 @@ export async function extractThemeSystem(slides: SlideInput[], opts: ThemeOption
   prepared.forEach((p, i) => {
     const layout = layouts[i]!;
     layout.regions = extractRegions(p.manifest.slots, layout.relationGraph, grammar, p.manifest.canvas);
+    const cardSpec = extractCardSpec(p.manifest.slots, layout.relationGraph, layout.decorationModel);
+    if (cardSpec) layout.cardSpec = cardSpec;
     for (const b of extractBlocks(p.manifest.slots, layout.relationGraph)) blockById.set(b.id, b);
   });
 

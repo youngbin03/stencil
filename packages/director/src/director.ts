@@ -1,6 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Layout, PlacementPlan } from "@stencil/ir";
-import { detectRepeatGroup } from "@stencil/solver";
 
 /**
  * Placement director (DEVDOC Phase 4.7-a). Given a layout (its repeatable card
@@ -39,9 +38,9 @@ export async function planSlide(
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY not set");
   const model = opts.model ?? process.env.ANTHROPIC_MODEL ?? "claude-opus-4-8";
 
-  const group = detectRepeatGroup(layout);
-  const memberIds = new Set(group?.memberIds ?? []);
-  const cardRoles = group?.roles ?? [];
+  const spec = layout.cardSpec;
+  const memberIds = new Set(spec?.memberIds ?? []);
+  const cardRoles = spec?.roles ?? [];
   const singleSlots = layout.slots
     .filter((s) => s.type === "text" && !memberIds.has(s.id) && s.role !== "decoration" && s.role !== "divider")
     .map((s) => ({ id: s.id, role: s.role, max: maxChars(s) }));
@@ -54,8 +53,8 @@ export async function planSlide(
     : "No image slots to fill (images: []).";
 
   // No repeatable card → fall back to a singles-only plan (still relation-safe).
-  const cardLine = group
-    ? `This slide has a REPEATABLE CARD with roles [${cardRoles.join(", ")}] (originally ${group.baseCount} cards). Produce a sensible number of cards for the topic (2–6); each card fills these roles. kpi = a short metric (e.g. +38%, 120K).`
+  const cardLine = spec
+    ? `This slide has a REPEATABLE CARD with roles [${cardRoles.join(", ")}] (originally ${spec.baseCount} cards). Produce a sensible number of cards for the topic (2–6); each card fills these roles. kpi = a short metric (e.g. +38%, 120K).`
     : `This slide has no repeatable card; produce cards = [].`;
 
   const singleLine = singleSlots.map((s) => `- ${s.id} (${s.role}, ≤${s.max} chars)`).join("\n") || "(none)";
@@ -118,7 +117,7 @@ sizes, colors, or fonts — only text. Use the tool.`,
     images?: { slotId: string; assetId: string }[];
   };
 
-  const cardRoleSet = new Set(cardRoles);
+  const cardRoleSet = new Set<string>(cardRoles);
   const cards = input.cards.map((c) => {
     const rec: Record<string, string> = {};
     for (const s of c.slots) if (cardRoleSet.has(s.role)) rec[s.role] = s.text;

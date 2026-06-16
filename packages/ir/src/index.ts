@@ -198,6 +198,47 @@ export interface Region {
 }
 
 // ---------------------------------------------------------------------------
+// Card spec — the single source of truth for a layout's repeatable card,
+// computed once at assetize and consumed by the assembler (no runtime re-detect).
+// ---------------------------------------------------------------------------
+
+export interface CardTemplateSlot {
+  role: Role;
+  type: SlotType;
+  /** Position relative to the card origin (colX0, colY0). */
+  dx: number;
+  dy: number;
+  w: number;
+  h: number;
+  fontSize?: number;
+  fontFamily?: string;
+  fontWeight?: number;
+  color?: string;
+  align: TextAlign;
+  letterSpacing?: string;
+}
+
+export interface CardDecoration {
+  dx: number;
+  dy: number;
+  w: number;
+  h: number;
+  fill: string;
+}
+
+export interface CardSpec {
+  template: CardTemplateSlot[];
+  rowBBox: BBox;
+  cardW: number;
+  colY0: number;
+  baseCount: number;
+  roles: Role[];
+  memberIds: string[];
+  decorationIds: string[];
+  cardDecoration?: CardDecoration;
+}
+
+// ---------------------------------------------------------------------------
 // Design grammar — relational/placement rules measured from the template
 // (DEVDOC: assetize stage; the "extraction" half of RCE). Deterministic.
 // ---------------------------------------------------------------------------
@@ -416,6 +457,8 @@ export interface Layout {
   decorationModel?: DecorationModel;
   /** Typed relation graph over slots + decoration (Phase 4.5). */
   relationGraph?: RelationGraph;
+  /** Repeatable card definition (assetize-computed; assembler consumes this). */
+  cardSpec?: CardSpec;
   regions: Region[];
   /**
    * Slot ids in authoring order. Assemble's inplace special case maps content

@@ -12,12 +12,11 @@ import type {
 } from "@stencil/ir";
 import type { PlacementPlan } from "@stencil/ir";
 import { fitText } from "./fit.js";
-import { detectRepeatGroup, reflowCards } from "./reflow.js";
+import { reflowCards } from "./reflow.js";
 import { selfCheck } from "./selfcheck.js";
 
 export { estimateWidth, wrapLine, fitText } from "./fit.js";
-export { detectRepeatGroup, reflowCards } from "./reflow.js";
-export type { RepeatGroup } from "./reflow.js";
+export { reflowCards } from "./reflow.js";
 export { selfCheck } from "./selfcheck.js";
 export type { SelfCheckIssue } from "./selfcheck.js";
 
@@ -136,16 +135,13 @@ export function solveDeckSlide(layout: Layout, plan: PlacementPlan, tokens: Toke
   const regions = layout.regions ?? [];
   let cardsPlaced = false;
   for (const region of regions) {
-    // Repeatable card row → reflow the cards across the row.
-    if (region.blockId && plan.cards.length > 0) {
-      const group = detectRepeatGroup(layout);
-      if (group) {
-        const { texts, rects } = reflowCards(group, plan.cards);
-        rects.forEach((r, i) => elements.push({ kind: "rect", id: `card_rect_${i}`, bbox: r.bbox, fill: r.fill }));
-        for (const { slot, text } of texts) elements.push(textElement(slot, text, tokens, canvas));
-        suppress = group.decorationIds;
-        cardsPlaced = true;
-      }
+    // Repeatable card row → reflow the cards across the row (using cardSpec).
+    if (region.blockId && plan.cards.length > 0 && layout.cardSpec) {
+      const { texts, rects } = reflowCards(layout.cardSpec, plan.cards);
+      rects.forEach((r, i) => elements.push({ kind: "rect", id: `card_rect_${i}`, bbox: r.bbox, fill: r.fill }));
+      for (const { slot, text } of texts) elements.push(textElement(slot, text, tokens, canvas));
+      suppress = layout.cardSpec.decorationIds;
+      cardsPlaced = true;
       for (const id of region.slotIds ?? []) handled.add(id);
       continue;
     }
