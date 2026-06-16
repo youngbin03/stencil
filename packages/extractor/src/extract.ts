@@ -1,13 +1,11 @@
 import { DOMParser, XMLSerializer, type Element } from "@xmldom/xmldom";
 import type {
-  BBox,
   Canvas,
   DesignSystemIR,
   Layout,
   LayoutArchetype,
   ManifestSlot,
   Palette,
-  Region,
   SlotGroup,
   Theme,
   Tokens,
@@ -17,7 +15,8 @@ import type {
 import { normalizeSvg } from "@stencil/normalizer";
 import { extractGroups, extractThemeGrammar, placeSlots, textSlots, type SlotLabelLite } from "./grammar.js";
 import { buildRelationGraph, extractDecorationModel, relationConventions } from "./relations.js";
-import type { RelationGraph } from "@stencil/ir";
+import { extractBlocks, extractRegions } from "./layout.js";
+import type { Block, RelationGraph } from "@stencil/ir";
 
 /** Injected vision classifier (Phase 2.5). Returns null on failure → id-rule fallback. */
 export type ClassifyFn = (
@@ -136,16 +135,6 @@ function extractColors(backgrounds: string[], shapeFills: string[], textColors: 
   };
 }
 
-function unionBBox(slots: ManifestSlot[]): BBox {
-  const text = textSlots(slots);
-  if (text.length === 0) return { x: 0, y: 0, w: 0, h: 0 };
-  const minX = Math.min(...text.map((s) => s.bbox.x));
-  const minY = Math.min(...text.map((s) => s.bbox.y));
-  const maxX = Math.max(...text.map((s) => s.bbox.x + s.bbox.w));
-  const maxY = Math.max(...text.map((s) => s.bbox.y + s.bbox.h));
-  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
-}
-
 /** Decoration-only SVG: remove every <text> node, keep shapes/decoration. */
 export function extractDecoration(svg: string): string {
   const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
@@ -260,9 +249,7 @@ export async function extractThemeSystem(slides: SlideInput[], opts: ThemeOption
       slots: placeSlots(p.manifest.slots, groups, labelsByLayout.get(p.layoutId)),
       decorationModel,
       relationGraph,
-      regions: [
-        { id: "content", bbox: unionBBox(p.manifest.slots), flow: "column", gap: 0, allowedBlocks: [] } satisfies Region,
-      ],
+      regions: [], // filled after grammar (needs spacing rhythm)
       defaultSlots: text.map((s) => s.id),
     };
     const archetype = archetypes.get(p.layoutId);
@@ -278,7 +265,13 @@ export async function extractThemeSystem(slides: SlideInput[], opts: ThemeOption
     .filter((c): c is string => Boolean(c));
   const grammar = extractThemeGrammar(slidesTextSlots, type, perSlideGroups);
 
-  for (const layout of layouts) layout.regions[0]!.gap = grammar.spacingRhythm.gaps.normal;
+  // Re-composition inputs: semantic regions (per layout) + reusable blocks (theme).
+  const blockById = new Map<string, Block>();
+  prepared.forEach((p, i) => {
+    const layout = layouts[i]!;
+    layout.regions = extractRegions(p.manifest.slots, layout.relationGraph, grammar, p.manifest.canvas);
+    for (const b of extractBlocks(p.manifest.slots, layout.relationGraph)) blockById.set(b.id, b);
+  });
 
   const tokens: Tokens = {
     fontFamily: type.body.family,
@@ -296,7 +289,7 @@ export async function extractThemeSystem(slides: SlideInput[], opts: ThemeOption
     tokens,
     grammar,
     relationConventions: relationConventions(convInput),
-    blocks: [],
+    blocks: [...blockById.values()],
     layouts,
   };
 

@@ -191,6 +191,10 @@ export interface Region {
   flow: FlowDirection;
   gap: number;
   allowedBlocks: string[];
+  /** Slot ids placed in this region (assemble reads regions, not raw slots). */
+  slotIds?: string[];
+  /** If this region is a repeatable block row, its block id. */
+  blockId?: string;
 }
 
 // ---------------------------------------------------------------------------
