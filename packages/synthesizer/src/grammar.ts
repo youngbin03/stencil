@@ -1,0 +1,132 @@
+import type {
+  AlignmentGrid, Block, Canvas, CardSpec, DesignSystemIR, FlowDirection, Hierarchy, Region, Role,
+  SpacingRhythm, TypeToken,
+} from "@stencil/ir";
+
+/**
+ * Explicit, structured design grammar (DEVDOC Phase 6). Consolidates the
+ * theme's extracted rules into ONE spec the synthesizer consumes — and, crucially,
+ * mines a NORMALIZED archetype skeleton per archetype by aggregating the regions of
+ * its example slides (median bands as canvas fractions). The skeleton is a design
+ * PATTERN, not a copied frame: synthesis instantiates it with new content, so the
+ * output reproduces the theme's spatial language without reusing any single slide.
+ */
+
+export interface ArchetypeZone {
+  id: string;                 // header | title | body | cards | footer
+  role?: Role;                // dominant single role (for non-card zones)
+  xFrac: [number, number];    // normalized horizontal band [0..1]
+  yFrac: [number, number];    // normalized vertical band [0..1]
+  flow: FlowDirection;
+  block?: string;             // block id when this is a repeatable card row
+}
+
+export interface ArchetypeSkeleton {
+  archetype: string;
+  support: number;            // how many example slides backed this pattern
+  zones: ArchetypeZone[];
+}
+
+export interface GrammarSpec {
+  theme: string;
+  canvas: Canvas;
+  palette: string[];
+  colors: { primary: string; accent: string; bg: string; text: string };
+  type: Record<string, TypeToken>;
+  spacing: SpacingRhythm;
+  alignment: AlignmentGrid;
+  hierarchy: Hierarchy;
+  blocks: Block[];
+  /** Measured card internals keyed by role signature (e.g. "kpi/caption"). */
+  cardSpecs: Record<string, CardSpec>;
+  relationConventions: { pattern: string; support: number }[];
+  archetypes: ArchetypeSkeleton[];
+}
+
+function median(xs: number[]): number {
+  if (xs.length === 0) return 0;
+  const s = [...xs].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m]! : (s[m - 1]! + s[m]!) / 2;
+}
+function mode<T>(xs: T[]): T | undefined {
+  const c = new Map<T, number>();
+  let best: T | undefined, bestN = 0;
+  for (const x of xs) { const n = (c.get(x) ?? 0) + 1; c.set(x, n); if (n > bestN) { bestN = n; best = x; } }
+  return best;
+}
+
+/** Aggregate the regions of one archetype's example slides into a median skeleton. */
+function mineSkeleton(archetype: string, examples: { regions: Region[]; canvas: Canvas }[]): ArchetypeSkeleton | undefined {
+  const byZone = new Map<string, { x0: number[]; x1: number[]; y0: number[]; y1: number[]; flow: FlowDirection[]; block: (string | undefined)[]; role: (Role | undefined)[] }>();
+  for (const ex of examples) {
+    for (const r of ex.regions) {
+      const z = byZone.get(r.id) ?? { x0: [], x1: [], y0: [], y1: [], flow: [], block: [], role: [] };
+      z.x0.push(r.bbox.x / ex.canvas.w);
+      z.x1.push((r.bbox.x + r.bbox.w) / ex.canvas.w);
+      z.y0.push(r.bbox.y / ex.canvas.h);
+      z.y1.push((r.bbox.y + r.bbox.h) / ex.canvas.h);
+      z.flow.push(r.flow);
+      z.block.push(r.blockId);
+      byZone.set(r.id, z);
+    }
+  }
+  const zones: ArchetypeZone[] = [];
+  for (const [id, z] of byZone) {
+    if (z.x0.length === 0) continue;
+    const zone: ArchetypeZone = {
+      id,
+      xFrac: [Math.max(0, median(z.x0)), Math.min(1, median(z.x1))],
+      yFrac: [Math.max(0, median(z.y0)), Math.min(1, median(z.y1))],
+      flow: mode(z.flow) ?? "column",
+    };
+    const block = mode(z.block.filter((b): b is string => !!b));
+    if (block) zone.block = block;
+    zones.push(zone);
+  }
+  zones.sort((a, b) => a.yFrac[0] - b.yFrac[0]);
+  if (zones.length === 0) return undefined;
+  return { archetype, support: examples.length, zones };
+}
+
+export function buildGrammarSpec(system: DesignSystemIR): GrammarSpec {
+  // One measured card spec per role signature — the theme's real card internals.
+  const cardSpecs: Record<string, CardSpec> = {};
+  for (const L of system.layouts) {
+    if (L.cardSpec) {
+      const key = L.cardSpec.roles.join("/");
+      if (!cardSpecs[key]) cardSpecs[key] = L.cardSpec;
+    }
+  }
+
+  // Mine a normalized skeleton per archetype from its example slides' regions.
+  const byArch = new Map<string, { regions: Region[]; canvas: Canvas }[]>();
+  for (const L of system.layouts) {
+    const a = L.archetype ?? "other";
+    if (!L.regions?.length) continue;
+    (byArch.get(a) ?? byArch.set(a, []).get(a)!).push({ regions: L.regions, canvas: system.canvas });
+  }
+  const archetypes: ArchetypeSkeleton[] = [];
+  for (const [a, exs] of byArch) {
+    const sk = mineSkeleton(a, exs);
+    if (sk) archetypes.push(sk);
+  }
+  archetypes.sort((a, b) => b.support - a.support);
+
+  return {
+    theme: system.theme,
+    canvas: system.canvas,
+    palette: system.tokens.palette ?? [],
+    colors: system.tokens.colors,
+    type: system.tokens.type,
+    spacing: system.grammar.spacingRhythm,
+    alignment: system.grammar.alignmentGrid,
+    hierarchy: system.grammar.hierarchy,
+    blocks: system.blocks ?? [],
+    cardSpecs,
+    relationConventions: system.relationConventions
+      ?? system.grammar.groups?.map((g) => ({ pattern: g.roles.join("+"), support: 1 }))
+      ?? [],
+    archetypes,
+  };
+}
