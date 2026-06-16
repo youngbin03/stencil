@@ -144,7 +144,14 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
     const lines = role === "title" || role === "headline" || role === "quote" ? 2 : role === "body" || role === "subtitle" ? 3 : 1;
     const h = Math.ceil((t?.size ?? 24) * lh * lines);
     const col = colX(zoneId, role === "title" || role === "quote" ? 0.6 : 0.5);
-    items.push({ id: zoneId, role, kind: "single", x: col.x, w: col.w, h, relY: rel });
+    // Mined zone widths come from short source text and can be too narrow for
+    // generated copy (titles wrapping into many narrow lines). Enforce a role-based
+    // minimum width so headings read on 1-2 lines.
+    const colW = tx1 - tx0;
+    const minW = role === "title" || role === "headline" || role === "quote" ? Math.round(colW * 0.66)
+      : role === "body" || role === "subtitle" ? Math.round(colW * 0.55) : col.w;
+    const w = Math.min(Math.max(col.w, minW), tx1 - col.x);
+    items.push({ id: zoneId, role, kind: "single", x: col.x, w, h, relY: rel });
     rel += h + (zoneId === "header" ? tight : loose);
   }
   const groupH = rel;

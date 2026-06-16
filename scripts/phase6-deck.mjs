@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
-import { buildGrammarSpec, synthesizeFromGrammar, evaluateSlide, archetypeSchema, synthDecoration } from "../packages/synthesizer/dist/index.js";
+import { buildGrammarSpec, synthesizeFromGrammar, evaluateSlide, archetypeSchema, chooseDecoration } from "../packages/synthesizer/dist/index.js";
 import { solveDeckSlide } from "../packages/solver/dist/index.js";
 import { renderComposite } from "../packages/renderer/dist/index.js";
 import { rasterize } from "../packages/classifier/dist/index.js";
@@ -71,10 +71,13 @@ mkdirSync(resolve("fixtures/out/phase6deck"), { recursive: true });
 const cards = [];
 results.forEach((r, i) => {
   const file = `${String(i + 1).padStart(2, "0")}_${r.o.archetype}.png`;
-  writeFileSync(resolve("fixtures/out/phase6deck", file), rasterize(renderComposite(r.slide, synthDecoration(spec, r.o.archetype, i)), 960));
+  const { svg, reason } = chooseDecoration(spec, r.slide, i);
+  writeFileSync(resolve("fixtures/out/phase6deck", file), rasterize(renderComposite(r.slide, svg), 960));
   const g = r.v.reject ? "REJECT" : r.v.pass ? "PASS" : "REVISE";
-  console.log(`${String(i + 1).padStart(2, "0")} ${r.o.archetype.padEnd(10)} ${g.padEnd(7)} nov=${r.v.scores.layoutNovelty.toFixed(0)} overall=${r.v.scores.overall.toFixed(1)}  ${r.o.purpose}`);
-  cards.push(`<figure><figcaption>${i + 1}. ${r.o.archetype} — ${g} (overall ${r.v.scores.overall.toFixed(1)}, novelty ${r.v.scores.layoutNovelty.toFixed(0)})<br>${r.o.purpose}</figcaption><img src="phase6deck/${file}"></figure>`);
+  console.log(`${String(i + 1).padStart(2, "0")} ${r.o.archetype.padEnd(10)} ${g.padEnd(7)} nov=${r.v.scores.layoutNovelty.toFixed(0)} ov=${r.v.scores.overall.toFixed(1)}`);
+  console.log(`     layout: '${r.o.archetype}' skeleton + type-scale sizes + rhythm gaps`);
+  console.log(`     asset:  ${reason}`);
+  cards.push(`<figure><figcaption>${i + 1}. ${r.o.archetype} — ${g} (ov ${r.v.scores.overall.toFixed(1)}, nov ${r.v.scores.layoutNovelty.toFixed(0)})<br>${r.o.purpose}<br><b>asset:</b> ${reason}</figcaption><img src="phase6deck/${file}"></figure>`);
 });
 writeFileSync(resolve("fixtures/out/phase6deck.html"), `<!doctype html><meta charset=utf-8><title>${outline.title}</title><link rel=stylesheet href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Bricolage+Grotesque:wght@400;600;700;800&display=swap"><style>body{font:14px -apple-system,sans-serif;margin:24px;background:#f7f8fa;color:#191f28}h1{font-size:20px}figure{margin:0 0 22px}figcaption{font-size:12px;color:#6b7684;margin-bottom:6px}img{width:100%;max-width:960px;border:1px solid #e8eaed;border-radius:8px;display:block}</style><h1>${outline.title} — synthesized (${theme})</h1>${cards.join("\n")}`);
 console.log("\nviewer: fixtures/out/phase6deck.html");

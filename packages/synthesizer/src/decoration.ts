@@ -1,3 +1,4 @@
+import type { BBox, RenderSlide } from "@stencil/ir";
 import type { GrammarSpec } from "./grammar.js";
 
 /**
@@ -36,11 +37,47 @@ const TREATMENTS: Treatment[] = [
 export function synthDecoration(spec: GrammarSpec, archetype: string, index: number): string {
   const { w, h } = spec.canvas;
   const cols = vivid(spec);
-  // Bottom-wave (treatment 5) overlaps the footer band — avoid it for footer-bearing
-  // archetypes; otherwise rotate treatments + colours so consecutive slides differ.
   const pool = ["stat", "content", "agenda"].includes(archetype) ? [0, 2, 4, 6] : [0, 1, 3, 4, 6];
   const t = TREATMENTS[pool[index % pool.length]!]!;
   const c = cols[index % cols.length]!;
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">` +
     `<rect width="${w}" height="${h}" fill="${spec.colors.bg}"/>${t(w, h, c)}</svg>`;
+}
+
+/** Distance from a point to a box (0 inside). */
+function distToBox(px: number, py: number, b: BBox): number {
+  const dx = Math.max(b.x - px, 0, px - (b.x + b.w));
+  const dy = Math.max(b.y - py, 0, py - (b.y + b.h));
+  return Math.hypot(dx, dy);
+}
+
+/**
+ * Principled, EXPLAINABLE decoration: a corner blob placed in the corner with the
+ * largest clearance from the slide's content, sized to that clearance (so it never
+ * overlaps text/cards/images) and filled from the theme palette. Returns the SVG
+ * plus a human reason for why this asset landed here.
+ */
+export function chooseDecoration(spec: GrammarSpec, slide: RenderSlide, index: number): { svg: string; reason: string } {
+  const { w, h } = spec.canvas;
+  const cols = vivid(spec);
+  const c = cols[index % cols.length]!;
+  const content = slide.elements.map((e) => e.bbox).filter((b) => b.w > 0 && b.h > 0);
+  const corners: { name: string; x: number; y: number }[] = [
+    { name: "top-right", x: w, y: 0 }, { name: "bottom-right", x: w, y: h },
+    { name: "bottom-left", x: 0, y: h }, { name: "top-left", x: 0, y: 0 },
+  ];
+  let best = corners[0]!, bestR = 0;
+  for (const k of corners) {
+    const r = content.length ? Math.min(...content.map((b) => distToBox(k.x, k.y, b))) : h * 0.5;
+    if (r > bestR) { bestR = r; best = k; }
+  }
+  const r = Math.round(Math.min(bestR * 0.92, h * 0.6));
+  const shape = r > 60
+    ? `<circle cx="${best.x}" cy="${best.y}" r="${r}" fill="${c}"/>`
+    : ""; // too tight to place anything without crowding
+  const reason = r > 60
+    ? `largest open corner = ${best.name} (clear radius ${r}px); fill ${c} from the theme palette, balancing the content mass`
+    : `layout is dense — no decoration placed to avoid crowding`;
+  const svg = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/>${shape}</svg>`;
+  return { svg, reason };
 }

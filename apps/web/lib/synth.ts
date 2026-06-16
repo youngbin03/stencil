@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
-import { buildGrammarSpec, synthesizeFromGrammar, evaluateSlide, archetypeSchema, synthDecoration, type ContentPlan } from "@stencil/synthesizer";
+import { buildGrammarSpec, synthesizeFromGrammar, evaluateSlide, archetypeSchema, chooseDecoration, type ContentPlan } from "@stencil/synthesizer";
 import { solveDeckSlide } from "@stencil/solver";
 import { renderComposite } from "@stencil/renderer";
 import type { DesignSystemIR } from "@stencil/ir";
@@ -93,7 +93,7 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
     }
     return {
       archetype: o.archetype, purpose: o.purpose,
-      svg: renderComposite(slide, synthDecoration(spec, o.archetype, i)),
+      svg: renderComposite(slide, chooseDecoration(spec, slide, i).svg),
       gate: v.reject ? "REJECT" : v.pass ? "PASS" : "REVISE",
       novelty: v.scores.layoutNovelty, overall: v.scores.overall,
     };
