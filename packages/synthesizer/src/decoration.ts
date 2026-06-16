@@ -57,8 +57,17 @@ function distToBox(px: number, py: number, b: BBox): number {
  * overlaps text/cards/images) and filled from the theme palette. Returns the SVG
  * plus a human reason for why this asset landed here.
  */
-export function chooseDecoration(spec: GrammarSpec, slide: RenderSlide, index: number): { svg: string; reason: string } {
+export function chooseDecoration(spec: GrammarSpec, slide: RenderSlide, archetype: string, index: number): { svg: string; reason: string } {
   const { w, h } = spec.canvas;
+  const bgSvg = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/>`;
+
+  // Amount of decoration is the THEME'S habit, not forced. Reproduce this
+  // archetype's measured coverage; if its examples are barely decorated, add none.
+  const profile = spec.archetypes.find((a) => a.archetype === archetype)?.decoration ?? { coverage: 0, count: 0 };
+  if (profile.coverage < 0.02) {
+    return { svg: bgSvg + "</svg>", reason: `theme keeps '${archetype}' slides undecorated (measured coverage ${(profile.coverage * 100).toFixed(0)}%) — none added` };
+  }
+
   const cols = vivid(spec);
   const c = cols[index % cols.length]!;
   const content = slide.elements.map((e) => e.bbox).filter((b) => b.w > 0 && b.h > 0);
@@ -71,13 +80,13 @@ export function chooseDecoration(spec: GrammarSpec, slide: RenderSlide, index: n
     const r = content.length ? Math.min(...content.map((b) => distToBox(k.x, k.y, b))) : h * 0.5;
     if (r > bestR) { bestR = r; best = k; }
   }
-  const r = Math.round(Math.min(bestR * 0.92, h * 0.6));
-  const shape = r > 60
-    ? `<circle cx="${best.x}" cy="${best.y}" r="${r}" fill="${c}"/>`
-    : ""; // too tight to place anything without crowding
-  const reason = r > 60
-    ? `largest open corner = ${best.name} (clear radius ${r}px); fill ${c} from the theme palette, balancing the content mass`
-    : `layout is dense — no decoration placed to avoid crowding`;
-  const svg = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/>${shape}</svg>`;
-  return { svg, reason };
+  // Target radius from the theme's coverage (area of a quarter-disc ≈ πr²/4),
+  // capped by the clearance so it never overlaps content.
+  const target = Math.sqrt((profile.coverage * w * h * 4) / Math.PI);
+  const r = Math.round(Math.min(bestR * 0.95, target, h * 0.85));
+  const shape = r > 50 ? `<circle cx="${best.x}" cy="${best.y}" r="${r}" fill="${c}"/>` : "";
+  const reason = r > 50
+    ? `theme decorates '${archetype}' ~${(profile.coverage * 100).toFixed(0)}% → ${best.name} blob r=${r}px (clear), fill ${c}`
+    : `theme decoration for '${archetype}' is light and the layout is dense — none added`;
+  return { svg: bgSvg + shape + "</svg>", reason };
 }

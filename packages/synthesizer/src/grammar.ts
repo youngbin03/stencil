@@ -28,6 +28,15 @@ export interface ImageZone {
   mediaKind?: string;         // photo | device_mockup | avatar | chart_line | logo
 }
 
+/** How much decoration this archetype's examples actually carry — so synthesis
+ * reproduces the theme's habit instead of forcing a shape on every slide. */
+export interface DecorationProfile {
+  /** Median non-background decoration area as a fraction of the canvas (0 = none). */
+  coverage: number;
+  /** Median count of non-background decoration elements. */
+  count: number;
+}
+
 export interface ArchetypeSkeleton {
   archetype: string;
   support: number;            // how many example slides backed this pattern
@@ -35,6 +44,8 @@ export interface ArchetypeSkeleton {
   /** Image cells this archetype expects (mined from example image slots). Empty
    *  for text-only archetypes. Filled only when the user supplies images. */
   imageZones: ImageZone[];
+  /** Decoration habit of this archetype's examples (amount, not forced). */
+  decoration: DecorationProfile;
 }
 
 export interface GrammarSpec {
@@ -87,7 +98,7 @@ function mineImageZones(slots: ImgSlot[]): ImageZone[] {
 }
 
 /** Aggregate the regions of one archetype's example slides into a median skeleton. */
-function mineSkeleton(archetype: string, examples: { regions: Region[]; imgSlots: ImgSlot[]; canvas: Canvas }[]): ArchetypeSkeleton | undefined {
+function mineSkeleton(archetype: string, examples: { regions: Region[]; imgSlots: ImgSlot[]; decoCoverage: number; decoCount: number; canvas: Canvas }[]): ArchetypeSkeleton | undefined {
   const byZone = new Map<string, { x0: number[]; x1: number[]; y0: number[]; y1: number[]; flow: FlowDirection[]; block: (string | undefined)[]; role: (Role | undefined)[] }>();
   for (const ex of examples) {
     for (const r of ex.regions) {
@@ -116,8 +127,12 @@ function mineSkeleton(archetype: string, examples: { regions: Region[]; imgSlots
   }
   zones.sort((a, b) => a.yFrac[0] - b.yFrac[0]);
   const imageZones = mineImageZones(examples.flatMap((e) => e.imgSlots));
+  const decoration: DecorationProfile = {
+    coverage: median(examples.map((e) => e.decoCoverage)),
+    count: Math.round(median(examples.map((e) => e.decoCount))),
+  };
   if (zones.length === 0 && imageZones.length === 0) return undefined;
-  return { archetype, support: examples.length, zones, imageZones };
+  return { archetype, support: examples.length, zones, imageZones, decoration };
 }
 
 export function buildGrammarSpec(system: DesignSystemIR): GrammarSpec {
@@ -131,7 +146,8 @@ export function buildGrammarSpec(system: DesignSystemIR): GrammarSpec {
   }
 
   // Mine a normalized skeleton per archetype from its example slides' regions.
-  const byArch = new Map<string, { regions: Region[]; imgSlots: ImgSlot[]; canvas: Canvas }[]>();
+  const canvasArea = system.canvas.w * system.canvas.h;
+  const byArch = new Map<string, { regions: Region[]; imgSlots: ImgSlot[]; decoCoverage: number; decoCount: number; canvas: Canvas }[]>();
   for (const L of system.layouts) {
     const a = L.archetype ?? "other";
     if (!L.regions?.length && !L.slots.some((s) => s.type === "image")) continue;
@@ -141,7 +157,9 @@ export function buildGrammarSpec(system: DesignSystemIR): GrammarSpec {
       ratio: s.bbox.h > 0 ? s.bbox.w / s.bbox.h : 1,
       ...(s.mediaKind ? { mediaKind: s.mediaKind } : {}),
     }));
-    (byArch.get(a) ?? byArch.set(a, []).get(a)!).push({ regions: L.regions ?? [], imgSlots, canvas: system.canvas });
+    const deco = (L.decorationModel?.elements ?? []).filter((d) => d.kind !== "background");
+    const decoCoverage = deco.reduce((s, d) => s + Math.min(d.bbox.w * d.bbox.h, canvasArea), 0) / canvasArea;
+    (byArch.get(a) ?? byArch.set(a, []).get(a)!).push({ regions: L.regions ?? [], imgSlots, decoCoverage, decoCount: deco.length, canvas: system.canvas });
   }
   const archetypes: ArchetypeSkeleton[] = [];
   for (const [a, exs] of byArch) {

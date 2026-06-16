@@ -93,7 +93,7 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
     }
     return {
       archetype: o.archetype, purpose: o.purpose,
-      svg: renderComposite(slide, chooseDecoration(spec, slide, i).svg),
+      svg: renderComposite(slide, chooseDecoration(spec, slide, o.archetype, i).svg),
       gate: v.reject ? "REJECT" : v.pass ? "PASS" : "REVISE",
       novelty: v.scores.layoutNovelty, overall: v.scores.overall,
     };

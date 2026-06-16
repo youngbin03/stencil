@@ -71,7 +71,7 @@ mkdirSync(resolve("fixtures/out/phase6deck"), { recursive: true });
 const cards = [];
 results.forEach((r, i) => {
   const file = `${String(i + 1).padStart(2, "0")}_${r.o.archetype}.png`;
-  const { svg, reason } = chooseDecoration(spec, r.slide, i);
+  const { svg, reason } = chooseDecoration(spec, r.slide, r.o.archetype, i);
   writeFileSync(resolve("fixtures/out/phase6deck", file), rasterize(renderComposite(r.slide, svg), 960));
   const g = r.v.reject ? "REJECT" : r.v.pass ? "PASS" : "REVISE";
   console.log(`${String(i + 1).padStart(2, "0")} ${r.o.archetype.padEnd(10)} ${g.padEnd(7)} nov=${r.v.scores.layoutNovelty.toFixed(0)} ov=${r.v.scores.overall.toFixed(1)}`);
