@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
-import { buildGrammarSpec, synthesizeFromGrammar, evaluateSlide, archetypeSchema, type GrammarSpec, type ContentPlan } from "@stencil/synthesizer";
+import { buildGrammarSpec, synthesizeFromGrammar, evaluateSlide, archetypeSchema, synthDecoration, type ContentPlan } from "@stencil/synthesizer";
 import { solveDeckSlide } from "@stencil/solver";
 import { renderComposite } from "@stencil/renderer";
 import type { DesignSystemIR } from "@stencil/ir";
@@ -24,12 +24,6 @@ export interface SynthSlide {
   overall: number;
 }
 export interface SynthDeck { title: string; theme: Theme; slides: SynthSlide[]; }
-
-function decoration(spec: GrammarSpec): string {
-  const { w, h } = spec.canvas;
-  const a = spec.palette.find((c) => /^#/.test(c) && !/f3f3f3|ffffff/i.test(c)) ?? "#5FA0FB";
-  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/><circle cx="${w}" cy="0" r="${Math.round(h * 0.36)}" fill="${a}" fill-opacity="0.92"/></svg>`;
-}
 
 async function callTool<T>(client: Anthropic, model: string, system: string, user: string, schema: object): Promise<T> {
   const res = await client.messages.create({
@@ -85,7 +79,8 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
     return { archetype, singles, ...(cards.length ? { cards } : {}) };
   };
 
-  const slides = await mapLimit(outline.slides, 3, async (o): Promise<SynthSlide> => {
+  const indexed = outline.slides.map((o, i) => ({ o, i }));
+  const slides = await mapLimit(indexed, 3, async ({ o, i }): Promise<SynthSlide> => {
     let content = await writeContent(o.archetype, o.purpose, false);
     let r = synthesizeFromGrammar(spec, content);
     let slide = solveDeckSlide(r.layout, r.placement, system.tokens, system.canvas);
@@ -98,7 +93,7 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
     }
     return {
       archetype: o.archetype, purpose: o.purpose,
-      svg: renderComposite(slide, decoration(spec)),
+      svg: renderComposite(slide, synthDecoration(spec, o.archetype, i)),
       gate: v.reject ? "REJECT" : v.pass ? "PASS" : "REVISE",
       novelty: v.scores.layoutNovelty, overall: v.scores.overall,
     };

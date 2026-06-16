@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
-import { buildGrammarSpec, synthesizeFromGrammar, evaluateSlide, archetypeSchema } from "../packages/synthesizer/dist/index.js";
+import { buildGrammarSpec, synthesizeFromGrammar, evaluateSlide, archetypeSchema, synthDecoration } from "../packages/synthesizer/dist/index.js";
 import { solveDeckSlide } from "../packages/solver/dist/index.js";
 import { renderComposite } from "../packages/renderer/dist/index.js";
 import { rasterize } from "../packages/classifier/dist/index.js";
@@ -67,12 +67,11 @@ const results = await mapLimit(outline.slides, 3, async (o) => {
   return { o, slide, v };
 });
 
-const deco = () => { const { w, h } = spec.canvas; const a = spec.palette.find((c) => /^#/.test(c) && !/f3f3f3|ffffff/i.test(c)) ?? "#5FA0FB"; return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/><circle cx="${w}" cy="0" r="${Math.round(h * 0.36)}" fill="${a}" fill-opacity="0.92"/></svg>`; };
 mkdirSync(resolve("fixtures/out/phase6deck"), { recursive: true });
 const cards = [];
 results.forEach((r, i) => {
   const file = `${String(i + 1).padStart(2, "0")}_${r.o.archetype}.png`;
-  writeFileSync(resolve("fixtures/out/phase6deck", file), rasterize(renderComposite(r.slide, deco()), 960));
+  writeFileSync(resolve("fixtures/out/phase6deck", file), rasterize(renderComposite(r.slide, synthDecoration(spec, r.o.archetype, i)), 960));
   const g = r.v.reject ? "REJECT" : r.v.pass ? "PASS" : "REVISE";
   console.log(`${String(i + 1).padStart(2, "0")} ${r.o.archetype.padEnd(10)} ${g.padEnd(7)} nov=${r.v.scores.layoutNovelty.toFixed(0)} overall=${r.v.scores.overall.toFixed(1)}  ${r.o.purpose}`);
   cards.push(`<figure><figcaption>${i + 1}. ${r.o.archetype} — ${g} (overall ${r.v.scores.overall.toFixed(1)}, novelty ${r.v.scores.layoutNovelty.toFixed(0)})<br>${r.o.purpose}</figcaption><img src="phase6deck/${file}"></figure>`);
