@@ -43,8 +43,9 @@ async function callTool<T>(client: Anthropic, model: string, system: string, use
 }
 
 const mapLimit = async <T, R>(items: T[], n: number, fn: (x: T) => Promise<R>): Promise<R[]> => {
+  const list = Array.isArray(items) ? items : [];
   const out: R[] = [];
-  for (let i = 0; i < items.length; i += n) out.push(...(await Promise.all(items.slice(i, i + n).map(fn))));
+  for (let i = 0; i < list.length; i += n) out.push(...(await Promise.all(list.slice(i, i + n).map(fn))));
   return out;
 };
 
@@ -62,6 +63,9 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
     "You plan a presentation as a sequence of composition ARCHETYPES (not fixed templates). Cover first, closing/section last.",
     `Topic: ${prompt}\n\nAvailable archetypes:\n${catalog}\n\nPlan about ${slideCount} slides.`,
     { type: "object", properties: { title: { type: "string" }, slides: { type: "array", items: { type: "object", properties: { archetype: { type: "string" }, purpose: { type: "string" } }, required: ["archetype", "purpose"], additionalProperties: false } } }, required: ["title", "slides"], additionalProperties: false });
+  if (!Array.isArray(outline.slides) || outline.slides.length === 0) throw new Error("planner returned no slides");
+  const knownArch = new Set(spec.archetypes.map((a) => a.archetype));
+  outline.slides = outline.slides.filter((s) => s && knownArch.has(s.archetype));
 
   const writeContent = async (archetype: string, purpose: string, shorter: boolean): Promise<ContentPlan> => {
     const s = archetypeSchema(spec, archetype);
@@ -76,8 +80,8 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
           cards: { type: "array", items: { type: "object", properties: { slots: { type: "array", items: { type: "object", properties: { role: { type: "string" }, text: { type: "string" } }, required: ["role", "text"], additionalProperties: false } } }, required: ["slots"], additionalProperties: false } },
         }, required: ["singles"], additionalProperties: false });
     const singles: ContentPlan["singles"] = {};
-    for (const x of input.singles) (singles as Record<string, string>)[x.role] = x.text;
-    const cards = (input.cards ?? []).map((c) => { const r: Record<string, string> = {}; for (const x of c.slots) r[x.role] = x.text; return r; });
+    for (const x of (Array.isArray(input.singles) ? input.singles : [])) (singles as Record<string, string>)[x.role] = x.text;
+    const cards = (Array.isArray(input.cards) ? input.cards : []).map((c) => { const r: Record<string, string> = {}; for (const x of (Array.isArray(c.slots) ? c.slots : [])) r[x.role] = x.text; return r; });
     return { archetype, singles, ...(cards.length ? { cards } : {}) };
   };
 
