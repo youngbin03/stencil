@@ -9,6 +9,7 @@
     { "path": "packages/director" },
     { "path": "packages/critic" },
     { "path": "packages/solver" },
-    { "path": "packages/renderer" }
+    { "path": "packages/renderer" },
+    { "path": "packages/synthesizer" }
   ]
 }
