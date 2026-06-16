@@ -13,10 +13,13 @@ import type {
 import type { PlacementPlan } from "@stencil/ir";
 import { fitText } from "./fit.js";
 import { detectRepeatGroup, reflowCards } from "./reflow.js";
+import { selfCheck } from "./selfcheck.js";
 
 export { estimateWidth, wrapLine, fitText } from "./fit.js";
 export { detectRepeatGroup, reflowCards } from "./reflow.js";
 export type { RepeatGroup } from "./reflow.js";
+export { selfCheck } from "./selfcheck.js";
+export type { SelfCheckIssue } from "./selfcheck.js";
 
 /**
  * Assemble stage — solver (DEVDOC ④, re-composition).
@@ -131,6 +134,7 @@ export function solveDeckSlide(layout: Layout, plan: PlacementPlan, tokens: Toke
 
   // Compose by region (zone + flow + block), not by pinning raw slot bboxes.
   const regions = layout.regions ?? [];
+  let cardsPlaced = false;
   for (const region of regions) {
     // Repeatable card row → reflow the cards across the row.
     if (region.blockId && plan.cards.length > 0) {
@@ -140,6 +144,7 @@ export function solveDeckSlide(layout: Layout, plan: PlacementPlan, tokens: Toke
         rects.forEach((r, i) => elements.push({ kind: "rect", id: `card_rect_${i}`, bbox: r.bbox, fill: r.fill }));
         for (const { slot, text } of texts) elements.push(textElement(slot, text, tokens, canvas));
         suppress = group.decorationIds;
+        cardsPlaced = true;
       }
       for (const id of region.slotIds ?? []) handled.add(id);
       continue;
@@ -200,5 +205,15 @@ export function solveDeckSlide(layout: Layout, plan: PlacementPlan, tokens: Toke
   };
   if (layout.background) slide.background = layout.background;
   if (suppress.length) slide.suppressDecorationIds = suppress;
+
+  // Unmet content: cards were provided but the layout had no repeatable region.
+  if (plan.cards.length > 0 && !cardsPlaced) {
+    warnings.push(`unmet/high: ${plan.cards.length} cards had no repeatable region in "${layout.id}"`);
+  }
+
+  // Self-check gate: auto-fix contrast, report the rest.
+  for (const issue of selfCheck(slide, layout, tokens)) {
+    warnings.push(`${issue.kind}/${issue.severity}: ${issue.target}${issue.detail ? ` (${issue.detail})` : ""}`);
+  }
   return slide;
 }
