@@ -16,6 +16,8 @@ import type {
 } from "@stencil/ir";
 import { normalizeSvg } from "@stencil/normalizer";
 import { extractGroups, extractThemeGrammar, placeSlots, textSlots, type SlotLabelLite } from "./grammar.js";
+import { buildRelationGraph, extractDecorationModel, relationConventions } from "./relations.js";
+import type { RelationGraph } from "@stencil/ir";
 
 /** Injected vision classifier (Phase 2.5). Returns null on failure → id-rule fallback. */
 export type ClassifyFn = (
@@ -230,6 +232,7 @@ export async function extractThemeSystem(slides: SlideInput[], opts: ThemeOption
   const shapeFills: string[] = [];
   const decorations: ThemeDecoration[] = [];
   const layouts: Layout[] = [];
+  const convInput: { graph: RelationGraph; slotRole: Map<string, string> }[] = [];
   let canvas: Canvas = { w: 0, h: 0 };
 
   for (const p of prepared) {
@@ -243,11 +246,20 @@ export async function extractThemeSystem(slides: SlideInput[], opts: ThemeOption
     slidesTextSlots.push(text);
     perSlideGroups.push(groups);
 
+    // Phase 4.5: decoration decomposition + relation graph (deterministic).
+    const decoSvg = extractDecoration(p.slide.svg);
+    const decorationRef = opts.decorationRef(p.layoutId);
+    const bg = p.background ?? "#FFFFFF";
+    const decorationModel = extractDecorationModel(decoSvg, p.layoutId, decorationRef, p.manifest.canvas, bg);
+    const relationGraph = buildRelationGraph(p.layoutId, p.manifest.slots, decorationModel.elements, p.manifest.canvas);
+
     const layout: Layout = {
       id: p.layoutId,
-      decorationRef: opts.decorationRef(p.layoutId),
-      background: p.background ?? "#FFFFFF",
+      decorationRef,
+      background: bg,
       slots: placeSlots(p.manifest.slots, groups, labelsByLayout.get(p.layoutId)),
+      decorationModel,
+      relationGraph,
       regions: [
         { id: "content", bbox: unionBBox(p.manifest.slots), flow: "column", gap: 0, allowedBlocks: [] } satisfies Region,
       ],
@@ -256,7 +268,8 @@ export async function extractThemeSystem(slides: SlideInput[], opts: ThemeOption
     const archetype = archetypes.get(p.layoutId);
     if (archetype) layout.archetype = archetype;
     layouts.push(layout);
-    decorations.push({ layoutId: p.layoutId, svg: extractDecoration(p.slide.svg) });
+    decorations.push({ layoutId: p.layoutId, svg: decoSvg });
+    convInput.push({ graph: relationGraph, slotRole: new Map(p.manifest.slots.map((s) => [s.id, s.role])) });
   }
 
   const type = extractType(allSlots);
@@ -282,6 +295,7 @@ export async function extractThemeSystem(slides: SlideInput[], opts: ThemeOption
     canvas,
     tokens,
     grammar,
+    relationConventions: relationConventions(convInput),
     blocks: [],
     layouts,
   };

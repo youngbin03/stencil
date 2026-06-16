@@ -237,6 +237,116 @@ export interface DesignGrammar {
   groups: SlotGroup[];
 }
 
+// ---------------------------------------------------------------------------
+// Relation graph (DEVDOC Phase 4.5) — decoration structure + typed relations,
+// measured deterministically (vision assist optional). Stored per layout.
+// ---------------------------------------------------------------------------
+
+export type DecorationKind =
+  | "background"
+  | "emphasis"
+  | "accent"
+  | "image_holder"
+  | "chart"
+  | "divider"
+  | "frame"
+  | "texture";
+
+/** A semantic element of a layout's decoration (an index over the kept SVG). */
+export interface DecorationElement {
+  id: string;
+  kind: DecorationKind;
+  bbox: BBox;
+  color?: string;
+  /** Draw order (background 0 → foreground). Text always sits above. */
+  z: number;
+  /** Visual weight 0..1 (area × color contrast); used for emphasis/avoid. */
+  salience?: number;
+  ratio?: string;
+  orientation?: "horizontal" | "vertical";
+}
+
+export interface DecorationModel {
+  layoutId: string;
+  decorationRef: string;
+  elements: DecorationElement[];
+}
+
+export type RelationType =
+  | "above"
+  | "below"
+  | "left_of"
+  | "right_of"
+  | "row"
+  | "column"
+  | "grid"
+  | "aligned"
+  | "coupled"
+  | "same_size"
+  | "larger_than"
+  | "reading_order"
+  | "emphasis_rank"
+  | "over"
+  | "inside"
+  | "anchored_to"
+  | "avoids"
+  | "beside";
+
+export type AnchorRegion =
+  | "left_half"
+  | "right_half"
+  | "top"
+  | "bottom"
+  | "center"
+  | "left_third"
+  | "center_third"
+  | "right_third"
+  | "top_third"
+  | "bottom_third";
+
+/**
+ * A typed relation edge. Fields are populated per `type` (loose by design so the
+ * closed vocabulary stays in one shape); all relations must reduce to linear
+ * constraints for the v2 solver.
+ */
+export interface RelationEdge {
+  type: RelationType;
+  /** Pairwise relations. */
+  a?: string;
+  b?: string;
+  /** Set/ordered relations. */
+  nodes?: string[];
+  order?: string[];
+  axis?: "left" | "center" | "right" | "top" | "baseline";
+  strength?: "tight" | "loose" | "section";
+  distribute?: "equal" | "space_between";
+  /** Slot↔decoration relations. */
+  slot?: string;
+  decoration?: string;
+  region?: AnchorRegion;
+  /** Measurement confidence 0..1; low → human review. */
+  confidence?: number;
+}
+
+export interface RelationNode {
+  id: string;
+  kind: "slot" | "decoration";
+  role: Role;
+  bbox: BBox;
+}
+
+export interface RelationGraph {
+  layoutId: string;
+  nodes: RelationNode[];
+  edges: RelationEdge[];
+}
+
+/** Recurring relation pattern across the theme's slides (Claude vocabulary). */
+export interface RelationConvention {
+  pattern: string;
+  support: number;
+}
+
 /**
  * A slot with its measured placement and style, persisted in the layout asset.
  * Carries the slot's own measured font (for inplace fidelity); the theme's
@@ -273,6 +383,10 @@ export interface Layout {
   background: string;
   /** Measured placement + style of every text/image slot (assemble reads this). */
   slots: PlacedSlot[];
+  /** Decoration decomposition (Phase 4.5). */
+  decorationModel?: DecorationModel;
+  /** Typed relation graph over slots + decoration (Phase 4.5). */
+  relationGraph?: RelationGraph;
   regions: Region[];
   /**
    * Slot ids in authoring order. Assemble's inplace special case maps content
@@ -295,6 +409,8 @@ export interface DesignSystemIR {
   tokens: Tokens;
   /** Common relational + placement rules across the theme's slides. */
   grammar: DesignGrammar;
+  /** Recurring relation patterns across the theme (Phase 4.5). */
+  relationConventions?: RelationConvention[];
   blocks: Block[];
   /** Every slide of the theme, as a layout. */
   layouts: Layout[];
