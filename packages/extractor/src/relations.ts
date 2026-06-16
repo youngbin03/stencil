@@ -22,6 +22,10 @@ import type {
 const COL_TOL = 24;
 const ALIGN_TOL = 8;
 const GROUP_GAP = 64;
+/** avoids: emphasis must be at least this salient to be worth steering clear of. */
+const AVOID_SALIENCE_MIN = 0.3;
+/** avoids: emphasis wider than this fraction of the canvas is full-bleed (no side). */
+const FULLBLEED_W = 0.8;
 
 // --- geometry / color helpers ----------------------------------------------
 
@@ -231,14 +235,20 @@ function slotDecorationEdges(slots: ManifestSlot[], deco: DecorationElement[], c
     if (on) edges.push({ type: "over", slot: s.id, decoration: on.id, confidence: 0.8 });
     // anchored_to region
     edges.push({ type: "anchored_to", slot: s.id, region: regionOf(s.bbox, canvas), confidence: 0.8 });
-    // avoids: a salient emphasis on the opposite horizontal half sharing the row band
+    // avoids: the slot sits beside a salient, BOUNDED emphasis in the shared
+    // vertical band with clean horizontal separation. Excludes (a) full-bleed
+    // emphasis that spans the canvas (no side to avoid), (b) emphasis that
+    // contains the slot — that is an "over" relation, not avoidance, and (c)
+    // emphasis that horizontally overlaps the slot (no clean gap to preserve).
     for (const e of emphasis) {
+      if ((e.salience ?? 0) < AVOID_SALIENCE_MIN) continue;
       if (!overlapsY(s.bbox, e.bbox)) continue;
-      const slotRight = c.x > canvas.w / 2;
-      const emphRight = center(e.bbox).x > canvas.w / 2;
-      if (slotRight !== emphRight && (e.salience ?? 0) >= 0.2) {
-        edges.push({ type: "avoids", slot: s.id, decoration: e.id, confidence: 0.7 });
-      }
+      if (e.bbox.w >= canvas.w * FULLBLEED_W) continue; // canvas-spanning → meaningless
+      if (contains(e.bbox, c)) continue; // slot over decoration, not avoiding it
+      const slotLeftOfD = s.bbox.x + s.bbox.w <= e.bbox.x; // slot fully left of D
+      const slotRightOfD = s.bbox.x >= e.bbox.x + e.bbox.w; // slot fully right of D
+      if (!slotLeftOfD && !slotRightOfD) continue; // horizontal overlap → not a clean avoid
+      edges.push({ type: "avoids", slot: s.id, decoration: e.id, confidence: 0.85 });
     }
   }
   return edges;
