@@ -46,9 +46,16 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (x: T) => Promise<R
 export async function generateDeck(theme: Theme, prompt: string, slideCount: number): Promise<GeneratedDeck> {
   const sysPath = resolve(ROOT, `fixtures/assets/${theme}/system.json`);
   const system = JSON.parse(await readFile(sysPath, "utf8")) as DesignSystemIR;
-  const byId = new Map<string, Layout>(system.layouts.map((l) => [l.id, l]));
 
-  const outline = await outlineDeck(system, prompt, { slides: slideCount });
+  // No user asset pool yet → restrict to text-complete layouts so image holders
+  // never render as empty placeholders. Keeps the deck at template quality.
+  const usable: DesignSystemIR = {
+    ...system,
+    layouts: system.layouts.filter((l) => !l.slots.some((s) => s.type === "image")),
+  };
+  const byId = new Map<string, Layout>(usable.layouts.map((l) => [l.id, l]));
+
+  const outline = await outlineDeck(usable, prompt, { slides: slideCount });
 
   const slides = await mapLimit(outline.slides, 3, async (o): Promise<GeneratedSlide | null> => {
     const layout = byId.get(o.layoutId);

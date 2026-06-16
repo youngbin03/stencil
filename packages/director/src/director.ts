@@ -124,9 +124,38 @@ sizes, colors, or fonts — only text. Use the tool.`,
     return rec;
   }).filter((c) => Object.keys(c).length > 0);
 
-  const validSingle = new Set(singleSlots.map((s) => s.id));
+  // Robust single matching. Slot ids are arbitrary layer names (e.g. "H3 Medium")
+  // that the model may not echo verbatim — so resolve each returned text to a slot
+  // by exact id → normalized id → role, and finally assign any leftover texts to
+  // still-empty slots in order. This prevents a whole slide rendering blank just
+  // because an id did not match (the cause of empty quote/team slides).
+  const norm = (x: string): string => x.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const byId = new Map(singleSlots.map((s) => [s.id, s.id]));
+  const byNorm = new Map(singleSlots.map((s) => [norm(s.id), s.id]));
+  const byRole = new Map<string, string[]>();
+  for (const s of singleSlots) (byRole.get(s.role) ?? byRole.set(s.role, []).get(s.role)!).push(s.id);
+
   const singles: Record<string, string> = {};
-  for (const s of input.singles) if (validSingle.has(s.id)) singles[s.id] = s.text;
+  const used = new Set<string>();
+  const leftover: string[] = [];
+  const claim = (id: string | undefined): boolean => {
+    if (!id || used.has(id)) return false;
+    used.add(id);
+    return true;
+  };
+  for (const s of input.singles) {
+    if (!s.text) continue;
+    let target = byId.get(s.id) ?? byNorm.get(norm(s.id));
+    if (target && used.has(target)) target = undefined;
+    if (!target) {
+      const roleMatch = (byRole.get(s.id) ?? byRole.get(norm(s.id)) ?? []).find((id) => !used.has(id));
+      target = roleMatch;
+    }
+    if (claim(target)) singles[target!] = s.text;
+    else leftover.push(s.text);
+  }
+  const empty = singleSlots.map((s) => s.id).filter((id) => !used.has(id));
+  for (let i = 0; i < empty.length && i < leftover.length; i++) singles[empty[i]!] = leftover[i]!;
 
   const validImage = new Set(imageSlots.map((s) => s.id));
   const poolById = new Map(pool.map((a) => [a.id, a.url]));
