@@ -79,6 +79,41 @@ function imageElement(slot: PlacedSlot, url: string): RenderImageElement {
   return el;
 }
 
+/** Actual rendered bottom of a text block — the ink, not the reserved slot box.
+ * Using ink (not bbox.h) preserves fidelity: authored boxes may overlap by design,
+ * so only real glyph encroachment triggers a push-down. */
+function renderedBottom(t: RenderTextElement): number {
+  return t.bbox.y + t.lines.length * t.fontSize * t.lineHeight;
+}
+
+function xOverlaps(a: { x: number; w: number }, b: { x: number; w: number }): boolean {
+  return a.x < b.x + b.w && b.x < a.x + a.w;
+}
+
+/**
+ * Vertical collision resolution (Cassowary above/below, simplified to 1D minimal
+ * displacement). Generated text often wraps to more lines than the original, so a
+ * block's ink can grow past its reserved slot and overlap the block below. In
+ * reading order, push each block down just enough to clear any earlier block it
+ * overlaps horizontally. Blocks that already fit keep their authored position
+ * (fidelity); only genuine encroachment shifts a block, by exactly the overflow.
+ */
+function resolveVerticalOverlaps(texts: RenderTextElement[]): void {
+  if (texts.length < 2) return;
+  const order = [...texts].sort((a, b) => a.bbox.y - b.bbox.y || a.bbox.x - b.bbox.x);
+  for (let i = 1; i < order.length; i++) {
+    const cur = order[i]!;
+    let top = cur.bbox.y;
+    for (let j = 0; j < i; j++) {
+      const prev = order[j]!;
+      if (!xOverlaps(cur.bbox, prev.bbox)) continue;
+      const prevBottom = renderedBottom(prev); // prev already finalized (ascending pass)
+      if (prevBottom > top) top = prevBottom + Math.round(cur.fontSize * 0.2);
+    }
+    if (top !== cur.bbox.y) cur.bbox = { ...cur.bbox, y: top };
+  }
+}
+
 /** Solve one slide by re-composition. Only slots with content are emitted. */
 export function solveSlide(layout: Layout, content: SlotContent, tokens: Tokens, canvas: Canvas): RenderSlide {
   const warnings: string[] = [];
@@ -139,7 +174,9 @@ export function solveDeckSlide(layout: Layout, plan: PlacementPlan, tokens: Toke
     if (region.blockId && plan.cards.length > 0 && layout.cardSpec) {
       const { texts, rects } = reflowCards(layout.cardSpec, plan.cards);
       rects.forEach((r, i) => elements.push({ kind: "rect", id: `card_rect_${i}`, bbox: r.bbox, fill: r.fill }));
-      for (const { slot, text } of texts) elements.push(textElement(slot, text, tokens, canvas));
+      const cardEls = texts.map(({ slot, text }) => textElement(slot, text, tokens, canvas));
+      resolveVerticalOverlaps(cardEls); // per-card stacking (different columns don't x-overlap)
+      for (const el of cardEls) elements.push(el);
       suppress = layout.cardSpec.decorationIds;
       cardsPlaced = true;
       for (const id of region.slotIds ?? []) handled.add(id);
@@ -158,7 +195,9 @@ export function solveDeckSlide(layout: Layout, plan: PlacementPlan, tokens: Toke
     if (allFilled || region.flow !== "column" || filled.length === 1) {
       // Keep authored positions (1:1 fidelity) — or row handled below for partial.
       if (allFilled || filled.length === 1) {
-        for (const s of filled) elements.push(textElement(s, plan.singles[s.id]!, tokens, canvas));
+        const els = filled.map((s) => textElement(s, plan.singles[s.id]!, tokens, canvas));
+        resolveVerticalOverlaps(els); // push down where grown text encroaches the block below
+        for (const el of els) elements.push(el);
         continue;
       }
     }
@@ -185,12 +224,15 @@ export function solveDeckSlide(layout: Layout, plan: PlacementPlan, tokens: Toke
   }
 
   // Singles not covered by any region → keep authored position (fallback).
+  const fallback: RenderTextElement[] = [];
   for (const [id, text] of Object.entries(plan.singles)) {
     if (handled.has(id) || !text) continue;
     const slot = slotById.get(id);
     if (!slot || slot.type !== "text" || slot.role === "decoration" || slot.role === "divider") continue;
-    elements.push(textElement(slot, text, tokens, canvas));
+    fallback.push(textElement(slot, text, tokens, canvas));
   }
+  resolveVerticalOverlaps(fallback);
+  for (const el of fallback) elements.push(el);
 
   const slide: RenderSlide = {
     layoutId: layout.id,
