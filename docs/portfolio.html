@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Stencil — Design-Grammar Slide Synthesis</title>
+<title>Stencil — Agentic Generative Slide Synthesis · Project Report</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
 <style>
@@ -48,6 +48,30 @@
   .foot{color:var(--muted);font-size:13.5px;text-align:center;padding:40px 0 64px}
   .two{display:grid;grid-template-columns:1.1fr 1fr;gap:22px;align-items:start}
   @media(max-width:760px){.two{grid-template-columns:1fr}}
+  .fault{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .fault>div{padding:22px}
+  .fault>div:first-child{border-right:1px solid var(--line)}
+  @media(max-width:760px){.fault{grid-template-columns:1fr}.fault>div:first-child{border-right:0;border-bottom:1px solid var(--line)}}
+  .fault .hd{display:flex;align-items:center;gap:9px;font-weight:700;font-size:15px;margin-bottom:14px}
+  .fault .hd .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .fault ul{margin:0;padding-left:18px} .fault li{font-size:14px;color:#2a2a2a;margin:6px 0}
+  .fault .why{font-size:13px;color:var(--muted);margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+  .prob{border:1px solid var(--line);border-radius:14px;padding:22px}
+  .prob .pt{font-weight:700;font-size:16px;margin:0 0 12px;letter-spacing:-0.02em}
+  .prob .row{display:grid;grid-template-columns:96px 1fr;gap:10px;font-size:13.5px;padding:7px 0;border-top:1px solid var(--line)}
+  .prob .row b{color:var(--faint);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding-top:2px}
+  .prob .row span{color:#2a2a2a}
+  .prob .row.res span{color:var(--green);font-weight:600}
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:6px}
+  @media(max-width:760px){.metrics{grid-template-columns:repeat(2,1fr)}}
+  .metrics .m{text-align:center;border:1px solid var(--line);border-radius:14px;padding:20px 12px}
+  .metrics .m .v{font-size:30px;font-weight:800;letter-spacing:-0.03em}
+  .metrics .m .l{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .next{display:grid;grid-template-columns:160px 1fr;gap:14px;font-size:14px;padding:13px 0;border-top:1px solid var(--line)}
+  .next:first-of-type{border-top:0}
+  .next .h{font-weight:700} .next .h small{display:block;color:var(--faint);font-weight:600;font-size:11px;letter-spacing:.04em;text-transform:uppercase;margin-top:2px}
+  .next .b{color:var(--muted)}
+  @media(max-width:760px){.next{grid-template-columns:1fr;gap:4px}}
 </style>
 </head>
 <body>
@@ -55,15 +79,21 @@
 
   <!-- HERO -->
   <section>
-    <div class="kicker"><span class="logo"></span> Stencil</div>
-    <h1>Design-grammar slide synthesis<br>디자인 문법 기반 슬라이드 합성</h1>
-    <p class="lead">업로드한 슬라이드를 <b>채워 넣을 템플릿이 아니라 디자인 예시 데이터</b>로 본다. 거기서 추출한 문법(간격·정렬·계층·컴포넌트 관계)으로 <b>원본에 없던 새 레이아웃을 합성</b>한다. Templates are example data, not fill-in forms — new layouts are synthesized from the extracted grammar.</p>
+    <div class="kicker"><span class="logo"></span> Stencil · 프로젝트 보고서</div>
+    <h1>An agentic generative system<br>for design-grammar slide synthesis</h1>
+    <p class="lead">업로드한 슬라이드를 <b>채워 넣을 템플릿이 아니라 디자인 예시 데이터</b>로 본다. 거기서 추출한 문법(간격·정렬·계층·컴포넌트 관계)으로 <b>원본에 없던 새 레이아웃을 합성</b>하는 에이전틱 시스템. 핵심 엔지니어링 결정은 하나로 요약된다 — <b>의미 판단은 AI, 기하 계산은 결정론 코드</b>. Templates are example data, not fill-in forms; the LLM reasons about meaning, deterministic code owns every pixel.</p>
     <div>
+      <span class="pill">agentic generative system</span>
+      <span class="pill">AI for semantics · code for geometry</span>
+      <span class="pill">vision-in-the-loop</span>
+      <span class="pill">evaluator–optimizer gate</span>
       <span class="pill">no frame copy · 원본 미복사</span>
-      <span class="pill">LLM writes content, never coordinates</span>
-      <span class="pill">geometry from grammar</span>
-      <span class="pill">deterministic</span>
-      <span class="pill">3 themes · 10 archetypes</span>
+    </div>
+    <div class="metrics">
+      <div class="m"><div class="v">2-phase</div><div class="l">bake-once · stamp-many</div></div>
+      <div class="m"><div class="v">7</div><div class="l">자동 품질 지표 + 게이트</div></div>
+      <div class="m"><div class="v">0</div><div class="l">LLM이 찍는 좌표</div></div>
+      <div class="m"><div class="v">3·10</div><div class="l">테마 · 아키타입</div></div>
     </div>
   </section>
 
@@ -95,6 +125,47 @@
     <p class="lead" style="margin-top:16px">사용자 프롬프트(+선택적 이미지)는 STAMP에만 들어간다. BAKE에서 만든 GrammarSpec만 읽고 합성하며, 평가 게이트를 통과하지 못하면 재합성한다.</p>
   </section>
 
+  <!-- AI ENGINEERING -->
+  <section>
+    <h2>AI engineering · 책임 분리라는 한 번의 결정</h2>
+    <p class="lead" style="margin-bottom:24px">이 프로젝트의 모든 구조는 한 가지 관찰에서 나온다 — <b>LLM은 의미 판단에 강하고 수치 정밀도에 약하다.</b> 그래서 시스템을 그 단층선(fault line)을 따라 둘로 갈랐다. 같은 프롬프트라도 좌표를 LLM이 찍으면 겹침·이탈·비재현이 생긴다. 의미는 확률적 모델에, 픽셀은 결정론 코드에 맡긴다.</p>
+    <div class="fault">
+      <div>
+        <div class="hd"><span class="dot" style="background:#1f6feb"></span> Claude — 의미 (probabilistic)</div>
+        <ul>
+          <li>슬롯 분류 — 번호 오버레이를 <b>비전</b>으로 읽어 role·mediaKind 판정</li>
+          <li>아키타입 선택 — 프롬프트를 슬라이드 목적으로 분해</li>
+          <li>콘텐츠 작성 — 레이아웃이 요구하는 정확한 블록만 생성</li>
+          <li>품질 비평 — 렌더된 픽셀을 다시 비전으로 평가</li>
+        </ul>
+        <div class="why">왜 AI인가 — 모호하고 맥락 의존적이며 "보기 좋음"이 정답인 판단. 규칙으로 못 박으면 부서진다.</div>
+      </div>
+      <div>
+        <div class="hd"><span class="dot" style="background:#0a7d33"></span> Deterministic code — 기하 (exact)</div>
+        <ul>
+          <li>좌표 생성 — 그리드 스냅·간격 리듬·계층에서 산출</li>
+          <li>텍스트 측정 — opentype.js 정확 메트릭, measure=render parity</li>
+          <li>충돌 회피 — push-down·safe area·비겹침 보장</li>
+          <li>대비 보정 — 가독성 자동 교정, 디자인 floor 강제</li>
+        </ul>
+        <div class="why">왜 코드인가 — 재현 가능하고 검증 가능하며 픽셀 단위로 정확해야 하는 작업. LLM이 손대면 안 되는 영역.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AGENTIC PATTERNS -->
+  <section>
+    <h2>Agentic patterns · 에이전틱 패턴</h2>
+    <div class="grid g2">
+      <div class="card"><div class="n">A</div><h3>Structured tool-use as a contract</h3><p>모든 AI 호출은 자유 텍스트가 아니라 <b>tool 스키마로 강제된 타입 객체</b>를 반환한다(ContentPlan·PlacementPlan·CritiquePatch). 파싱이 아니라 계약. 비배열·누락 출력에 대한 방어를 더해 파이프라인을 견고하게 만들었다.</p></div>
+      <div class="card"><div class="n">B</div><h3>Vision-in-the-loop</h3><p>슬롯에 번호를 그려 비전으로 분류하고, <b>합성 결과를 다시 비전으로 평가</b>한다. 텍스트 설명이 아니라 실제 렌더 픽셀을 근거로 판단해 "보기엔 깨진" 결과를 잡아낸다.</p></div>
+      <div class="card"><div class="n">C</div><h3>Evaluator–optimizer loop</h3><p>생성 → 7지표 채점 → 미달 시 자기 수정. <span class="mono">score &lt; 7  → revise
+novelty &lt; 6 → reject &amp; re-synthesize
+N ≤ 2 (bounded)</span>생성기와 평가기를 분리한 자기교정 루프.</p></div>
+      <div class="card"><div class="n">D</div><h3>Bake-once, stamp-many</h3><p>비싼 AI 분석(흡수·문법 추출·비전 분류)은 <b>테마당 1회</b> 실행해 GrammarSpec로 캐시한다. 요청 시점에는 원본 SVG를 다시 읽지 않고 캐시만 조합 — 저렴하고 빠르고 결정론적.</p></div>
+    </div>
+  </section>
+
   <!-- CORE LOGIC -->
   <section>
     <h2>Core logic · 핵심 로직</h2>
@@ -119,6 +190,55 @@ layout novelty &lt; 6 → reject</span></p></div>
       <figure><img class="shot" src="assets/comparison.png" alt="comparison"><figcaption><span class="tag">comparison</span><span class="score pass">PASS 10</span> pricing tiers (was empty before)</figcaption></figure>
       <figure><img class="shot" src="assets/image-split.png" alt="image split"><figcaption><span class="tag">image</span> user photo placed (cover-crop), text in the complementary column</figcaption></figure>
       <figure><img class="shot" src="assets/gallery.png" alt="gallery"><figcaption><span class="tag">gallery</span> 3 user images in a mined image row</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- HARD PROBLEMS -->
+  <section>
+    <h2>Hard problems · 풀어낸 난제</h2>
+    <div class="grid g2">
+      <div class="prob">
+        <div class="pt">"글자만 바꾸기" 함정 (in-place fill)</div>
+        <div class="row"><b>문제</b><span>슬롯 채우기·LLM 직접 배치는 결국 원본 슬라이드를 복제한다.</span></div>
+        <div class="row"><b>난점</b><span>원본의 감성·간격·계층은 지키되 레이아웃 구조는 새로 만들어야 한다.</span></div>
+        <div class="row"><b>해법</b><span>아키타입별 예시 region을 정규화·median 집계한 <b>스켈레톤(패턴)</b>을 새 콘텐츠로 인스턴스화.</span></div>
+        <div class="row res"><b>결과</b><span>원본 미복사 + 신규성&lt;6 reject 게이트로 보장.</span></div>
+      </div>
+      <div class="prob">
+        <div class="pt">LLM은 픽셀 정밀도가 없다</div>
+        <div class="row"><b>문제</b><span>모델에 좌표를 맡기면 겹침·캔버스 이탈·동일 입력 비재현.</span></div>
+        <div class="row"><b>난점</b><span>창의적 구성은 원하지만 결과는 깨지면 안 된다.</span></div>
+        <div class="row"><b>해법</b><span>LLM은 의미만, 좌표는 grammar+solver가 전담. 골격이 창의성을 제약 안에 가둔다.</span></div>
+        <div class="row res"><b>결과</b><span>겹침 0 · 이탈 0 · 완전 재현.</span></div>
+      </div>
+      <div class="prob">
+        <div class="pt">텍스트 오버플로우 = measure ≠ render</div>
+        <div class="row"><b>문제</b><span>휴리스틱 폭 추정은 실제 렌더와 어긋나 줄바꿈·넘침이 예측 불가.</span></div>
+        <div class="row"><b>난점</b><span>생성 텍스트는 길이를 통제할 수 없다.</span></div>
+        <div class="row"><b>해법</b><span>opentype.js 정확 메트릭 + resvg 폰트 동기화로 <b>측정=렌더 일치</b>. 폭·높이 동시 축소.</span></div>
+        <div class="row res"><b>결과</b><span>줄바꿈·자동 축소가 정확, 넘침 사라짐.</span></div>
+      </div>
+      <div class="prob">
+        <div class="pt">공간 관계를 버리고 있었다</div>
+        <div class="row"><b>문제</b><span>모든 슬라이드를 단일 중앙 컬럼에 세로 스택 — 단조롭다.</span></div>
+        <div class="row"><b>난점</b><span>스켈레톤은 zone별 수평 밴드(anchored 좌/우)를 담는데 합성이 그 x를 폐기.</span></div>
+        <div class="row"><b>해법</b><span>mined xFrac을 직접 소비 — title 좌/body 우처럼 분리되면 <b>side-by-side</b>로 합성.</span></div>
+        <div class="row res"><b>결과</b><span>테마가 실제로 하는 2단 구성을 재현, 단조 탈피.</span></div>
+      </div>
+      <div class="prob">
+        <div class="pt">AI 출력의 신뢰성</div>
+        <div class="row"><b>문제</b><span>모델이 가끔 스키마를 벗어난 형태(비배열 등)를 내 파이프라인이 깨졌다.</span></div>
+        <div class="row"><b>난점</b><span>확률적 출력 위에 결정론 파이프라인을 올려야 한다.</span></div>
+        <div class="row"><b>해법</b><span>tool-use 스키마 강제 + 경계에서 형태 방어·정규화.</span></div>
+        <div class="row res"><b>결과</b><span>모델 변동에도 파이프라인 안정.</span></div>
+      </div>
+      <div class="prob">
+        <div class="pt">"왜 이 에셋을 썼나"에 답할 수 없었다</div>
+        <div class="row"><b>문제</b><span>장식·배치가 인덱스 회전 등 임의 선택이라 설명 불가.</span></div>
+        <div class="row"><b>난점</b><span>생성 결과는 설명 가능해야 신뢰받는다.</span></div>
+        <div class="row"><b>해법</b><span>각 결정에 근거를 기록 — "가장 빈 코너 + 여유 반경 + 팔레트색", 장식량은 테마 측정 coverage.</span></div>
+        <div class="row res"><b>결과</b><span>모든 배치/장식 선택을 한 줄로 설명 가능.</span></div>
+      </div>
     </div>
   </section>
 
@@ -169,6 +289,17 @@ layout novelty &lt; 6 → reject</span></p></div>
     </div>
   </section>
 
+  <!-- WHAT'S NEXT -->
+  <section>
+    <h2>What's next · 차기 기술 로드맵</h2>
+    <p class="lead" style="margin-bottom:22px">현재 결정론 배치는 안정적이지만, 다음 단계는 같은 책임 분리 위에 더 강한 도구를 얹는 것이다.</p>
+    <div class="next"><div class="h">Constraint solver<small>Cassowary / kiwi</small></div><div class="b">스켈레톤을 하드·소프트 제약으로 표현해 단순 스택을 넘어선 자유 배치. 골격은 "관계 우선, 좌표는 마지막" 철학과 맞물린다.</div></div>
+    <div class="next"><div class="h">Embedding retrieval<small>vector similarity</small></div><div class="b">아키타입 매칭과 유사도 페널티(현재 구조 거리)를 임베딩 거리로 — 더 풍부한 신규성·검색.</div></div>
+    <div class="next"><div class="h">Preference learning<small>DPO-style</small></div><div class="b">evaluator 7지표를 보상 신호로 삼아 아키타입·콘텐츠 선택 정책을 학습 — 휴먼 피드백 없이 자기 개선.</div></div>
+    <div class="next"><div class="h">Multi-agent decomposition<small>planner · designer · critic</small></div><div class="b">현재 단일 루프를 역할별 독립 에이전트로 분해해 병렬·전문화. 비평가는 항상 별도 레인.</div></div>
+    <div class="next"><div class="h">VLM-grounded decoration<small>+ Code Connect sync</small></div><div class="b">장식·이미지 선택을 비전-언어 모델로 콘텐츠에 정합. 디자인 토큰/컴포넌트 양방향 동기화.</div></div>
+  </section>
+
   <!-- REFERENCE DIAGRAMS -->
   <section>
     <h2>Reference diagrams · 참조 도식</h2>
@@ -180,7 +311,7 @@ layout novelty &lt; 6 → reject</span></p></div>
 
   <div class="foot">
     Invariants · 불변 원칙 — never copy a source frame · LLM writes content + picks archetype, never coordinates · geometry from grammar · deterministic, no randomness<br>
-    Stencil · design-grammar slide synthesis
+    Stencil · agentic generative slide synthesis — project report
   </div>
 
 </div>
