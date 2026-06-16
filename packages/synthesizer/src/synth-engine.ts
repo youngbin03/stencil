@@ -37,6 +37,14 @@ const ZONE_ROLES: Record<string, Role[]> = {
 
 /** The content an archetype expects — single roles + card roles + image count.
  * Drives the LLM content planner so it writes exactly what the layout needs. */
+/** Archetypes that must present repeated structured items, with the canonical
+ * card roles to use when the mined skeleton itself lacks a card block. */
+const NEEDS_CARDS: Record<string, Role[]> = {
+  stat: ["kpi", "caption"],
+  comparison: ["headline", "body"],
+  agenda: ["label", "body"],
+};
+
 export function archetypeSchema(spec: GrammarSpec, archetype: string): { archetype: string; singles: Role[]; cardRoles: Role[]; images: number } {
   const sk = spec.archetypes.find((a) => a.archetype === archetype) ?? spec.archetypes[0]!;
   const singles: Role[] = [];
@@ -46,7 +54,14 @@ export function archetypeSchema(spec: GrammarSpec, archetype: string): { archety
     if (role) singles.push(role);
   }
   const cardsZone = sk.zones.find((z) => z.block);
-  const cardRoles = cardsZone ? (spec.blocks.find((b) => b.id === cardsZone.block)?.slots.map((s) => s.role) ?? []) : [];
+  let cardRoles = cardsZone ? (spec.blocks.find((b) => b.id === cardsZone.block)?.slots.map((s) => s.role) ?? []) : [];
+  // Archetype needs cards but the mined skeleton has none → supply canonical roles
+  // (prefer a measured cardSpec with the same signature; else the canonical set).
+  if (cardRoles.length === 0 && NEEDS_CARDS[archetype]) {
+    const want = NEEDS_CARDS[archetype]!;
+    const measured = Object.keys(spec.cardSpecs).find((k) => k.split("/").some((r) => want.includes(r as Role)));
+    cardRoles = measured ? (measured.split("/") as Role[]) : want;
+  }
   return { archetype, singles, cardRoles, images: sk.imageZones.length };
 }
 
@@ -129,11 +144,15 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
   let cardSpec: CardSpec | undefined;
   for (const zoneId of order) {
     if (zoneId === "cards") {
+      // Place cards from whatever the planner actually wrote (robust even when the
+      // mined skeleton has no card block) — reuse a measured cardSpec if its role
+      // signature matches, else build the card template from the grammar.
+      const planRoles = Object.keys(plan.cards![0]!) as Role[];
       const z = zoneById.get("cards");
       const blockId = z?.block ?? spec.blocks.find((b) => b.slots.some((s) => plan.cards![0]![s.role] !== undefined))?.id;
-      if (!blockId) continue;
-      const { roles, cs } = cardSpecForBlock(spec, blockId);
-      const useRoles = roles.length ? roles : (Object.keys(plan.cards![0]!) as Role[]);
+      const fromBlock = blockId ? cardSpecForBlock(spec, blockId) : { roles: [] as Role[], cs: undefined };
+      const useRoles = planRoles.length ? planRoles : fromBlock.roles;
+      const cs = spec.cardSpecs[useRoles.join("/")] ?? fromBlock.cs;
       const rowW = tx1 - tx0;
       const cardW = Math.min(cs?.cardW ?? Math.round(rowW / Math.max(1, plan.cards!.length) * 0.9), Math.round(rowW / Math.max(1, plan.cards!.length)));
       const rowH = cs ? cs.rowBBox.h : Math.ceil(useRoles.reduce((s, r) => s + (spec.type[r]?.size ?? 40) * lh * 1.4, 0));
