@@ -1,4 +1,5 @@
-import type { RenderAdapter, RenderImageElement, RenderSlide, RenderTextElement, Tokens } from "@stencil/ir";
+import { DOMParser, XMLSerializer, type Element } from "@xmldom/xmldom";
+import type { RenderAdapter, RenderImageElement, RenderRectElement, RenderSlide, RenderTextElement, Tokens } from "@stencil/ir";
 
 /**
  * Assemble stage — renderer (DEVDOC ④/⑤, "composite" adapter).
@@ -50,14 +51,39 @@ function renderImage(el: RenderImageElement, i: number): string {
   );
 }
 
+function renderRect(el: RenderRectElement): string {
+  const { x, y, w, h } = el.bbox;
+  const rx = el.rx ? ` rx="${el.rx}"` : "";
+  return `<rect id="${escapeXml(el.id)}" x="${x}" y="${y}" width="${w}" height="${h}" fill="${el.fill}"${rx}/>`;
+}
+
+/** Remove decoration elements (any tag) whose id is in the suppress list. */
+function suppressDecoration(decorationSvg: string, ids: string[]): string {
+  const doc = new DOMParser().parseFromString(decorationSvg, "image/svg+xml");
+  const wanted = new Set(ids);
+  const all = doc.getElementsByTagName("*");
+  const remove: Element[] = [];
+  for (let i = 0; i < all.length; i++) {
+    const id = all[i]!.getAttribute("id");
+    if (id && wanted.has(id)) remove.push(all[i]!);
+  }
+  for (const n of remove) n.parentNode?.removeChild(n);
+  return new XMLSerializer().serializeToString(doc);
+}
+
 export function renderComposite(slide: RenderSlide, decorationSvg: string): string {
+  let base = decorationSvg;
+  if (slide.suppressDecorationIds?.length) base = suppressDecoration(base, slide.suppressDecorationIds);
+
   const parts: string[] = [];
   slide.elements.forEach((el, i) => {
-    parts.push(el.kind === "text" ? renderText(el) : renderImage(el, i));
+    if (el.kind === "text") parts.push(renderText(el));
+    else if (el.kind === "image") parts.push(renderImage(el, i));
+    else parts.push(renderRect(el));
   });
   const overlay = `<g id="__content__">${parts.join("")}</g>`;
-  const close = decorationSvg.lastIndexOf(SVG_NS_CLOSE);
-  return close === -1 ? decorationSvg + overlay : decorationSvg.slice(0, close) + overlay + decorationSvg.slice(close);
+  const close = base.lastIndexOf(SVG_NS_CLOSE);
+  return close === -1 ? base + overlay : base.slice(0, close) + overlay + base.slice(close);
 }
 
 export const compositeAdapter: RenderAdapter = {

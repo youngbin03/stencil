@@ -167,6 +167,14 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (x: T, i: number) =
   return out;
 }
 
+/** Outline only: pick layouts for the topic (Phase 4.7 director fills them). */
+export async function outlineDeck(
+  system: DesignSystemIR, prompt: string, opts: ComposeOptions = {},
+): Promise<{ title: string; slides: { layoutId: string; purpose: string }[] }> {
+  const { anthropic, model } = client(opts);
+  return planOutline(anthropic, model, system, prompt, opts);
+}
+
 export async function compose(system: DesignSystemIR, prompt: string, opts: ComposeOptions = {}): Promise<DeckPlan> {
   const { anthropic, model } = client(opts);
   const outline = await planOutline(anthropic, model, system, prompt, opts);

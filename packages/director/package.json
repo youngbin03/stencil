@@ -1,5 +1,5 @@
 {
-  "name": "@stencil/renderer",
+  "name": "@stencil/director",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -17,6 +17,10 @@
   },
   "dependencies": {
     "@stencil/ir": "*",
-    "@xmldom/xmldom": "^0.9.7"
+    "@stencil/solver": "*",
+    "@anthropic-ai/sdk": "^0.39.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0"
   }
 }

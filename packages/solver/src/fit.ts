@@ -76,7 +76,10 @@ export function fitText(
   for (;;) {
     const lines = wrapAll(fontSize);
     const totalH = lines.length * fontSize * lineHeight;
-    if (totalH <= box.h) return { lines, fontSize, overflow: false };
+    // A line can exceed width when it is a single unbreakable token (e.g. $120K);
+    // shrink for width too, not just height.
+    const maxLineW = Math.max(...lines.map((l) => estimateWidth(l, fontSize)));
+    if (totalH <= box.h && maxLineW <= box.w * 1.02) return { lines, fontSize, overflow: false };
     if (fontSize <= minFontSize) {
       // Ellipsize: keep as many lines as fit, mark last with an ellipsis.
       const maxLines = Math.max(1, Math.floor(box.h / (fontSize * lineHeight)));

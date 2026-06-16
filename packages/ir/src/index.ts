@@ -341,6 +341,17 @@ export interface RelationGraph {
   edges: RelationEdge[];
 }
 
+/**
+ * Output of the placement director (Phase 4.7-a). Coordinate-free: repeatable
+ * cards (each = role→text) get reflowed by the solver into the layout's row
+ * region; singles map a fixed slot id → text.
+ */
+export interface PlacementPlan {
+  layoutId: string;
+  cards: Record<string, string>[];
+  singles: Record<string, string>;
+}
+
 /** Recurring relation pattern across the theme's slides (Claude vocabulary). */
 export interface RelationConvention {
   pattern: string;
@@ -485,7 +496,16 @@ export interface RenderImageElement {
   ratio?: string;
 }
 
-export type RenderElement = RenderTextElement | RenderImageElement;
+/** A cloned decoration shape (e.g. a card's emphasis rect repeated per card). */
+export interface RenderRectElement {
+  kind: "rect";
+  id: string;
+  bbox: BBox;
+  fill: string;
+  rx?: number;
+}
+
+export type RenderElement = RenderTextElement | RenderImageElement | RenderRectElement;
 
 export interface RenderSlide {
   layoutId: string;
@@ -494,6 +514,8 @@ export interface RenderSlide {
   decorationUrl: string;
   /** Layout background fill (drawn if the decoration fragment lacks one). */
   background?: string;
+  /** Decoration element ids to remove before compositing (cloned by reflow). */
+  suppressDecorationIds?: string[];
   elements: RenderElement[];
   warnings: string[];
 }
