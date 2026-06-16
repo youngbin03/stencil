@@ -23,6 +23,8 @@ export interface DirectorOptions {
   model?: string;
   /** Pool of user/library images the director may bind to image slots. */
   assetPool?: AssetRef[];
+  /** Critique feedback from a previous attempt (Phase 4.7-c revise loop). */
+  feedback?: string;
 }
 
 function maxChars(slot: { bbox: { w: number }; fontSize?: number }): number {
@@ -103,7 +105,8 @@ sizes, colors, or fonts — only text. Use the tool.`,
     messages: [{
       role: "user",
       content: [{ type: "text", text:
-        `Deck: ${deckTitle}\nTopic: ${topic}\nThis slide's purpose: ${purpose}\nLayout archetype: ${layout.archetype ?? "other"}\n\n${cardLine}\n\nFixed single slots (fill each):\n${singleLine}\n\n${imageLine}` }],
+        `Deck: ${deckTitle}\nTopic: ${topic}\nThis slide's purpose: ${purpose}\nLayout archetype: ${layout.archetype ?? "other"}\n\n${cardLine}\n\nFixed single slots (fill each):\n${singleLine}\n\n${imageLine}` +
+        (opts.feedback ? `\n\nThe previous attempt had issues — revise to fix them (shorten text / fewer cards as needed):\n${opts.feedback}` : "") }],
     }],
   });
 

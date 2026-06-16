@@ -7,6 +7,7 @@
     { "path": "packages/classifier" },
     { "path": "packages/composer" },
     { "path": "packages/director" },
+    { "path": "packages/critic" },
     { "path": "packages/solver" },
     { "path": "packages/renderer" }
   ]

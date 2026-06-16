@@ -354,6 +354,18 @@ export interface PlacementPlan {
   images?: Record<string, string>;
 }
 
+/** Vision critique of a rendered slide (Phase 4.7-c, evaluator-optimizer). */
+export interface CritiqueIssue {
+  severity: "high" | "med" | "low";
+  target: string;
+  problem: string;
+  fix: string;
+}
+export interface CritiquePatch {
+  verdict: "accept" | "revise";
+  issues: CritiqueIssue[];
+}
+
 /** Recurring relation pattern across the theme's slides (Claude vocabulary). */
 export interface RelationConvention {
   pattern: string;
