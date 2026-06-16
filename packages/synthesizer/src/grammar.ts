@@ -21,10 +21,20 @@ export interface ArchetypeZone {
   block?: string;             // block id when this is a repeatable card row
 }
 
+export interface ImageZone {
+  xFrac: [number, number];
+  yFrac: [number, number];
+  ratio: number;              // target aspect (w/h) — user image is cover-cropped to it
+  mediaKind?: string;         // photo | device_mockup | avatar | chart_line | logo
+}
+
 export interface ArchetypeSkeleton {
   archetype: string;
   support: number;            // how many example slides backed this pattern
   zones: ArchetypeZone[];
+  /** Image cells this archetype expects (mined from example image slots). Empty
+   *  for text-only archetypes. Filled only when the user supplies images. */
+  imageZones: ImageZone[];
 }
 
 export interface GrammarSpec {
@@ -56,8 +66,28 @@ function mode<T>(xs: T[]): T | undefined {
   return best;
 }
 
+interface ImgSlot { xFrac: number; yFrac: number; wFrac: number; hFrac: number; ratio: number; mediaKind?: string }
+
+/** Cluster example image slots into representative image cells (columns). */
+function mineImageZones(slots: ImgSlot[]): ImageZone[] {
+  if (slots.length === 0) return [];
+  const cols: ImgSlot[][] = [];
+  for (const s of [...slots].sort((a, b) => a.xFrac - b.xFrac)) {
+    const col = cols.find((c) => Math.abs(c[0]!.xFrac - s.xFrac) < 0.1);
+    if (col) col.push(s); else cols.push([s]);
+  }
+  return cols.map((c) => {
+    const x = median(c.map((s) => s.xFrac)), w = median(c.map((s) => s.wFrac));
+    const y = median(c.map((s) => s.yFrac)), h = median(c.map((s) => s.hFrac));
+    const zone: ImageZone = { xFrac: [x, x + w], yFrac: [y, y + h], ratio: median(c.map((s) => s.ratio)) };
+    const mk = mode(c.map((s) => s.mediaKind).filter(Boolean));
+    if (mk) zone.mediaKind = mk;
+    return zone;
+  });
+}
+
 /** Aggregate the regions of one archetype's example slides into a median skeleton. */
-function mineSkeleton(archetype: string, examples: { regions: Region[]; canvas: Canvas }[]): ArchetypeSkeleton | undefined {
+function mineSkeleton(archetype: string, examples: { regions: Region[]; imgSlots: ImgSlot[]; canvas: Canvas }[]): ArchetypeSkeleton | undefined {
   const byZone = new Map<string, { x0: number[]; x1: number[]; y0: number[]; y1: number[]; flow: FlowDirection[]; block: (string | undefined)[]; role: (Role | undefined)[] }>();
   for (const ex of examples) {
     for (const r of ex.regions) {
@@ -85,8 +115,9 @@ function mineSkeleton(archetype: string, examples: { regions: Region[]; canvas: 
     zones.push(zone);
   }
   zones.sort((a, b) => a.yFrac[0] - b.yFrac[0]);
-  if (zones.length === 0) return undefined;
-  return { archetype, support: examples.length, zones };
+  const imageZones = mineImageZones(examples.flatMap((e) => e.imgSlots));
+  if (zones.length === 0 && imageZones.length === 0) return undefined;
+  return { archetype, support: examples.length, zones, imageZones };
 }
 
 export function buildGrammarSpec(system: DesignSystemIR): GrammarSpec {
@@ -100,11 +131,17 @@ export function buildGrammarSpec(system: DesignSystemIR): GrammarSpec {
   }
 
   // Mine a normalized skeleton per archetype from its example slides' regions.
-  const byArch = new Map<string, { regions: Region[]; canvas: Canvas }[]>();
+  const byArch = new Map<string, { regions: Region[]; imgSlots: ImgSlot[]; canvas: Canvas }[]>();
   for (const L of system.layouts) {
     const a = L.archetype ?? "other";
-    if (!L.regions?.length) continue;
-    (byArch.get(a) ?? byArch.set(a, []).get(a)!).push({ regions: L.regions, canvas: system.canvas });
+    if (!L.regions?.length && !L.slots.some((s) => s.type === "image")) continue;
+    const imgSlots: ImgSlot[] = L.slots.filter((s) => s.type === "image").map((s) => ({
+      xFrac: s.bbox.x / system.canvas.w, yFrac: s.bbox.y / system.canvas.h,
+      wFrac: s.bbox.w / system.canvas.w, hFrac: s.bbox.h / system.canvas.h,
+      ratio: s.bbox.h > 0 ? s.bbox.w / s.bbox.h : 1,
+      ...(s.mediaKind ? { mediaKind: s.mediaKind } : {}),
+    }));
+    (byArch.get(a) ?? byArch.set(a, []).get(a)!).push({ regions: L.regions ?? [], imgSlots, canvas: system.canvas });
   }
   const archetypes: ArchetypeSkeleton[] = [];
   for (const [a, exs] of byArch) {

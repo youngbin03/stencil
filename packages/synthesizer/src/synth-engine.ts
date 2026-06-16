@@ -11,10 +11,21 @@ import type { ArchetypeZone, GrammarSpec } from "./grammar.js";
  * geometry is regenerated. Output feeds the existing solver + renderer.
  */
 
+/** A user-provided image (we place, never generate). */
+export interface Asset {
+  id: string;
+  url: string;       // data URI or URL
+  ratio?: number;    // w/h, for best-fit zone matching
+  desc?: string;
+  mediaKind?: string;
+}
+
 export interface ContentPlan {
   archetype: string;
   singles: Partial<Record<Role, string>>;
   cards?: Record<string, string>[];
+  /** Optional user images; placed into the archetype's image zones (cover-crop). */
+  images?: Asset[];
 }
 
 const ZONE_ROLES: Record<string, Role[]> = {
@@ -46,13 +57,35 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
   const { tight, loose, section } = spec.spacing.gaps;
   const hasCards = !!plan.cards?.length;
 
-  // Horizontal placement from the mined x-band of the zone (kept to preserve the
-  // theme's column feel); falls back to a left margin column.
+  // User images → place into this archetype's image zones (cover-crop) and reserve
+  // their space, constraining the text column to the complementary side (or above
+  // an image row). We place, never generate; only as many zones as images given.
+  const margin = snapX(spec.alignment.margin);
+  const snapBox = (z: { xFrac: [number, number]; yFrac: [number, number] }): BBox => {
+    const x = snapX(z.xFrac[0] * W), x1 = snapX(z.xFrac[1] * W);
+    const y = Math.round(z.yFrac[0] * H), y1 = Math.round(z.yFrac[1] * H);
+    return { x, y, w: Math.max(60, x1 - x), h: Math.max(60, y1 - y) };
+  };
+  const useImages = (plan.images ?? []).slice(0, skeleton.imageZones.length);
+  const imageBoxes = skeleton.imageZones.slice(0, useImages.length).map(snapBox);
+  let tx0 = margin, tx1 = W - margin, textBottomCap = H;
+  if (imageBoxes.length) {
+    const minX = Math.min(...imageBoxes.map((b) => b.x));
+    const maxR = Math.max(...imageBoxes.map((b) => b.x + b.w));
+    const minY = Math.min(...imageBoxes.map((b) => b.y));
+    if (maxR - minX > W * 0.6) textBottomCap = Math.max(H * 0.4, minY - section); // image row → text above
+    else if (minX > W * 0.5) tx1 = minX - section;                                 // images right → text left
+    else tx0 = maxR + section;                                                      // images left → text right
+  }
+
+  // Horizontal placement: mined x-band clamped into the text column [tx0, tx1].
   const colX = (id: string, defFracW: number): { x: number; w: number } => {
     const z = zoneById.get(id);
-    const x0 = z ? snapX(z.xFrac[0] * W) : snapX(spec.alignment.margin);
-    const x1 = z ? snapX(z.xFrac[1] * W) : snapX(Math.round(W * (spec.alignment.margin / W + defFracW)));
-    return { x: Math.max(snapX(spec.alignment.margin), x0), w: Math.max(Math.round(W * 0.25), x1 - x0) };
+    let x0 = z ? snapX(z.xFrac[0] * W) : tx0;
+    let x1 = z ? snapX(z.xFrac[1] * W) : Math.round(tx0 + W * defFracW);
+    x0 = Math.min(Math.max(tx0, x0), tx1 - Math.round(W * 0.18));
+    x1 = Math.min(tx1, Math.max(x0 + Math.round(W * 0.2), x1));
+    return { x: x0, w: x1 - x0 };
   };
 
   // Build the vertical stack (header → title → cards|body) as relative blocks,
@@ -77,16 +110,15 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
       if (!blockId) continue;
       const { roles, cs } = cardSpecForBlock(spec, blockId);
       const useRoles = roles.length ? roles : (Object.keys(plan.cards![0]!) as Role[]);
-      const col = colX("cards", 0.9);
-      const rowW = W - 2 * snapX(spec.alignment.margin);
-      const cardW = cs?.cardW ?? Math.round(rowW / Math.max(1, plan.cards!.length) * 0.9);
+      const rowW = tx1 - tx0;
+      const cardW = Math.min(cs?.cardW ?? Math.round(rowW / Math.max(1, plan.cards!.length) * 0.9), Math.round(rowW / Math.max(1, plan.cards!.length)));
       const rowH = cs ? cs.rowBBox.h : Math.ceil(useRoles.reduce((s, r) => s + (spec.type[r]?.size ?? 40) * lh * 1.4, 0));
       const template: CardTemplateSlot[] = cs
         ? cs.template.map((t) => ({ ...t }))
         : useRoles.map((role, i) => ({ role, type: "text" as const, dx: 0, dy: i * Math.ceil((spec.type[role]?.size ?? 40) * 1.4),
             w: cardW, h: Math.ceil((spec.type[role]?.size ?? 40) * 1.3), fontSize: spec.type[role]?.size ?? 40, fontWeight: spec.type[role]?.weight ?? 400, color: spec.colors.text, align: "left" as TextAlign }));
-      items.push({ id: "cards", kind: "cards", x: snapX(spec.alignment.margin), w: rowW, h: rowH, relY: rel });
-      cardSpec = { template, rowBBox: { x: snapX(spec.alignment.margin), y: 0, w: rowW, h: rowH }, cardW, colY0: 0, baseCount: plan.cards!.length, roles: useRoles, memberIds: [], decorationIds: [] };
+      items.push({ id: "cards", kind: "cards", x: tx0, w: rowW, h: rowH, relY: rel });
+      cardSpec = { template, rowBBox: { x: tx0, y: 0, w: rowW, h: rowH }, cardW, colY0: 0, baseCount: plan.cards!.length, roles: useRoles, memberIds: [], decorationIds: [] };
       rel += rowH + section;
       continue;
     }
@@ -101,7 +133,9 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
     rel += h + (zoneId === "header" ? tight : loose);
   }
   const groupH = rel;
-  const top = Math.max(snapX(spec.alignment.margin), Math.round((H - groupH) / 2)); // vertical centering
+  // Center the text group in the available vertical space (full height for side
+  // images; above the band for an image row).
+  const top = Math.min(Math.max(margin, Math.round((textBottomCap - groupH) / 2)), Math.max(margin, textBottomCap - groupH));
 
   const slots: PlacedSlot[] = [];
   const regions: Region[] = [];
@@ -134,11 +168,24 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
     defaultSlots.push("footer");
   }
 
+  // Place user images into the reserved zones (cover-crop), bound by order.
+  const images: Record<string, string> = {};
+  imageBoxes.forEach((bbox, i) => {
+    const id = `image_${i}`;
+    const slot: PlacedSlot = { id, role: "image", type: "image", bbox, align: "left" };
+    const mk = skeleton.imageZones[i]?.mediaKind;
+    if (mk) slot.mediaKind = mk as NonNullable<PlacedSlot["mediaKind"]>;
+    slots.push(slot);
+    images[id] = useImages[i]!.url;
+  });
+
   const layout: Layout = {
     id: `synth_${plan.archetype}_${spec.theme}`,
     decorationRef: "", background: spec.colors.bg,
     slots, regions, defaultSlots,
     ...(cardSpec ? { cardSpec } : {}),
   };
-  return { layout, placement: { layoutId: layout.id, cards: plan.cards ?? [], singles } };
+  const placement: PlacementPlan = { layoutId: layout.id, cards: plan.cards ?? [], singles };
+  if (Object.keys(images).length) placement.images = images;
+  return { layout, placement };
 }
