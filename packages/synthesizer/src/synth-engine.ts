@@ -117,21 +117,43 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
     else tx0 = maxR + section;                                                      // images left → text right
   }
 
-  // Horizontal placement: mined x-band clamped into the text column [tx0, tx1].
-  const colX = (id: string, defFracW: number): { x: number; w: number } => {
+  // Disposition (relation/spatial consumption): the mined skeleton encodes each
+  // zone's horizontal band (xFrac = the theme's anchored_to left/right). When the
+  // theme places title and body in opposite horizontal halves over an overlapping
+  // vertical band, we REPRODUCE that side-by-side instead of discarding x and
+  // stacking into one column. Bounded to the safe title+body case (no cards, no
+  // images) so card archetypes and the overlap-safe stack path are untouched.
+  type Col = "left" | "right" | "main";
+  const titleZ = zoneById.get("title"), bodyZ = zoneById.get("body");
+  const split = !hasCards && imageBoxes.length === 0 && !!titleZ && !!bodyZ
+    && titleZ.xFrac[1] <= 0.56 && bodyZ.xFrac[0] >= 0.42
+    && bodyZ.xFrac[0] - titleZ.xFrac[0] >= 0.2;
+  let splitX = tx1;
+  if (split) {
+    splitX = snapX(((titleZ!.xFrac[1] + bodyZ!.xFrac[0]) / 2) * W);
+    splitX = Math.min(Math.max(splitX, tx0 + Math.round(W * 0.3)), tx1 - Math.round(W * 0.3));
+  }
+  const zoneCol = (id: string): Col => (!split ? "main" : id === "body" ? "right" : "left");
+  const colBounds = (c: Col): [number, number] =>
+    c === "right" ? [splitX, tx1] : c === "left" ? [tx0, splitX - section] : [tx0, tx1];
+
+  // Horizontal placement: mined x-band clamped into the zone's column range.
+  const colX = (id: string, defFracW: number): { x: number; w: number; col: Col } => {
+    const col = zoneCol(id);
+    const [lo, hi] = colBounds(col);
     const z = zoneById.get(id);
-    let x0 = z ? snapX(z.xFrac[0] * W) : tx0;
-    let x1 = z ? snapX(z.xFrac[1] * W) : Math.round(tx0 + W * defFracW);
-    x0 = Math.min(Math.max(tx0, x0), tx1 - Math.round(W * 0.18));
-    x1 = Math.min(tx1, Math.max(x0 + Math.round(W * 0.2), x1));
-    return { x: x0, w: x1 - x0 };
+    let x0 = z ? snapX(z.xFrac[0] * W) : lo;
+    let x1 = z ? snapX(z.xFrac[1] * W) : Math.round(lo + W * defFracW);
+    x0 = Math.min(Math.max(lo, x0), hi - Math.round(W * 0.12));
+    x1 = Math.min(hi, Math.max(x0 + Math.round(W * 0.14), x1));
+    return { x: x0, w: x1 - x0, col };
   };
 
   // Build the vertical stack (header → title → cards|body) as relative blocks,
   // then center the whole group; footer is pinned to the bottom band. This makes
   // overlap impossible while still honouring mined columns, type scale, rhythm and
   // the theme's MEASURED card internals.
-  interface Item { id: string; role?: Role; kind: "single" | "cards"; x: number; w: number; h: number; relY: number; fontSize?: number; }
+  interface Item { id: string; role?: Role; kind: "single" | "cards"; x: number; w: number; h: number; relY: number; col: Col; fontSize?: number; }
   const items: Item[] = [];
   const usedRole = new Set<Role>();
   const pickRole = (zoneId: string): Role | undefined => {
@@ -139,7 +161,7 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
     return prefs.find((r) => plan.singles[r] !== undefined && !usedRole.has(r));
   };
 
-  let rel = 0;
+  const relByCol: Record<Col, number> = { left: 0, right: 0, main: 0 };
   const order = ["header", "title", hasCards ? "cards" : "body"];
   let cardSpec: CardSpec | undefined;
   for (const zoneId of order) {
@@ -160,9 +182,9 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
         ? cs.template.map((t) => (t.fontSize ? { ...t, fontSize: sz(t.fontSize) } : { ...t }))
         : useRoles.map((role, i) => ({ role, type: "text" as const, dx: 0, dy: i * Math.ceil((spec.type[role]?.size ?? 40) * 1.4),
             w: cardW, h: Math.ceil((spec.type[role]?.size ?? 40) * 1.3), fontSize: sz(spec.type[role]?.size ?? 40), fontWeight: spec.type[role]?.weight ?? 400, color: spec.colors.text, align: "left" as TextAlign }));
-      items.push({ id: "cards", kind: "cards", x: tx0, w: rowW, h: rowH, relY: rel });
+      items.push({ id: "cards", kind: "cards", x: tx0, w: rowW, h: rowH, relY: relByCol.main, col: "main" });
       cardSpec = { template, rowBBox: { x: tx0, y: 0, w: rowW, h: rowH }, cardW, colY0: 0, baseCount: plan.cards!.length, roles: useRoles, memberIds: [], decorationIds: [] };
-      rel += rowH + section;
+      relByCol.main += rowH + section;
       continue;
     }
     const role = pickRole(zoneId);
@@ -173,15 +195,16 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
     const lines = role === "title" || role === "headline" || role === "quote" ? 2 : role === "body" || role === "subtitle" ? 3 : 1;
     const h = Math.ceil(fontSize * lh * lines);
     const col = colX(zoneId, role === "title" || role === "quote" ? 0.6 : 0.5);
+    const [, hi] = colBounds(col.col);
     // Mined zone widths come from short source text and can be too narrow for
     // generated copy (titles wrapping into many narrow lines). Enforce a role-based
     // minimum width so headings read on 1-2 lines.
-    const colW = tx1 - tx0;
+    const colW = hi - colBounds(col.col)[0];
     const minW = role === "title" || role === "headline" || role === "quote" ? Math.round(colW * 0.66)
       : role === "body" || role === "subtitle" ? Math.round(colW * 0.55) : col.w;
-    const w = Math.min(Math.max(col.w, minW), tx1 - col.x);
-    items.push({ id: zoneId, role, kind: "single", x: col.x, w, h, relY: rel, fontSize });
-    rel += h + (zoneId === "header" ? tight : loose);
+    const w = Math.min(Math.max(col.w, minW), hi - col.x);
+    items.push({ id: zoneId, role, kind: "single", x: col.x, w, h, relY: relByCol[col.col], col: col.col, fontSize });
+    relByCol[col.col] += h + (zoneId === "header" ? tight : loose);
   }
 
   // Lead-size floor: every slide needs one focal line. If nothing display-sized
@@ -198,23 +221,31 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
       const delta = newH - lead.h;
       lead.fontSize = LEAD_MIN;
       lead.h = newH;
-      for (const it of items) if (it.relY > lead.relY) it.relY += delta;
-      rel += delta;
+      for (const it of items) if (it.col === lead.col && it.relY > lead.relY) it.relY += delta;
+      relByCol[lead.col] += delta;
     }
   }
   // groupH = the ACTUAL ink extent, not `rel` (which carries a phantom trailing gap
   // after the last zone — that inflated the height and left dead space at the
   // bottom). The cohesive group is then centered in the usable vertical space.
+  // Center each column's group independently in the usable vertical space, so a
+  // split layout's left and right columns each sit balanced (and the single-column
+  // stack behaves exactly as before).
   const safeV = Math.round(H * 0.07);
-  const groupH = items.length ? Math.max(...items.map((it) => it.relY + it.h)) : 0;
-  const top = Math.min(Math.max(safeV, Math.round((textBottomCap - groupH) / 2)), Math.max(safeV, textBottomCap - groupH));
+  const topByCol: Record<Col, number> = { left: safeV, right: safeV, main: safeV };
+  for (const c of ["left", "right", "main"] as Col[]) {
+    const cit = items.filter((it) => it.col === c);
+    if (!cit.length) continue;
+    const groupH = Math.max(...cit.map((it) => it.relY + it.h));
+    topByCol[c] = Math.min(Math.max(safeV, Math.round((textBottomCap - groupH) / 2)), Math.max(safeV, textBottomCap - groupH));
+  }
 
   const slots: PlacedSlot[] = [];
   const regions: Region[] = [];
   const singles: Record<string, string> = {};
   const defaultSlots: string[] = [];
   for (const it of items) {
-    const bbox: BBox = { x: it.x, y: top + it.relY, w: it.w, h: it.h };
+    const bbox: BBox = { x: it.x, y: topByCol[it.col] + it.relY, w: it.w, h: it.h };
     if (it.kind === "cards") {
       cardSpec!.rowBBox = bbox; cardSpec!.colY0 = bbox.y;
       regions.push({ id: "cards", bbox, flow: "row", gap: spec.spacing.gaps.normal, allowedBlocks: zoneById.get("cards")?.block ? [zoneById.get("cards")!.block!] : [], slotIds: [], blockId: zoneById.get("cards")?.block ?? "cards" });
