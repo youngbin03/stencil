@@ -72,10 +72,19 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
   const { tight, loose, section } = spec.spacing.gaps;
   const hasCards = !!plan.cards?.length;
 
+  // --- baseline design floor (always enforced, independent of theme) ---
+  // Inner padding: a comfortable safe margin even when the theme's grid is tight
+  // (e.g. colorful's 31px hugged the edges). Minimum readable font size.
+  const SAFE = Math.max(spec.alignment.margin, Math.round(W * 0.05));
+  const MIN_FONT = Math.round(H * 0.017); // ~18px at 1080p — readability floor
+  const LEAD_MIN = Math.round(H * 0.05);  // ~54px — every slide needs one focal line
+  const sz = (v: number): number => Math.max(v, MIN_FONT);
+  const DISPLAY: ReadonlySet<Role> = new Set(["title", "headline", "quote", "kpi", "subtitle"]);
+
   // User images → place into this archetype's image zones (cover-crop) and reserve
   // their space, constraining the text column to the complementary side (or above
   // an image row). We place, never generate; only as many zones as images given.
-  const margin = snapX(spec.alignment.margin);
+  const margin = SAFE;
   const snapBox = (z: { xFrac: [number, number]; yFrac: [number, number] }): BBox => {
     const x = snapX(z.xFrac[0] * W), x1 = snapX(z.xFrac[1] * W);
     const y = Math.round(z.yFrac[0] * H), y1 = Math.round(z.yFrac[1] * H);
@@ -107,7 +116,7 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
   // then center the whole group; footer is pinned to the bottom band. This makes
   // overlap impossible while still honouring mined columns, type scale, rhythm and
   // the theme's MEASURED card internals.
-  interface Item { id: string; role?: Role; kind: "single" | "cards"; x: number; w: number; h: number; relY: number; }
+  interface Item { id: string; role?: Role; kind: "single" | "cards"; x: number; w: number; h: number; relY: number; fontSize?: number; }
   const items: Item[] = [];
   const usedRole = new Set<Role>();
   const pickRole = (zoneId: string): Role | undefined => {
@@ -131,7 +140,7 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
       const template: CardTemplateSlot[] = cs
         ? cs.template.map((t) => ({ ...t }))
         : useRoles.map((role, i) => ({ role, type: "text" as const, dx: 0, dy: i * Math.ceil((spec.type[role]?.size ?? 40) * 1.4),
-            w: cardW, h: Math.ceil((spec.type[role]?.size ?? 40) * 1.3), fontSize: spec.type[role]?.size ?? 40, fontWeight: spec.type[role]?.weight ?? 400, color: spec.colors.text, align: "left" as TextAlign }));
+            w: cardW, h: Math.ceil((spec.type[role]?.size ?? 40) * 1.3), fontSize: sz(spec.type[role]?.size ?? 40), fontWeight: spec.type[role]?.weight ?? 400, color: spec.colors.text, align: "left" as TextAlign }));
       items.push({ id: "cards", kind: "cards", x: tx0, w: rowW, h: rowH, relY: rel });
       cardSpec = { template, rowBBox: { x: tx0, y: 0, w: rowW, h: rowH }, cardW, colY0: 0, baseCount: plan.cards!.length, roles: useRoles, memberIds: [], decorationIds: [] };
       rel += rowH + section;
@@ -141,8 +150,9 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
     if (!role) continue;
     usedRole.add(role);
     const t = spec.type[role];
+    const fontSize = sz(t?.size ?? 24);
     const lines = role === "title" || role === "headline" || role === "quote" ? 2 : role === "body" || role === "subtitle" ? 3 : 1;
-    const h = Math.ceil((t?.size ?? 24) * lh * lines);
+    const h = Math.ceil(fontSize * lh * lines);
     const col = colX(zoneId, role === "title" || role === "quote" ? 0.6 : 0.5);
     // Mined zone widths come from short source text and can be too narrow for
     // generated copy (titles wrapping into many narrow lines). Enforce a role-based
@@ -151,8 +161,27 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
     const minW = role === "title" || role === "headline" || role === "quote" ? Math.round(colW * 0.66)
       : role === "body" || role === "subtitle" ? Math.round(colW * 0.55) : col.w;
     const w = Math.min(Math.max(col.w, minW), tx1 - col.x);
-    items.push({ id: zoneId, role, kind: "single", x: col.x, w, h, relY: rel });
+    items.push({ id: zoneId, role, kind: "single", x: col.x, w, h, relY: rel, fontSize });
     rel += h + (zoneId === "header" ? tight : loose);
+  }
+
+  // Lead-size floor: every slide needs one focal line. If nothing display-sized
+  // exists (no cards, no title/headline/kpi), promote the largest single to LEAD_MIN.
+  const hasDisplay = !!cardSpec || items.some((it) => it.role && DISPLAY.has(it.role) && (it.fontSize ?? 0) >= LEAD_MIN);
+  if (!hasDisplay) {
+    // Promote the most content-meaningful single (title/body before label/eyebrow),
+    // so the focal line carries substance — not a kicker like "Traction".
+    const order = ["title", "headline", "quote", "subtitle", "body", "kpi", "bullet", "label", "eyebrow", "caption", "footer"];
+    const lead = [...items].filter((it) => it.kind === "single")
+      .sort((a, b) => order.indexOf(a.role as string) - order.indexOf(b.role as string))[0];
+    if (lead && (lead.fontSize ?? 0) < LEAD_MIN) {
+      const newH = Math.ceil(LEAD_MIN * lh * 2);
+      const delta = newH - lead.h;
+      lead.fontSize = LEAD_MIN;
+      lead.h = newH;
+      for (const it of items) if (it.relY > lead.relY) it.relY += delta;
+      rel += delta;
+    }
   }
   const groupH = rel;
   // Center the text group in the available vertical space (full height for side
@@ -171,7 +200,7 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
       continue;
     }
     const t = spec.type[it.role!];
-    slots.push({ id: it.id, role: it.role!, type: "text", bbox, align: "left", fontSize: t?.size ?? 24, fontWeight: t?.weight ?? 400, color: spec.colors.text, ...(t?.family ? { fontFamily: t.family } : {}) });
+    slots.push({ id: it.id, role: it.role!, type: "text", bbox, align: "left", fontSize: it.fontSize ?? sz(t?.size ?? 24), fontWeight: t?.weight ?? 400, color: spec.colors.text, ...(t?.family ? { fontFamily: t.family } : {}) });
     regions.push({ id: it.id, bbox, flow: "column", gap: loose, allowedBlocks: [], slotIds: [it.id] });
     singles[it.id] = plan.singles[it.role!]!;
     defaultSlots.push(it.id);
@@ -184,7 +213,7 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
     const h = Math.ceil((t?.size ?? 20) * lh);
     const col = colX("footer", 0.5);
     const bbox: BBox = { x: col.x, y: Math.round(H * 0.92), w: col.w, h };
-    slots.push({ id: "footer", role: fRole, type: "text", bbox, align: "left", fontSize: t?.size ?? 20, fontWeight: t?.weight ?? 400, color: spec.colors.text, ...(t?.family ? { fontFamily: t.family } : {}) });
+    slots.push({ id: "footer", role: fRole, type: "text", bbox, align: "left", fontSize: sz(t?.size ?? 20), fontWeight: t?.weight ?? 400, color: spec.colors.text, ...(t?.family ? { fontFamily: t.family } : {}) });
     regions.push({ id: "footer", bbox, flow: "row", gap: tight, allowedBlocks: [], slotIds: ["footer"] });
     singles.footer = plan.singles[fRole]!;
     defaultSlots.push("footer");
