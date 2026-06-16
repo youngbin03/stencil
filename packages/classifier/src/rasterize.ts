@@ -7,10 +7,16 @@ import type { ManifestSlot } from "@stencil/ir";
  * structural metadata and reads text from the image.
  */
 
+import { resolve } from "node:path";
+import { existsSync } from "node:fs";
+
+const FONTS_DIR = process.env.STENCIL_FONTS_DIR ?? resolve(process.cwd(), "fonts");
+
 export function rasterize(svg: string, width = 1280): Buffer {
   const resvg = new Resvg(svg, {
     fitTo: { mode: "width", value: width },
-    font: { loadSystemFonts: true },
+    // Embed theme fonts so the raster matches opentype.js measurements.
+    font: { loadSystemFonts: true, ...(existsSync(FONTS_DIR) ? { fontDirs: [FONTS_DIR] } : {}) },
     background: "white",
   });
   return resvg.render().asPng();

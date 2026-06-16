@@ -40,15 +40,13 @@ function textElement(slot: PlacedSlot, content: string, tokens: Tokens, canvas: 
   const t = typeFor(slot.role, tokens);
   const baseFont = slot.fontSize ?? t?.size ?? 16;
   const lineHeight = t?.lineHeight ?? DEFAULT_LINE_HEIGHT;
-  // Fit within the slot to avoid overlapping neighbors (slot positions are
-  // fixed in v1). Respect the measured width; allow a small height cushion so
-  // a one-line original can take ~2 lines. Reflowing neighbors when a slot
-  // grows is a Phase 4.5 (relation-graph) concern.
+  const family = slot.fontFamily ?? t?.family ?? tokens.fontFamily;
+  // Fit within the slot using accurate font metrics so a line never overflows.
+  // Width is hard-respected; a small height cushion lets a 1-line original take
+  // ~2 lines. Neighbor reflow on growth is handled by the card reflow path.
   const availW = slot.bbox.w > 0 ? slot.bbox.w : canvas.w * 0.5;
-  // Stay within the slot's measured height (only guarantee 1 line) so growing
-  // text shrinks instead of overrunning neighbors. Neighbor reflow = Phase 4.5.
   const availH = Math.max(slot.bbox.h, baseFont * lineHeight);
-  const fit = fitText(content, { w: availW, h: availH }, baseFont, lineHeight);
+  const fit = fitText(content, { w: availW, h: availH }, baseFont, lineHeight, family);
   const el: RenderTextElement = {
     kind: "text",
     id: slot.id,
@@ -56,7 +54,7 @@ function textElement(slot: PlacedSlot, content: string, tokens: Tokens, canvas: 
     bbox: slot.bbox,
     lines: fit.lines,
     fontSize: fit.fontSize,
-    fontFamily: slot.fontFamily ?? t?.family ?? tokens.fontFamily,
+    fontFamily: family,
     fontWeight: slot.fontWeight ?? t?.weight ?? 400,
     color: slot.color ?? tokens.colors.text,
     align: (slot.align ?? "left") satisfies TextAlign,
