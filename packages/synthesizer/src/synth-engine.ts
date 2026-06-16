@@ -157,7 +157,7 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
       const cardW = Math.min(cs?.cardW ?? Math.round(rowW / Math.max(1, plan.cards!.length) * 0.9), Math.round(rowW / Math.max(1, plan.cards!.length)));
       const rowH = cs ? cs.rowBBox.h : Math.ceil(useRoles.reduce((s, r) => s + (spec.type[r]?.size ?? 40) * lh * 1.4, 0));
       const template: CardTemplateSlot[] = cs
-        ? cs.template.map((t) => ({ ...t }))
+        ? cs.template.map((t) => (t.fontSize ? { ...t, fontSize: sz(t.fontSize) } : { ...t }))
         : useRoles.map((role, i) => ({ role, type: "text" as const, dx: 0, dy: i * Math.ceil((spec.type[role]?.size ?? 40) * 1.4),
             w: cardW, h: Math.ceil((spec.type[role]?.size ?? 40) * 1.3), fontSize: sz(spec.type[role]?.size ?? 40), fontWeight: spec.type[role]?.weight ?? 400, color: spec.colors.text, align: "left" as TextAlign }));
       items.push({ id: "cards", kind: "cards", x: tx0, w: rowW, h: rowH, relY: rel });
@@ -202,10 +202,12 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
       rel += delta;
     }
   }
-  const groupH = rel;
-  // Center the text group in the available vertical space (full height for side
-  // images; above the band for an image row).
-  const top = Math.min(Math.max(margin, Math.round((textBottomCap - groupH) / 2)), Math.max(margin, textBottomCap - groupH));
+  // groupH = the ACTUAL ink extent, not `rel` (which carries a phantom trailing gap
+  // after the last zone — that inflated the height and left dead space at the
+  // bottom). The cohesive group is then centered in the usable vertical space.
+  const safeV = Math.round(H * 0.07);
+  const groupH = items.length ? Math.max(...items.map((it) => it.relY + it.h)) : 0;
+  const top = Math.min(Math.max(safeV, Math.round((textBottomCap - groupH) / 2)), Math.max(safeV, textBottomCap - groupH));
 
   const slots: PlacedSlot[] = [];
   const regions: Region[] = [];

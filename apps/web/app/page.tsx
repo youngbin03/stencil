@@ -55,9 +55,13 @@ export default function Page() {
   }
 
   return (
-    <main className="wrap">
-      <div className="brand">Stencil</div>
-      <div className="sub">Generate an on-brand deck from a baked design system — re-composition, never the original template.</div>
+    <>
+      <main className="wrap">
+        <div className="hero">
+          <span className="kicker"><span className="logo" /> Stencil</span>
+          <h1>Generate a deck, not a template fill</h1>
+          <p>New layouts synthesized from a theme&apos;s design grammar — spacing, hierarchy, and components — never a copied slide.</p>
+        </div>
 
       <section className="panel">
         <div className="row">
@@ -104,8 +108,9 @@ export default function Page() {
         </div>
       </section>
 
-      {deck && <DeckView deck={deck} />}
-    </main>
+        {deck && <DeckView deck={deck} />}
+      </main>
+    </>
   );
 }
 
@@ -132,17 +137,17 @@ function SlideCard({ slide, index }: { slide: Slide; index: number }) {
   return (
     <div className="slide">
       <div className="cap">
-        <span>{index + 1}.{slide.layoutId ? ` ${slide.layoutId}` : ""}</span>
+        <span className="idx">{String(index + 1).padStart(2, "0")}</span>
         {slide.archetype && <span className="tag">{slide.archetype}</span>}
         <span>{slide.purpose}</span>
         {slide.gate && (
-          <span className="warn" style={{ color: slide.gate === "PASS" ? "#12b886" : slide.gate === "REVISE" ? "#c2410c" : "#e5484d" }}>
+          <span className={`score ${slide.gate.toLowerCase()}`}>
             {slide.gate} · {slide.overall?.toFixed(1)} · nov {slide.novelty?.toFixed(0)}
           </span>
         )}
-        {warn.length > 0 && <span className="warn">⚠ {warn.length}</span>}
-        <a className="dl" href={href} download={`${String(index + 1).padStart(2, "0")}_${slide.layoutId}.svg`}>
-          download SVG
+        {warn.length > 0 && !slide.gate && <span className="score revise">⚠ {warn.length}</span>}
+        <a className="dl" href={href} download={`${String(index + 1).padStart(2, "0")}_${slide.layoutId ?? slide.archetype ?? "slide"}.svg`}>
+          SVG
         </a>
       </div>
       <div className="frame" dangerouslySetInnerHTML={{ __html: slide.svg }} />
