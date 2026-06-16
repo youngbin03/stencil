@@ -16,6 +16,8 @@ import type {
 const COL_TOL = 80;
 const DECO_RATIO_MIN = 0.25;
 const DECO_RATIO_MAX = 4;
+/** A title slot must sit within this many px of the mid band's top to count. */
+const TITLE_TOP_TOL = 90;
 
 function union(boxes: BBox[]): BBox {
   const minX = Math.min(...boxes.map((b) => b.x));
@@ -148,13 +150,23 @@ export function extractRegions(
   const card = detectCard(slots, graph);
   const cardSet = new Set(card?.memberIds ?? []);
 
-  const header = content.filter((s) => s.bbox.y < canvas.h * 0.15 && !cardSet.has(s.id));
+  // Header/footer = SMALL strip slots fully contained in the top/bottom band — not
+  // a tall content block that merely starts high (that belongs to title/body).
+  const header = content.filter((s) => s.bbox.y < canvas.h * 0.15 && s.bbox.y + s.bbox.h < canvas.h * 0.28 && !cardSet.has(s.id));
   const footer = content.filter((s) => s.bbox.y > canvas.h * 0.85 && !cardSet.has(s.id));
   const stripIds = new Set([...header, ...footer].map((s) => s.id));
   const mid = content.filter((s) => !stripIds.has(s.id) && !cardSet.has(s.id));
 
-  const titleSlot = [...mid].filter((s) => s.type === "text").sort((a, b) => (b.fontSize ?? 0) - (a.fontSize ?? 0))[0];
-  const title = titleSlot ? [titleSlot] : [];
+  // Title = the single largest-font slot, but only when it is a genuine heading:
+  // its role must be UNIQUE in the mid band and it must sit at the top. In stat /
+  // kpi grids the biggest slot is a repeated metric, not a title — extracting one
+  // there splits an interleaved title/body pair that overlaps vertically.
+  const midText = [...mid].filter((s) => s.type === "text");
+  const biggest = [...midText].sort((a, b) => (b.fontSize ?? 0) - (a.fontSize ?? 0))[0];
+  const topY = midText.length ? Math.min(...midText.map((s) => s.bbox.y)) : 0;
+  const roleUnique = biggest ? midText.filter((s) => s.role === biggest.role).length === 1 : false;
+  const atTop = biggest ? biggest.bbox.y <= topY + TITLE_TOP_TOL : false;
+  const title = biggest && roleUnique && atTop ? [biggest] : [];
   const titleIds = new Set(title.map((s) => s.id));
   const body = mid.filter((s) => !titleIds.has(s.id));
 

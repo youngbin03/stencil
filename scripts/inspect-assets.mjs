@@ -26,6 +26,25 @@ for (const theme of Object.keys(THEME_DIR)) {
   const g = sys.grammar;
   const conventions = (g.groups ?? []).map((gr) => gr.roles.join("+")).join(", ") || "(none)";
 
+  const cw = sys.canvas?.w ?? 1920;
+  const ch = sys.canvas?.h ?? 1080;
+  // SVG overlay of regions (bbox solid) + their safeArea growth limit (dashed).
+  const regionOverlay = (regions) => {
+    if (!regions?.length) return "";
+    const colors = { header: "#e6194b", title: "#3cb44b", cards: "#4363d8", body: "#f58231", footer: "#911eb4" };
+    const parts = regions.map((r) => {
+      const c = colors[r.id] ?? "#888";
+      const b = r.bbox;
+      const sa = r.safeArea;
+      const saRect = sa
+        ? `<rect x="${sa.x}" y="${sa.y}" width="${sa.w}" height="${sa.h}" fill="none" stroke="${c}" stroke-width="3" stroke-dasharray="14 10" opacity="0.7"/>`
+        : "";
+      return `${saRect}<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="${c}" fill-opacity="0.10" stroke="${c}" stroke-width="2"/>` +
+        `<text x="${b.x + 6}" y="${b.y + 26}" font-size="26" fill="${c}" font-family="sans-serif">${r.id} (${r.flow})</text>`;
+    }).join("");
+    return `<svg viewBox="0 0 ${cw} ${ch}" class="overlay" preserveAspectRatio="xMidYMid meet">${parts}</svg>`;
+  };
+
   const cards = (sys.layouts ?? [])
     .map((L) => {
       const name = L.id.replace(`${theme}_`, "");
@@ -35,13 +54,24 @@ for (const theme of Object.keys(THEME_DIR)) {
         .map((s) => (s.mediaKind ? `${s.role}:${s.mediaKind}${s.replaceable ? "*" : ""}` : s.role))
         .join(", ");
       const arche = L.archetype ? `<span class="arche">${L.archetype}</span>` : "";
+      const regions = L.regions ?? [];
+      const edges = L.relationGraph?.edges ?? [];
+      const avoids = edges.filter((e) => e.type === "avoids").length;
+      const over = edges.filter((e) => e.type === "over").length;
+      const grows = regions
+        .filter((r) => r.safeArea && r.safeArea.h > r.bbox.h + 1)
+        .map((r) => `${r.id}+${Math.round(r.safeArea.h - r.bbox.h)}`)
+        .join(", ") || "(none)";
+      const card = L.cardSpec ? ` · card×${L.cardSpec.baseCount}[${(L.cardSpec.roles ?? []).join("/")}]` : "";
       return `<div class="card">
         <h4>${name} ${arche}<span class="bg" style="background:${L.background}"></span><code>${L.background}</code></h4>
         <div class="pair">
-          <figure><figcaption>original</figcaption><img src="${orig}"></figure>
+          <figure><figcaption>original + regions / safeArea(dashed)</figcaption>
+            <div class="stack"><img src="${orig}">${regionOverlay(regions)}</div></figure>
           <figure><figcaption>decoration</figcaption><img src="${deco}"></figure>
         </div>
         <p class="slots">slots: ${slotList || "(none)"}</p>
+        <p class="meta">regions: ${regions.length} · grow room: ${grows} · relations: ${avoids} avoids, ${over} over${card}</p>
       </div>`;
     })
     .join("\n");
@@ -77,8 +107,10 @@ const html = `<!doctype html><meta charset="utf-8"><title>Stencil — design sys
   .arche{font-size:10px;background:#111;color:#fff;border-radius:4px;padding:1px 6px}
   .bg{width:14px;height:14px;border-radius:3px;border:1px solid #ccc;display:inline-block}
   .pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  figure{margin:0} figcaption{font-size:11px;color:#999} img{width:100%;border:1px solid #eee;border-radius:4px;background:#fff}
+  figure{margin:0} figcaption{font-size:11px;color:#999} img{width:100%;border:1px solid #eee;border-radius:4px;background:#fff;display:block}
+  .stack{position:relative} .stack img{display:block} .overlay{position:absolute;inset:0;width:100%;height:100%}
   .slots{font-size:11px;color:#666;margin:8px 0 0} code{font-size:11px;color:#666}
+  .meta{font-size:11px;color:#2a6;margin:4px 0 0;font-family:ui-monospace,monospace}
 </style>
 <h1>Stencil — design systems (${sections.length} themes)</h1>
 ${sections.join("\n")}`;
