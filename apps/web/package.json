@@ -9,11 +9,13 @@
     "start": "next start -p 3000"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
     "@stencil/composer": "*",
     "@stencil/director": "*",
     "@stencil/ir": "*",
     "@stencil/renderer": "*",
     "@stencil/solver": "*",
+    "@stencil/synthesizer": "*",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

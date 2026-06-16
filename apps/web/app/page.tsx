@@ -6,21 +6,26 @@ const THEMES = ["colorful", "black", "green"] as const;
 type Theme = (typeof THEMES)[number];
 
 interface Slide {
-  layoutId: string;
+  layoutId?: string;
   archetype?: string;
   purpose: string;
   svg: string;
-  warnings: string[];
+  warnings?: string[];
+  gate?: "PASS" | "REVISE" | "REJECT";
+  novelty?: number;
+  overall?: number;
 }
 interface Deck {
   title: string;
   theme: Theme;
-  canvas: { w: number; h: number };
+  mode?: string;
   slides: Slide[];
 }
+type Mode = "filler" | "synthesis";
 
 export default function Page() {
   const [theme, setTheme] = useState<Theme>("colorful");
+  const [mode, setMode] = useState<Mode>("synthesis");
   const [prompt, setPrompt] = useState(
     "Aero — an AI design assistant: features, traction, pricing, team, and roadmap",
   );
@@ -37,7 +42,7 @@ export default function Page() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ theme, prompt, slideCount }),
+        body: JSON.stringify({ theme, prompt, slideCount, mode }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "generation failed");
@@ -55,14 +60,23 @@ export default function Page() {
       <div className="sub">Generate an on-brand deck from a baked design system — re-composition, never the original template.</div>
 
       <section className="panel">
-        <div className="field">
-          <label>Theme</label>
-          <div className="seg">
-            {THEMES.map((t) => (
-              <button key={t} aria-pressed={theme === t} onClick={() => setTheme(t)}>
-                {t}
-              </button>
-            ))}
+        <div className="row">
+          <div className="field">
+            <label>Theme</label>
+            <div className="seg">
+              {THEMES.map((t) => (
+                <button key={t} aria-pressed={theme === t} onClick={() => setTheme(t)}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="field">
+            <label>Mode</label>
+            <div className="seg">
+              <button aria-pressed={mode === "synthesis"} onClick={() => setMode("synthesis")}>synthesis</button>
+              <button aria-pressed={mode === "filler"} onClick={() => setMode("filler")}>filler</button>
+            </div>
           </div>
         </div>
         <div className="field">
@@ -114,15 +128,18 @@ function SlideCard({ slide, index }: { slide: Slide; index: number }) {
     () => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(slide.svg)}`,
     [slide.svg],
   );
-  const warn = slide.warnings.filter((w) => /high|overlap|out_of|overflow/.test(w));
+  const warn = (slide.warnings ?? []).filter((w) => /high|overlap|out_of|overflow/.test(w));
   return (
     <div className="slide">
       <div className="cap">
-        <span>
-          {index + 1}. {slide.layoutId}
-        </span>
+        <span>{index + 1}.{slide.layoutId ? ` ${slide.layoutId}` : ""}</span>
         {slide.archetype && <span className="tag">{slide.archetype}</span>}
         <span>{slide.purpose}</span>
+        {slide.gate && (
+          <span className="warn" style={{ color: slide.gate === "PASS" ? "#12b886" : slide.gate === "REVISE" ? "#c2410c" : "#e5484d" }}>
+            {slide.gate} · {slide.overall?.toFixed(1)} · nov {slide.novelty?.toFixed(0)}
+          </span>
+        )}
         {warn.length > 0 && <span className="warn">⚠ {warn.length}</span>}
         <a className="dl" href={href} download={`${String(index + 1).padStart(2, "0")}_${slide.layoutId}.svg`}>
           download SVG
