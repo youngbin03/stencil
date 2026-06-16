@@ -117,12 +117,19 @@ export function solveDeckSlide(layout: Layout, plan: PlacementPlan, tokens: Toke
   const warnings: string[] = [];
   const elements: RenderElement[] = [];
 
-  // Fixed singles.
+  // Image slots first (under text). 4.7-b — placement (bind+crop), not generation.
+  for (const [id, url] of Object.entries(plan.images ?? {})) {
+    const slot = layout.slots.find((s) => s.id === id);
+    if (slot && url) elements.push(imageElement(slot, url));
+  }
+
+  // Fixed singles (text).
   for (const [id, text] of Object.entries(plan.singles)) {
     const slot = layout.slots.find((s) => s.id === id);
     if (!slot || !text) continue;
     if (slot.role === "decoration" || slot.role === "divider") continue;
-    elements.push(slot.type === "image" ? imageElement(slot, text) : textElement(slot, text, tokens, canvas));
+    if (slot.type === "image") continue; // images handled above
+    elements.push(textElement(slot, text, tokens, canvas));
   }
 
   // Repeatable cards.

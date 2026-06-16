@@ -10,9 +10,19 @@ import { detectRepeatGroup } from "@stencil/solver";
  * positions, sizes, or colors.
  */
 
+export interface AssetRef {
+  id: string;
+  /** URL or data-URI placed into the slot. */
+  url: string;
+  /** Short description to help the model match assets to slots. */
+  desc?: string;
+}
+
 export interface DirectorOptions {
   apiKey?: string;
   model?: string;
+  /** Pool of user/library images the director may bind to image slots. */
+  assetPool?: AssetRef[];
 }
 
 function maxChars(slot: { bbox: { w: number }; fontSize?: number }): number {
@@ -33,6 +43,13 @@ export async function planSlide(
   const singleSlots = layout.slots
     .filter((s) => s.type === "text" && !memberIds.has(s.id) && s.role !== "decoration" && s.role !== "divider")
     .map((s) => ({ id: s.id, role: s.role, max: maxChars(s) }));
+  const imageSlots = layout.slots.filter((s) => s.type === "image");
+  const pool = opts.assetPool ?? [];
+  const imageLine = imageSlots.length && pool.length
+    ? `Image slots to fill from the asset pool (pick the best assetId for each):\n` +
+      imageSlots.map((s) => `- ${s.id} (${s.mediaKind ?? "image"})`).join("\n") +
+      `\nAsset pool:\n` + pool.map((a) => `- ${a.id}${a.desc ? `: ${a.desc}` : ""}`).join("\n")
+    : "No image slots to fill (images: []).";
 
   // No repeatable card → fall back to a singles-only plan (still relation-safe).
   const cardLine = group
@@ -73,6 +90,10 @@ sizes, colors, or fonts — only text. Use the tool.`,
             type: "array",
             items: { type: "object", properties: { id: { type: "string" }, text: { type: "string" } }, required: ["id", "text"], additionalProperties: false },
           },
+          images: {
+            type: "array",
+            items: { type: "object", properties: { slotId: { type: "string" }, assetId: { type: "string" } }, required: ["slotId", "assetId"], additionalProperties: false },
+          },
         },
         required: ["cards", "singles"],
         additionalProperties: false,
@@ -82,7 +103,7 @@ sizes, colors, or fonts — only text. Use the tool.`,
     messages: [{
       role: "user",
       content: [{ type: "text", text:
-        `Deck: ${deckTitle}\nTopic: ${topic}\nThis slide's purpose: ${purpose}\nLayout archetype: ${layout.archetype ?? "other"}\n\n${cardLine}\n\nFixed single slots (fill each):\n${singleLine}` }],
+        `Deck: ${deckTitle}\nTopic: ${topic}\nThis slide's purpose: ${purpose}\nLayout archetype: ${layout.archetype ?? "other"}\n\n${cardLine}\n\nFixed single slots (fill each):\n${singleLine}\n\n${imageLine}` }],
     }],
   });
 
@@ -91,6 +112,7 @@ sizes, colors, or fonts — only text. Use the tool.`,
   const input = tool.input as {
     cards: { slots: { role: string; text: string }[] }[];
     singles: { id: string; text: string }[];
+    images?: { slotId: string; assetId: string }[];
   };
 
   const cardRoleSet = new Set(cardRoles);
@@ -104,5 +126,14 @@ sizes, colors, or fonts — only text. Use the tool.`,
   const singles: Record<string, string> = {};
   for (const s of input.singles) if (validSingle.has(s.id)) singles[s.id] = s.text;
 
-  return { layoutId: layout.id, cards, singles };
+  const validImage = new Set(imageSlots.map((s) => s.id));
+  const poolById = new Map(pool.map((a) => [a.id, a.url]));
+  const images: Record<string, string> = {};
+  for (const b of input.images ?? []) {
+    if (validImage.has(b.slotId) && poolById.has(b.assetId)) images[b.slotId] = poolById.get(b.assetId)!;
+  }
+
+  const plan: PlacementPlan = { layoutId: layout.id, cards, singles };
+  if (Object.keys(images).length) plan.images = images;
+  return plan;
 }

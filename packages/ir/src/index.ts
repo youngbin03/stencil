@@ -350,6 +350,8 @@ export interface PlacementPlan {
   layoutId: string;
   cards: Record<string, string>[];
   singles: Record<string, string>;
+  /** Image slot id → asset URL/data-URI to place (cover-cropped). 4.7-b. */
+  images?: Record<string, string>;
 }
 
 /** Recurring relation pattern across the theme's slides (Claude vocabulary). */

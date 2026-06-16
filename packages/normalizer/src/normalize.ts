@@ -9,6 +9,7 @@ import type {
   UnmappedLayer,
 } from "@stencil/ir";
 import { mapRole } from "./roleMap.js";
+import { accumulatedTransform, applyBBox } from "./transform.js";
 
 /**
  * M0 normalizer (DEVDOC 6/8.0). Reads a Figma SVG with real <text> nodes and
@@ -118,19 +119,25 @@ function buildTextSlot(el: Element): ManifestSlot {
   return slot;
 }
 
-function buildImageSlot(el: Element): ManifestSlot {
-  const id = el.getAttribute("id") ?? "image";
-  return {
-    id,
-    role: "image",
-    type: "image",
-    bbox: {
-      x: num(el, "x") ?? 0,
-      y: num(el, "y") ?? 0,
-      w: num(el, "width") ?? 0,
-      h: num(el, "height") ?? 0,
-    },
+function isInDefs(el: Element): boolean {
+  let p: Element | null = el.parentNode as Element | null;
+  while (p) {
+    if (p.nodeName?.toLowerCase() === "defs") return true;
+    p = p.parentNode as Element | null;
+  }
+  return false;
+}
+
+/** Image slot from an element (pattern-fill rect or <image>), transform-applied. */
+function buildImageSlot(el: Element, index: number): ManifestSlot {
+  const local: BBox = {
+    x: num(el, "x") ?? 0,
+    y: num(el, "y") ?? 0,
+    w: num(el, "width") ?? 0,
+    h: num(el, "height") ?? 0,
   };
+  const bbox = applyBBox(local, accumulatedTransform(el));
+  return { id: el.getAttribute("id") || `image_${index}`, role: "image", type: "image", bbox };
 }
 
 export function normalizeSvg(svg: string, opts: NormalizeOptions): SlotManifest {
@@ -149,8 +156,19 @@ export function normalizeSvg(svg: string, opts: NormalizeOptions): SlotManifest 
   const texts = doc.getElementsByTagName("text");
   for (let i = 0; i < texts.length; i++) slots.push(buildTextSlot(texts[i]!));
 
+  // Image slots: pattern-fill rects (placeholders) + standalone <image> outside
+  // <defs>. The Checker.png inside <defs>/<pattern> is the texture, not a slot.
+  let imgIdx = 0;
+  const rects = doc.getElementsByTagName("rect");
+  for (let i = 0; i < rects.length; i++) {
+    const r = rects[i]!;
+    const fill = r.getAttribute("fill") ?? "";
+    if (fill.startsWith("url(#pattern") && !isInDefs(r)) slots.push(buildImageSlot(r, imgIdx++));
+  }
   const images = doc.getElementsByTagName("image");
-  for (let i = 0; i < images.length; i++) slots.push(buildImageSlot(images[i]!));
+  for (let i = 0; i < images.length; i++) {
+    if (!isInDefs(images[i]!)) slots.push(buildImageSlot(images[i]!, imgIdx++));
+  }
 
   // Non-text/image layers with a semantic id → unmapped (kept in base template).
   const all = doc.getElementsByTagName("*");

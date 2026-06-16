@@ -1,4 +1,5 @@
 import { DOMParser, type Element } from "@xmldom/xmldom";
+import { accumulatedTransform, applyBBox } from "@stencil/normalizer";
 import type {
   AnchorRegion,
   BBox,
@@ -94,10 +95,11 @@ function isInDefs(el: Element): boolean {
 
 function collectShapes(doc: ReturnType<DOMParser["parseFromString"]>): Shape[] {
   const shapes: Shape[] = [];
-  const push = (el: Element, bbox: BBox | undefined): void => {
-    if (!bbox || isInDefs(el)) return;
+  const push = (el: Element, local: BBox | undefined): void => {
+    if (!local || isInDefs(el)) return;
     const fill = el.getAttribute("fill") ?? "";
     if (fill === "none") return;
+    const bbox = applyBBox(local, accumulatedTransform(el)); // transform-aware
     shapes.push({ tag: el.nodeName.toLowerCase(), id: el.getAttribute("id") ?? "", bbox, fill });
   };
   for (const t of ["rect", "circle", "ellipse", "path", "image", "polygon"]) {
@@ -140,7 +142,7 @@ export function extractDecorationModel(
     const sal = Math.min(1, areaNorm * 2) * (0.5 + 0.5 * contrast(fill, bg));
 
     let kind: DecorationElement["kind"];
-    if (s.tag === "image") kind = "image_holder";
+    if (s.tag === "image" || fill.startsWith("url(#pattern")) kind = "image_holder";
     else if (s.tag === "rect" && bbox.w >= canvas.w * 0.98 && bbox.h >= canvas.h * 0.98) kind = "background";
     else if (minSide <= 4 || aspect >= 25 || aspect <= 0.04) kind = "divider";
     else if (areaNorm >= 0.05) kind = "emphasis";
