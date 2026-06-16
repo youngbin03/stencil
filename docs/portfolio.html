@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Stencil — Design-Grammar Slide Synthesis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
+<style>
+  :root{
+    --ink:#0a0a0a; --muted:#6b6b6b; --faint:#9a9a9a; --line:#ebebeb; --line2:#d9d9d9;
+    --bg:#ffffff; --fill:#f6f6f7; --green:#0a7d33; --blue:#1f6feb; --amber:#9a5b00;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 Inter,-apple-system,system-ui,sans-serif;letter-spacing:-0.011em;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+  section{padding:64px 0;border-top:1px solid var(--line)}
+  section:first-of-type{border-top:0}
+  h1{font-size:46px;line-height:1.08;letter-spacing:-0.035em;margin:0 0 16px;font-weight:800}
+  h2{font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin:0 0 28px}
+  h3{font-size:20px;letter-spacing:-0.02em;margin:0 0 6px;font-weight:700}
+  p{margin:0 0 12px;color:#2a2a2a}
+  .lead{font-size:19px;color:var(--muted);max-width:680px}
+  .kicker{display:inline-flex;align-items:center;gap:9px;font-weight:700;font-size:15px;margin-bottom:22px}
+  .logo{width:18px;height:18px;border-radius:5px;background:var(--ink);display:inline-block}
+  .pill{display:inline-block;font-size:12px;font-weight:600;color:var(--muted);border:1px solid var(--line2);border-radius:30px;padding:4px 12px;margin:4px 6px 0 0}
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:760px){.g2,.g3{grid-template-columns:1fr}}
+  .card{border:1px solid var(--line);border-radius:14px;padding:22px;background:var(--bg)}
+  .card .n{font-size:12px;font-weight:700;color:var(--faint);font-variant-numeric:tabular-nums}
+  .card p{font-size:14.5px;color:var(--muted);margin:0}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;color:#444;background:var(--fill);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:block;white-space:pre-wrap;margin-top:10px}
+  figure{margin:0}
+  .shot{width:100%;border:1px solid var(--line);border-radius:10px;display:block;background:#fff;aspect-ratio:16/9;object-fit:cover}
+  figcaption{font-size:12.5px;color:var(--muted);margin-top:8px}
+  .tag{display:inline-block;background:var(--ink);color:#fff;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;margin-right:6px}
+  .score{font-size:11px;font-weight:700;border-radius:20px;padding:2px 9px}
+  .pass{color:var(--green);background:#f3fbf5;border:1px solid #cdeed5}
+  .col h4{display:flex;align-items:center;gap:8px;font-size:15px;margin:0 0 14px}
+  .col h4 b{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .item{padding:12px 0;border-top:1px solid var(--line)}
+  .item:first-of-type{border-top:0}
+  .item .t{font-weight:700;font-size:15px}
+  .item .d{font-size:13.5px;color:var(--muted)}
+  .diagram{width:100%;border:1px solid var(--line);border-radius:14px;background:var(--fill);padding:8px}
+  .foot{color:var(--muted);font-size:13.5px;text-align:center;padding:40px 0 64px}
+  .two{display:grid;grid-template-columns:1.1fr 1fr;gap:22px;align-items:start}
+  @media(max-width:760px){.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <section>
+    <div class="kicker"><span class="logo"></span> Stencil</div>
+    <h1>Design-grammar slide synthesis<br>디자인 문법 기반 슬라이드 합성</h1>
+    <p class="lead">업로드한 슬라이드를 <b>채워 넣을 템플릿이 아니라 디자인 예시 데이터</b>로 본다. 거기서 추출한 문법(간격·정렬·계층·컴포넌트 관계)으로 <b>원본에 없던 새 레이아웃을 합성</b>한다. Templates are example data, not fill-in forms — new layouts are synthesized from the extracted grammar.</p>
+    <div>
+      <span class="pill">no frame copy · 원본 미복사</span>
+      <span class="pill">LLM writes content, never coordinates</span>
+      <span class="pill">geometry from grammar</span>
+      <span class="pill">deterministic</span>
+      <span class="pill">3 themes · 10 archetypes</span>
+    </div>
+  </section>
+
+  <!-- PIPELINE -->
+  <section>
+    <h2>How it works · 파이프라인</h2>
+    <svg class="diagram" viewBox="0 0 1040 360" xmlns="http://www.w3.org/2000/svg" font-family="Inter">
+      <defs><marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0L7 3L0 6Z" fill="#9a9a9a"/></marker></defs>
+      <text x="24" y="36" font-size="13" font-weight="700" fill="#1f6feb">BAKE · 테마당 1회</text>
+      <g font-size="13">
+        <rect x="24" y="50" width="220" height="70" rx="11" fill="#fff" stroke="#e2e2e2"/><text x="40" y="80" font-weight="700">1 · Parse 흡수</text><text x="40" y="100" fill="#6b6b6b">slides → 측정 슬롯</text>
+        <rect x="268" y="50" width="220" height="70" rx="11" fill="#fff" stroke="#e2e2e2"/><text x="284" y="80" font-weight="700">2 · Grammar 문법</text><text x="284" y="100" fill="#6b6b6b">팔레트·타입·그리드·리듬</text>
+        <rect x="512" y="50" width="220" height="70" rx="11" fill="#fff" stroke="#0a7d33"/><text x="528" y="80" font-weight="700">3 · Skeletons 골격</text><text x="528" y="100" fill="#6b6b6b">아키타입 zone (집계)</text>
+        <rect x="772" y="50" width="244" height="70" rx="11" fill="#eaf3ff" stroke="#1f6feb"/><text x="788" y="80" font-weight="700" fill="#1f6feb">GrammarSpec</text><text x="788" y="100" fill="#6b6b6b">blocks·cardSpec·skeletons</text>
+        <line x1="246" y1="85" x2="266" y2="85" stroke="#9a9a9a" marker-end="url(#ar)"/><line x1="490" y1="85" x2="510" y2="85" stroke="#9a9a9a" marker-end="url(#ar)"/><line x1="734" y1="85" x2="770" y2="85" stroke="#0a7d33" marker-end="url(#ar)"/>
+      </g>
+      <text x="24" y="186" font-size="13" font-weight="700" fill="#7048e8">STAMP · 요청마다</text>
+      <g font-size="13">
+        <rect x="24" y="200" width="220" height="76" rx="11" fill="#fff" stroke="#e2e2e2"/><text x="40" y="230" font-weight="700">4 · Plan 계획</text><text x="40" y="250" fill="#6b6b6b">prompt → 아키타입+콘텐츠</text><text x="40" y="268" fill="#1f6feb" font-size="11">Claude</text>
+        <rect x="268" y="200" width="220" height="76" rx="11" fill="#fff" stroke="#e2e2e2"/><text x="284" y="230" font-weight="700">5 · Synthesize 합성</text><text x="284" y="250" fill="#6b6b6b">골격+문법 → 새 좌표</text><text x="284" y="268" fill="#0a7d33" font-size="11">grammar only</text>
+        <rect x="512" y="200" width="220" height="76" rx="11" fill="#fff" stroke="#e2e2e2"/><text x="528" y="230" font-weight="700">6 · Solve 배치</text><text x="528" y="250" fill="#6b6b6b">fit·push-down·safe area</text><text x="528" y="268" fill="#6b6b6b" font-size="11">deterministic</text>
+        <rect x="772" y="200" width="244" height="76" rx="11" fill="#fff" stroke="#7048e8"/><text x="788" y="230" font-weight="700" fill="#7048e8">7 · Evaluate 평가</text><text x="788" y="250" fill="#6b6b6b">7 scores · revise/reject</text><text x="788" y="268" fill="#7048e8" font-size="11">gate</text>
+        <line x1="246" y1="238" x2="266" y2="238" stroke="#9a9a9a" marker-end="url(#ar)"/><line x1="490" y1="238" x2="510" y2="238" stroke="#9a9a9a" marker-end="url(#ar)"/><line x1="734" y1="238" x2="770" y2="238" stroke="#9a9a9a" marker-end="url(#ar)"/>
+        <path d="M894 276 L894 312 L406 312 L406 278" fill="none" stroke="#7048e8" stroke-width="1.5" stroke-dasharray="6 5" marker-end="url(#ar)"/>
+        <text x="650" y="332" font-size="12" fill="#7048e8" text-anchor="middle">revise (&lt;7) / reject (novelty&lt;6) → re-synthesize · 재합성</text>
+        <line x1="894" y1="120" x2="380" y2="198" stroke="#0a7d33" stroke-width="1.5" marker-end="url(#ar)"/>
+      </g>
+    </svg>
+    <p class="lead" style="margin-top:16px">사용자 프롬프트(+선택적 이미지)는 STAMP에만 들어간다. BAKE에서 만든 GrammarSpec만 읽고 합성하며, 평가 게이트를 통과하지 못하면 재합성한다.</p>
+  </section>
+
+  <!-- CORE LOGIC -->
+  <section>
+    <h2>Core logic · 핵심 로직</h2>
+    <div class="grid g3">
+      <div class="card"><div class="n">01</div><h3>GrammarSpec</h3><p>팔레트·타입스케일·정렬 그리드·간격 리듬·계층·blocks·측정 cardSpec을 하나로 구조화한 명시적 디자인 문법.</p></div>
+      <div class="card"><div class="n">02</div><h3>Archetype skeletons</h3><p>아키타입별 예시 슬라이드의 region을 캔버스 분수로 정규화·median 집계한 <b>패턴</b>. 특정 프레임 복사가 아님.</p></div>
+      <div class="card"><div class="n">03</div><h3>Grammar-only synthesis</h3><p>골격을 GrammarSpec만으로 인스턴스화. 좌표는 그리드·리듬·계층에서 생성, 카드 내부는 측정값 재사용.</p></div>
+      <div class="card"><div class="n">04</div><h3>Quality evaluator</h3><p>7지표(문법 일관성·신규성·위계·간격·적합도·유사도 페널티·종합) 채점 + 게이트.<span class="mono">any &lt; 7 → revise
+layout novelty &lt; 6 → reject</span></p></div>
+      <div class="card"><div class="n">05</div><h3>Decoration = theme habit</h3><p>장식 양을 테마의 측정 coverage에서 결정(강제 아님). 빈 코너·여유 반경·팔레트색으로 배치 근거를 기록.</p></div>
+      <div class="card"><div class="n">06</div><h3>Design floor</h3><p>테마 무관 기본 규약: 안전 여백(≥5%)·최소 폰트(~18px)·초점 크기(~54px)·비겹침(push-down/safe area).</p></div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section>
+    <h2>Results · 합성 결과 (no frame copied)</h2>
+    <div class="grid g2">
+      <figure><img class="shot" src="assets/cover.png" alt="cover"><figcaption><span class="tag">cover</span><span class="score pass">PASS 10 · nov 10</span></figcaption></figure>
+      <figure><img class="shot" src="assets/content.png" alt="content"><figcaption><span class="tag">content</span><span class="score pass">PASS 10 · nov 10</span> 3 feature cards from a card block</figcaption></figure>
+      <figure><img class="shot" src="assets/stat.png" alt="stat"><figcaption><span class="tag">stat</span><span class="score pass">PASS 10 · nov 10</span> KPI row, measured card internals</figcaption></figure>
+      <figure><img class="shot" src="assets/comparison.png" alt="comparison"><figcaption><span class="tag">comparison</span><span class="score pass">PASS 10</span> pricing tiers (was empty before)</figcaption></figure>
+      <figure><img class="shot" src="assets/image-split.png" alt="image split"><figcaption><span class="tag">image</span> user photo placed (cover-crop), text in the complementary column</figcaption></figure>
+      <figure><img class="shot" src="assets/gallery.png" alt="gallery"><figcaption><span class="tag">gallery</span> 3 user images in a mined image row</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- PROGRESS -->
+  <section>
+    <h2>Progress · 진행 현황</h2>
+    <div class="grid g3">
+      <div class="col">
+        <h4><b style="background:#0a7d33"></b> Built · 구축</h4>
+        <div class="item"><div class="t">Explicit GrammarSpec</div><div class="d">토큰·리듬·그리드·계층·blocks·cardSpec</div></div>
+        <div class="item"><div class="t">Mined archetype skeletons</div><div class="d">예시 집계, 복사 아님</div></div>
+        <div class="item"><div class="t">Grammar-only synthesis</div><div class="d">새 레이아웃, 원본 미복사</div></div>
+        <div class="item"><div class="t">7-score evaluator + gate</div><div class="d">revise / reject 루프</div></div>
+        <div class="item"><div class="t">User image placement</div><div class="d">배치, 생성 아님</div></div>
+        <div class="item"><div class="t">Web app (synthesis/filler)</div><div class="d">모드 토글 + 점수</div></div>
+      </div>
+      <div class="col">
+        <h4><b style="background:#1f6feb"></b> Quality floor · 기본 규약</h4>
+        <div class="item"><div class="t">Decoration = theme habit</div><div class="d">colorful 대담 / black 무장식</div></div>
+        <div class="item"><div class="t">Safe padding + min font</div><div class="d">가장자리 붙음·작은 글자 해결</div></div>
+        <div class="item"><div class="t">Lead-size focal line</div><div class="d">모든 슬라이드 초점 보장</div></div>
+        <div class="item"><div class="t">Weak archetypes → cards</div><div class="d">stat→KPI, comparison→티어</div></div>
+        <div class="item"><div class="t">Explainable asset choice</div><div class="d">배치 근거 기록</div></div>
+        <div class="item"><div class="t">Cohesive centering</div><div class="d">phantom 갭·tiny 폰트 제거</div></div>
+      </div>
+      <div class="col">
+        <h4><b style="background:#9a5b00"></b> Open · 남은 작업</h4>
+        <div class="item"><div class="t">Web image upload UI</div><div class="d">업로더 → 합성에 에셋 전달</div></div>
+        <div class="item"><div class="t">Contrast on color panels</div><div class="d">색 위 텍스트 흰색 전환</div></div>
+        <div class="item"><div class="t">Decoration vs sparse content</div><div class="d">콘텐츠 적을 때 크기 캡</div></div>
+        <div class="item"><div class="t">ratio/desc image matching</div><div class="d">이미지↔zone 적합 매칭</div></div>
+        <div class="item"><div class="t">Relation graph direct use</div><div class="d">anchored/aligned/avoids</div></div>
+        <div class="item"><div class="t">Constraint solver v2 (kiwi)</div><div class="d">자유 배치</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUALITY JOURNEY -->
+  <section>
+    <h2>Quality journey · 품질 개선 이력</h2>
+    <div class="grid g2">
+      <div class="card"><h3>Edge hugging → safe padding</h3><p>colorful 그리드 margin 31px로 텍스트가 가장자리에 붙음 → 안전 여백 = max(grid, 5%) 강제.</p></div>
+      <div class="card"><h3>Tiny text → font floor</h3><p>측정 카드 폰트가 12px까지 축소 → 최소 폰트(~18px)·초점(~54px) 규약.</p></div>
+      <div class="card"><h3>Empty comparison → tier cards</h3><p>가격 티어가 한 문장으로 뭉침 → 카드 구조 보장(Starter/Growth/Scale).</p></div>
+      <div class="card"><h3>Clustered band → cohesive center</h3><p>마지막 zone 뒤 phantom 갭이 그룹을 미정렬 → 실제 잉크 범위로 중앙 정렬.</p></div>
+      <div class="card"><h3>Forced blob → theme habit</h3><p>모든 슬라이드 같은 블롭 → 테마 측정 coverage 기반(black은 무장식 유지).</p></div>
+      <div class="card"><h3>Arbitrary asset → explainable</h3><p>인덱스 회전 → "가장 빈 코너 + 여유 반경 + 팔레트색" 근거 기록.</p></div>
+    </div>
+  </section>
+
+  <!-- REFERENCE DIAGRAMS -->
+  <section>
+    <h2>Reference diagrams · 참조 도식</h2>
+    <div class="grid g2">
+      <figure><img class="shot" style="aspect-ratio:auto" src="assets/architecture.png" alt="architecture"><figcaption>Pipeline & invariants</figcaption></figure>
+      <figure><img class="shot" style="aspect-ratio:auto" src="assets/progress.png" alt="progress board"><figcaption>Progress board (EN/KR)</figcaption></figure>
+    </div>
+  </section>
+
+  <div class="foot">
+    Invariants · 불변 원칙 — never copy a source frame · LLM writes content + picks archetype, never coordinates · geometry from grammar · deterministic, no randomness<br>
+    Stencil · design-grammar slide synthesis
+  </div>
+
+</div>
+</body>
+</html>
