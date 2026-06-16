@@ -14,3 +14,6 @@ coverage/
 fixtures/out/
 fixtures/assets/
 fixtures/sample/
+
+# Next.js generated
+next-env.d.ts
