@@ -32,86 +32,94 @@ function weightFor(system: DesignSystemIR, role: Role, fallback: number): number
   const rank = system.grammar.hierarchy.ranks.find((r) => r.role === role);
   return rank?.weight ?? system.tokens.type[role]?.weight ?? fallback;
 }
+/** Snap a coordinate to the theme's measured alignment guides (its real grid). */
+function snap(guides: number[], v: number, tol = 60): number {
+  let best = v, bestD = tol;
+  for (const g of guides) { const d = Math.abs(g - v); if (d < bestD) { best = g; bestD = d; } }
+  return best;
+}
+/** A measured card spec from the system that contains `role` — reuse its real
+ * internal geometry (offsets/sizes/coupled spacing) instead of inventing it. */
+function exemplarCardSpec(system: DesignSystemIR, role: Role): CardSpec | undefined {
+  return system.layouts.map((l) => l.cardSpec).find((cs): cs is CardSpec => !!cs && cs.roles.includes(role));
+}
 
-/** metric-row: eyebrow + title (upper-left), then a row of KPI cards (lower band). */
+/**
+ * metric-row: eyebrow + title in the top band, a row of KPI cards in the band the
+ * THEME actually uses for metrics. All geometry comes from the design system —
+ * left edge + columns from alignmentGrid.xGuides, vertical bands snapped to
+ * yGuides, gaps from spacingRhythm, and the card internals reused verbatim from a
+ * measured kpi cardSpec (the theme's real kpi↕caption coupling). No magic numbers.
+ */
 function metricRow(system: DesignSystemIR, plan: SynthPlan): SynthResult {
   const { canvas, grammar, tokens } = system;
-  const W = canvas.w, H = canvas.h;
-  const lh = 1.15;
-  const M = Math.max(grammar.alignmentGrid.margin, Math.round(W * 0.05));
-  const tight = grammar.spacingRhythm.gaps.tight;
-  const normal = grammar.spacingRhythm.gaps.normal;
+  const W = canvas.w, H = canvas.h, lh = 1.15;
+  const xG = grammar.alignmentGrid.xGuides, yG = grammar.alignmentGrid.yGuides;
+  const { tight, loose } = grammar.spacingRhythm.gaps;
+  const M = snap(xG, grammar.alignmentGrid.margin, 80); // structural left edge
 
   const block = plan.block ?? { id: "card_kpi_caption", cards: [] };
-  const cardRoles = (system.blocks.find((b) => b.id === block.id)?.slots ?? [
-    { role: "kpi" as Role }, { role: "caption" as Role },
-  ]).map((s) => s.role);
+  const ex = exemplarCardSpec(system, "kpi"); // theme's measured kpi card
+  const cardRoles: Role[] = ex?.roles ?? (system.blocks.find((b) => b.id === block.id)?.slots.map((s) => s.role) ?? ["kpi", "caption"]);
 
-  // --- upper-left text band (singles) ---
+  // --- card internals: reuse the theme's MEASURED kpi card (offsets/sizes/coupling) ---
+  const n = Math.max(1, block.cards.length || ex?.baseCount || 3);
+  const cardW = ex?.cardW ?? Math.round(W * 0.28);
+  const rowH = ex ? ex.rowBBox.h : Math.round(H * 0.22);
+  const template: CardTemplateSlot[] = ex
+    ? ex.template.map((t) => ({ ...t }))
+    : cardRoles.map((role, i) => ({
+        role, type: "text" as const, dx: 0, dy: i * (sizeFor(system, role, 60) * lh + tight),
+        w: cardW, h: Math.ceil(sizeFor(system, role, 60) * lh * (role === "kpi" ? 1 : 1.6)),
+        fontSize: sizeFor(system, role, 60), fontWeight: weightFor(system, role, role === "kpi" ? 700 : 400),
+        color: tokens.colors.text, align: "left" as TextAlign,
+      }));
+
+  // --- vertical rhythm: lay the zones relative to 0, then center the whole group
+  // in the canvas so the page is balanced (no top-heavy gap). Horizontals stay on
+  // the grid; gaps come from spacingRhythm; card internals stay measured. ---
+  const eyFs = sizeFor(system, "eyebrow", 28), eyH = Math.ceil(eyFs * lh);
+  const tFs = sizeFor(system, "headline", 80), tH = Math.ceil(tFs * lh * 2);
+  let rel = 0;
+  const eyRel = plan.singles.eyebrow ? rel : -1;
+  if (plan.singles.eyebrow) rel += eyH + tight;
+  const tRel = plan.singles.title ? rel : -1;
+  if (plan.singles.title) rel += tH + loose;
+  const rowRel = rel;
+  rel += rowH;
+  const top = snap(yG, Math.max(grammar.alignmentGrid.margin, Math.round((H - rel) / 2)), 40);
+
   const slots: PlacedSlot[] = [];
   const regions: Region[] = [];
   const singles: Record<string, string> = {};
   const defaultSlots: string[] = [];
 
-  let y = Math.round(H * 0.13);
-  if (plan.singles.eyebrow) {
-    const fs = sizeFor(system, "eyebrow", 28);
-    const h = Math.ceil(fs * lh);
-    slots.push({ id: "eyebrow", role: "eyebrow", type: "text", bbox: { x: M, y, w: Math.round(W * 0.5), h }, align: "left", fontSize: fs, fontWeight: weightFor(system, "eyebrow", 600), color: tokens.colors.text });
-    regions.push({ id: "header", bbox: { x: M, y, w: Math.round(W * 0.5), h }, flow: "row", gap: tight, allowedBlocks: [], slotIds: ["eyebrow"] });
-    singles.eyebrow = plan.singles.eyebrow;
+  if (eyRel >= 0) {
+    const bbox: BBox = { x: M, y: top + eyRel, w: Math.round(W * 0.5), h: eyH };
+    slots.push({ id: "eyebrow", role: "eyebrow", type: "text", bbox, align: "left", fontSize: eyFs, fontWeight: weightFor(system, "eyebrow", 600), color: tokens.colors.text });
+    regions.push({ id: "header", bbox, flow: "row", gap: tight, allowedBlocks: [], slotIds: ["eyebrow"] });
+    singles.eyebrow = plan.singles.eyebrow!;
     defaultSlots.push("eyebrow");
-    y += h + tight;
   }
-  if (plan.singles.title) {
-    const fs = sizeFor(system, "headline", 80);
-    const h = Math.ceil(fs * lh * 2); // allow two lines
-    slots.push({ id: "title", role: "title", type: "text", bbox: { x: M, y, w: Math.round(W * 0.62), h }, align: "left", fontSize: fs, fontWeight: weightFor(system, "title", 700), color: tokens.colors.text });
-    regions.push({ id: "title", bbox: { x: M, y, w: Math.round(W * 0.62), h }, flow: "column", gap: normal, allowedBlocks: [], slotIds: ["title"] });
-    singles.title = plan.singles.title;
+  if (tRel >= 0) {
+    const bbox: BBox = { x: M, y: top + tRel, w: Math.round(W * 0.62), h: tH };
+    slots.push({ id: "title", role: "title", type: "text", bbox, align: "left", fontSize: tFs, fontWeight: weightFor(system, "title", 700), color: tokens.colors.text });
+    regions.push({ id: "title", bbox, flow: "column", gap: loose, allowedBlocks: [], slotIds: ["title"] });
+    singles.title = plan.singles.title!;
     defaultSlots.push("title");
   }
 
-  // --- lower KPI card row (block) ---
-  const rowY = Math.round(H * 0.52);
-  const rowBBox: BBox = { x: M, y: rowY, w: W - 2 * M, h: Math.round(H * 0.26) };
-  const n = Math.max(1, block.cards.length || 3);
-  const cardW = Math.min(Math.round((rowBBox.w - (n - 1) * normal) / n), Math.round(W * 0.28));
-
-  const kpiSize = Math.min(sizeFor(system, "kpi", 96), Math.round(rowBBox.h * 0.42));
-  const capSize = sizeFor(system, "caption", 28);
-  const template: CardTemplateSlot[] = [];
-  let dy = 0;
-  for (const role of cardRoles) {
-    const isKpi = role === "kpi";
-    const fs = isKpi ? kpiSize : capSize;
-    const h = Math.ceil(fs * lh * (isKpi ? 1 : 1.6));
-    template.push({
-      role, type: "text", dx: 0, dy, w: cardW, h,
-      fontSize: fs, fontWeight: weightFor(system, role, isKpi ? 700 : 400),
-      color: tokens.colors.text, align: "left",
-    });
-    dy += h + (isKpi ? tight : 0);
-  }
-
-  const cardSpec: CardSpec = {
-    template, rowBBox, cardW, colY0: rowY, baseCount: n,
-    roles: cardRoles, memberIds: [], decorationIds: [],
-  };
-  regions.push({ id: "cards", bbox: rowBBox, flow: "row", gap: normal, allowedBlocks: [block.id], slotIds: [], blockId: block.id });
+  const rowY = top + rowRel;
+  const rowBBox: BBox = { x: M, y: rowY, w: W - 2 * M, h: rowH };
+  const cardSpec: CardSpec = { template, rowBBox, cardW, colY0: rowY, baseCount: n, roles: cardRoles, memberIds: [], decorationIds: [] };
+  regions.push({ id: "cards", bbox: rowBBox, flow: "row", gap: grammar.spacingRhythm.gaps.normal, allowedBlocks: [block.id], slotIds: [], blockId: block.id });
 
   const layout: Layout = {
     id: `synth_${plan.archetype}_${system.theme}`,
-    decorationRef: "",
-    background: tokens.colors.bg,
-    slots,
-    cardSpec,
-    regions,
-    defaultSlots,
+    decorationRef: "", background: tokens.colors.bg,
+    slots, cardSpec, regions, defaultSlots,
   };
-
-  const placement: PlacementPlan = { layoutId: layout.id, cards: block.cards, singles };
-  return { layout, placement };
+  return { layout, placement: { layoutId: layout.id, cards: block.cards, singles } };
 }
 
 export function synthesize(system: DesignSystemIR, plan: SynthPlan): SynthResult {
