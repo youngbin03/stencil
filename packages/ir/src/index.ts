@@ -106,6 +106,13 @@ export interface ManifestSlot {
   align?: TextAlign;
   /** Image aspect ratio constraint, e.g. "16:9". */
   ratio?: string;
+  /**
+   * For non-rectangular image slots (e.g. a device-mockup screen "Insert Designs
+   * here" path), the exact fill/clip shape as an SVG path `d` in canvas coords.
+   * A user image dropped into this slot is clipped to this shape (rounded corners,
+   * notch, etc.). Absent for plain rectangular slots.
+   */
+  clip?: string;
   /** Set when id→role mapping is ambiguous; must be resolved before M2 passes. */
   uncertain?: boolean;
 }
@@ -446,6 +453,9 @@ export interface PlacedSlot {
   mediaKind?: MediaKind;
   /** Whether a user upload can replace this image slot. */
   replaceable?: boolean;
+  /** Exact fill/clip shape (SVG path `d`, canvas coords) for non-rect image slots
+   *  such as a device-mockup screen. A user image is clipped to this shape. */
+  clip?: string;
   /** Free-form note from the classifier (debugging / human review). */
   note?: string;
 }
@@ -562,6 +572,9 @@ export interface RenderImageElement {
   assetUrl: string;
   /** Cover-crop source rect within the original image. */
   ratio?: string;
+  /** Exact clip shape (SVG path `d`, canvas coords) — e.g. a mockup screen with a
+   *  notch. When set, the image is clipped to this path instead of the bbox rect. */
+  clip?: string;
 }
 
 /** A cloned decoration shape (e.g. a card's emphasis rect repeated per card). */

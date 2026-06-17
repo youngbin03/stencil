@@ -79,6 +79,7 @@ function imageElement(slot: PlacedSlot, url: string): RenderImageElement {
     assetUrl: url,
   };
   if (slot.ratio) el.ratio = slot.ratio;
+  if (slot.clip) el.clip = slot.clip;
   return el;
 }
 

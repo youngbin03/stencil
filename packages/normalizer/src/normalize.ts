@@ -140,6 +140,56 @@ function buildImageSlot(el: Element, index: number): ManifestSlot {
   return { id: el.getAttribute("id") || `image_${index}`, role: "image", type: "image", bbox };
 }
 
+/** Axis-aligned bbox of an SVG path `d` (endpoints + control points). Handles the
+ *  Figma command set (M/L/H/V/C/S/Q/T/A/Z, absolute + relative). */
+function pathBBox(d: string): BBox | null {
+  const toks = d.match(/[a-zA-Z]|-?\d*\.?\d+(?:e[-+]?\d+)?/g);
+  if (!toks) return null;
+  let i = 0, cx = 0, cy = 0, minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  const ext = (x: number, y: number): void => { if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; };
+  const nx = (): number => Number(toks[i++]);
+  let cmd = "";
+  while (i < toks.length) {
+    if (/[a-zA-Z]/.test(toks[i]!)) { cmd = toks[i]!; i++; }
+    const rel = cmd === cmd.toLowerCase();
+    const base = (x: number, y: number): [number, number] => (rel ? [cx + x, cy + y] : [x, y]);
+    switch (cmd.toUpperCase()) {
+      case "M": case "L": case "T": { const [x, y] = base(nx(), nx()); cx = x; cy = y; ext(x, y); if (cmd === "m") cmd = "l"; else if (cmd === "M") cmd = "L"; break; }
+      case "H": { const x = rel ? cx + nx() : nx(); cx = x; ext(x, cy); break; }
+      case "V": { const y = rel ? cy + nx() : nx(); cy = y; ext(cx, y); break; }
+      case "C": { const [x1, y1] = base(nx(), nx()); const [x2, y2] = base(nx(), nx()); const [x, y] = base(nx(), nx()); ext(x1, y1); ext(x2, y2); ext(x, y); cx = x; cy = y; break; }
+      case "S": case "Q": { const [x1, y1] = base(nx(), nx()); const [x, y] = base(nx(), nx()); ext(x1, y1); ext(x, y); cx = x; cy = y; break; }
+      case "A": { nx(); nx(); nx(); nx(); nx(); const [x, y] = base(nx(), nx()); ext(x, y); cx = x; cy = y; break; }
+      case "Z": break;
+      default: i++; // unknown token, skip defensively
+    }
+  }
+  if (!Number.isFinite(minX)) return null;
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+}
+
+function isIdentity(m: { a: number; b: number; c: number; d: number; e: number; f: number }): boolean {
+  return Math.abs(m.a - 1) < 1e-6 && Math.abs(m.d - 1) < 1e-6 && Math.abs(m.b) < 1e-6 && Math.abs(m.c) < 1e-6 && Math.abs(m.e) < 1e-3 && Math.abs(m.f) < 1e-3;
+}
+
+/** Image slot from a pattern-filled non-rect shape (e.g. a mockup screen path).
+ *  Captures the exact shape as `clip` so a user image fills it precisely. */
+function buildShapeImageSlot(el: Element, index: number): ManifestSlot | null {
+  const d = el.getAttribute("d");
+  if (!d) return null;
+  const local = pathBBox(d);
+  if (!local || local.w <= 0 || local.h <= 0) return null;
+  const m = accumulatedTransform(el);
+  const slot: ManifestSlot = {
+    id: el.getAttribute("id") || `image_${index}`, role: "image", type: "image",
+    bbox: applyBBox(local, m),
+  };
+  // Only carry the clip shape when it is already in canvas space (no surprising
+  // transform) so the stored `d` matches the bbox the renderer will use.
+  if (isIdentity(m)) slot.clip = d;
+  return slot;
+}
+
 export function normalizeSvg(svg: string, opts: NormalizeOptions): SlotManifest {
   const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
 
@@ -168,6 +218,17 @@ export function normalizeSvg(svg: string, opts: NormalizeOptions): SlotManifest 
   const images = doc.getElementsByTagName("image");
   for (let i = 0; i < images.length; i++) {
     if (!isInDefs(images[i]!)) slots.push(buildImageSlot(images[i]!, imgIdx++));
+  }
+  // Pattern-filled non-rect shapes — e.g. a device-mockup screen ("Insert Designs
+  // here") drawn as a <path> with a notch/rounded clip. These were previously
+  // missed (only <rect> was scanned), so the real fill target was lost.
+  const paths = doc.getElementsByTagName("path");
+  for (let i = 0; i < paths.length; i++) {
+    const p = paths[i]!;
+    const fill = p.getAttribute("fill") ?? "";
+    if (!fill.startsWith("url(#pattern") || isInDefs(p)) continue;
+    const slot = buildShapeImageSlot(p, imgIdx++);
+    if (slot) slots.push(slot);
   }
 
   // Non-text/image layers with a semantic id → unmapped (kept in base template).

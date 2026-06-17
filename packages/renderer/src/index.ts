@@ -44,8 +44,13 @@ function renderText(el: RenderTextElement): string {
 function renderImage(el: RenderImageElement, i: number): string {
   const clip = `clip_${i}`;
   const { x, y, w, h } = el.bbox;
+  // A non-rect clip (e.g. a mockup screen path with a notch) clips the image to the
+  // exact shape; otherwise the bbox rect. Image still cover-crops to fill the bbox.
+  const clipShape = el.clip
+    ? `<path d="${escapeXml(el.clip)}"/>`
+    : `<rect x="${x}" y="${y}" width="${w}" height="${h}"/>`;
   return (
-    `<clipPath id="${clip}"><rect x="${x}" y="${y}" width="${w}" height="${h}"/></clipPath>` +
+    `<clipPath id="${clip}">${clipShape}</clipPath>` +
     `<image href="${escapeXml(el.assetUrl)}" x="${x}" y="${y}" width="${w}" height="${h}" ` +
     `preserveAspectRatio="xMidYMid slice" clip-path="url(#${clip})" data-role="${el.role}"/>`
   );

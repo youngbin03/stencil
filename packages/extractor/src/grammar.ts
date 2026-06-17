@@ -208,6 +208,7 @@ export function placeSlots(
     if (s.fontWeight !== undefined) slot.fontWeight = s.fontWeight;
     if (s.letterSpacing) slot.letterSpacing = s.letterSpacing;
     if (s.ratio) slot.ratio = s.ratio;
+    if (s.clip) slot.clip = s.clip;
     if (label?.mediaKind) slot.mediaKind = label.mediaKind;
     if (label?.replaceable !== undefined) slot.replaceable = label.replaceable;
     if (label?.note) slot.note = label.note;
