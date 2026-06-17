@@ -81,7 +81,7 @@
   <section>
     <div class="kicker"><span class="logo"></span> Stencil · 프로젝트 보고서</div>
     <h1>An agentic generative system<br>for design-grammar slide synthesis</h1>
-    <p class="lead">업로드한 슬라이드를 <b>채워 넣을 템플릿이 아니라 디자인 예시 데이터</b>로 본다. 거기서 추출한 문법(간격·정렬·계층·컴포넌트 관계)으로 <b>원본에 없던 새 레이아웃을 합성</b>하는 에이전틱 시스템. 핵심 엔지니어링 결정은 하나로 요약된다 — <b>의미 판단은 AI, 기하 계산은 결정론 코드</b>. Templates are example data, not fill-in forms; the LLM reasons about meaning, deterministic code owns every pixel.</p>
+    <p class="lead">업로드한 슬라이드를 채워 넣을 틀로 쓰지 않는다. 디자인 예시로 보고 간격·정렬·계층·컴포넌트 관계를 뽑아낸 다음, 그걸로 원본에 없던 레이아웃을 새로 만든다. 만들면서 계속 부딪힌 끝에 내린 결론은 단순하다. <b>의미를 판단하는 일은 LLM이 잘하고, 좌표 같은 정밀한 숫자는 코드가 맡아야 한다.</b> 실제로 좌표까지 LLM에 시켜 보니 글자가 겹치고 화면 밖으로 나가고 같은 입력에도 결과가 달라졌다. 그래서 그 경계를 처음부터 갈라놨다.</p>
     <div>
       <span class="pill">agentic generative system</span>
       <span class="pill">AI for semantics · code for geometry</span>
@@ -122,13 +122,13 @@
         <line x1="894" y1="120" x2="380" y2="198" stroke="#0a7d33" stroke-width="1.5" marker-end="url(#ar)"/>
       </g>
     </svg>
-    <p class="lead" style="margin-top:16px">사용자 프롬프트(+선택적 이미지)는 STAMP에만 들어간다. BAKE에서 만든 GrammarSpec만 읽고 합성하며, 평가 게이트를 통과하지 못하면 재합성한다.</p>
+    <p class="lead" style="margin-top:16px">사용자 프롬프트(와 선택한 이미지)는 STAMP 단계에서만 들어간다. BAKE에서 미리 만들어 둔 GrammarSpec만 읽어서 합성하고, 평가를 통과 못 하면 다시 만든다. 원본 SVG는 합성할 때 한 번도 다시 읽지 않는다.</p>
   </section>
 
   <!-- AI ENGINEERING -->
   <section>
-    <h2>AI engineering · 책임 분리라는 한 번의 결정</h2>
-    <p class="lead" style="margin-bottom:24px">이 프로젝트의 모든 구조는 한 가지 관찰에서 나온다 — <b>LLM은 의미 판단에 강하고 수치 정밀도에 약하다.</b> 그래서 시스템을 그 단층선(fault line)을 따라 둘로 갈랐다. 같은 프롬프트라도 좌표를 LLM이 찍으면 겹침·이탈·비재현이 생긴다. 의미는 확률적 모델에, 픽셀은 결정론 코드에 맡긴다.</p>
+    <h2>AI engineering · 역할을 어디서 가를 것인가</h2>
+    <p class="lead" style="margin-bottom:24px">구조를 이렇게 가른 이유는 하나다. <b>LLM은 '무엇이 무엇인지', '뭐가 보기 좋은지'는 잘 맞히는데 좌표 같은 숫자는 자주 틀린다.</b> 그래서 의미 판단은 모델에, 픽셀은 코드에 맡겼다. 좌표까지 모델에 맡겨 본 버전에서 겹침·화면 이탈·재현 불가가 바로 나와서, 그 선을 분명히 그었다.</p>
     <div class="fault">
       <div>
         <div class="hd"><span class="dot" style="background:#1f6feb"></span> Claude — 의미 (probabilistic)</div>
@@ -138,7 +138,7 @@
           <li>콘텐츠 작성 — 레이아웃이 요구하는 정확한 블록만 생성</li>
           <li>품질 비평 — 렌더된 픽셀을 다시 비전으로 평가</li>
         </ul>
-        <div class="why">왜 AI인가 — 모호하고 맥락 의존적이며 "보기 좋음"이 정답인 판단. 규칙으로 못 박으면 부서진다.</div>
+        <div class="why">맥락에 따라 달라지고 "보기 좋다"가 정답인 판단이라, 규칙으로 박아두면 금방 깨진다. 그래서 모델에 맡겼다.</div>
       </div>
       <div>
         <div class="hd"><span class="dot" style="background:#0a7d33"></span> Deterministic code — 기하 (exact)</div>
@@ -148,7 +148,7 @@
           <li>충돌 회피 — push-down·safe area·비겹침 보장</li>
           <li>대비 보정 — 가독성 자동 교정, 디자인 floor 강제</li>
         </ul>
-        <div class="why">왜 코드인가 — 재현 가능하고 검증 가능하며 픽셀 단위로 정확해야 하는 작업. LLM이 손대면 안 되는 영역.</div>
+        <div class="why">같은 입력이면 같은 결과가 나와야 하고 픽셀 단위로 맞아야 하는 일이라, 모델이 손대면 안 된다. 전부 코드가 계산한다.</div>
       </div>
     </div>
   </section>
@@ -157,13 +157,13 @@
   <section>
     <h2>Agentic patterns · 에이전틱 패턴</h2>
     <div class="grid g2">
-      <div class="card"><div class="n">A</div><h3>Structured tool-use as a contract</h3><p>모든 AI 호출은 자유 텍스트가 아니라 <b>tool 스키마로 강제된 타입 객체</b>를 반환한다(ContentPlan·PlacementPlan·CritiquePatch). 파싱이 아니라 계약. 비배열·누락 출력에 대한 방어를 더해 파이프라인을 견고하게 만들었다.</p></div>
-      <div class="card"><div class="n">B</div><h3>Vision-in-the-loop</h3><p>슬롯에 번호를 그려 비전으로 분류하고, <b>합성 결과를 다시 비전으로 평가</b>한다. 텍스트 설명이 아니라 실제 렌더 픽셀을 근거로 판단해 "보기엔 깨진" 결과를 잡아낸다.</p></div>
-      <div class="card"><div class="n">C</div><h3>Evaluator–optimizer loop</h3><p>생성 → 7지표 채점 → 미달 시 자기 수정. <span class="mono">score &lt; 7  → revise
+      <div class="card"><div class="n">A</div><h3>Structured tool-use as a contract</h3><p>AI 호출은 자유 텍스트를 파싱하지 않는다. tool 스키마로 타입이 강제된 객체(ContentPlan·PlacementPlan·CritiquePatch)만 받는다. 그런데도 모델이 가끔 배열을 빼먹거나 형태가 어긋나길래, 경계에서 한 번 더 방어하도록 막아뒀다.</p></div>
+      <div class="card"><div class="n">B</div><h3>Vision-in-the-loop</h3><p>슬롯에 번호를 그려서 비전으로 분류하고, 합성한 결과도 다시 비전으로 본다. 텍스트 설명이 아니라 실제로 렌더된 픽셀을 보기 때문에 "말로는 멀쩡한데 눈으로 보면 깨진" 경우를 잡는다.</p></div>
+      <div class="card"><div class="n">C</div><h3>Evaluator–optimizer loop</h3><p>만들고 → 7개 지표로 채점하고 → 기준에 못 미치면 스스로 고친다. 만드는 쪽과 평가하는 쪽을 분리해 뒀다.<span class="mono">score &lt; 7  → revise
 novelty &lt; 6 → reject &amp; re-synthesize
-N ≤ 2 (bounded)</span>생성기와 평가기를 분리한 자기교정 루프.</p></div>
-      <div class="card"><div class="n">D</div><h3>Bake-once, stamp-many</h3><p>비싼 AI 분석(흡수·문법 추출·비전 분류)은 <b>테마당 1회</b> 실행해 GrammarSpec로 캐시한다. 요청 시점에는 원본 SVG를 다시 읽지 않고 캐시만 조합 — 저렴하고 빠르고 결정론적.</p></div>
-      <div class="card"><div class="n">E</div><h3>Structure-first context</h3><p>에이전트가 더 잘 고르도록 <b>이미 추출한 구조를 노출</b>한다 — 역할 의미(kpi=헤드라인 지표), 아키타입의 미디어(이 골격은 제품 UI 목업을 가짐). 비싼 의미 프롬프트를 굽는 대신 결정론적 구조를 먼저 쓴다 — 무료·환각 0·기하 우선.</p></div>
+N ≤ 2 (bounded)</span></p></div>
+      <div class="card"><div class="n">D</div><h3>Bake-once, stamp-many</h3><p>흡수·문법 추출·비전 분류처럼 비싼 작업은 테마당 한 번만 돌려 GrammarSpec에 캐시한다. 생성할 때는 원본 SVG를 다시 읽지 않고 캐시만 조합해서, 싸고 빠르고 결과가 항상 같다.</p></div>
+      <div class="card"><div class="n">E</div><h3>Structure-first context</h3><p>에이전트가 더 잘 고르게 하려고 이미 뽑아둔 구조를 그대로 보여준다. 역할 의미(kpi는 헤드라인 지표)나 아키타입이 가진 미디어(이 골격엔 제품 목업이 있음) 같은 것들. 의미 설명을 따로 비전으로 굽는 대신 결정론 구조를 먼저 쓰니 돈도 안 들고 환각도 없다.</p></div>
     </div>
   </section>
 
@@ -184,7 +184,7 @@ layout novelty &lt; 6 → reject</span></p></div>
   <!-- RESULTS -->
   <section>
     <h2>Results · 합성 결과 (no frame copied · grammar-synthesized)</h2>
-    <p class="lead" style="margin-bottom:24px">같은 제품(Pulse — AI 고객지원 코파일럿)을 세 테마로 합성한 6장. 텍스트·데이터 시각화·디바이스 목업·타이틀을 아우른다. 모두 원본 프레임을 복사하지 않고 GrammarSpec에서 좌표를 생성하며, 장식은 <b>테마의 측정된 습관</b>(colorful 대담 / black 무장식 / green 에디토리얼)을 따른다.</p>
+    <p class="lead" style="margin-bottom:24px">같은 제품(Pulse, AI 고객지원 코파일럿)으로 세 테마에서 6장을 뽑았다. 텍스트 슬라이드부터 데이터 시각화, 디바이스 목업, 타이틀까지 들어 있다. 전부 원본 프레임을 복사하지 않고 GrammarSpec에서 좌표를 새로 만든 것이고, 장식은 테마가 원래 쓰던 만큼만 따라간다. colorful은 과감하게, black은 거의 안 쓰고, green은 차분하게.</p>
     <div class="grid g2">
       <figure><img class="shot" src="assets/ex-timeline.png" alt="colorful timeline"><figcaption><span class="tag">colorful · timeline</span> 날짜 + 연결선 + 테마 장식 어휘(유기적 블롭)</figcaption></figure>
       <figure><img class="shot" src="assets/ex-metric.png" alt="colorful metric"><figcaption><span class="tag">colorful · metric</span> 메트릭 콜아웃 + 2×2 버블 사분면</figcaption></figure>
@@ -198,7 +198,7 @@ layout novelty &lt; 6 → reject</span></p></div>
   <!-- DESIGN SYSTEM INSPECTOR -->
   <section>
     <h2>Design systems · 템플릿 → 정립된 시스템</h2>
-    <p class="lead" style="margin-bottom:24px">각 테마의 슬라이드들을 <b>하나의 재사용 디자인 시스템으로 증류</b>한다 — 복사한 슬라이드가 아니라 추출된 규칙. 인스펙터는 팔레트·타입스케일·그리드/리듬·계층·blocks·아키타입 골격·장식 언어·목업을 한 페이지로 문서화한다.</p>
+    <p class="lead" style="margin-bottom:24px">테마마다 슬라이드들을 하나의 재사용 디자인 시스템으로 정리한다. 복사한 슬라이드가 아니라 거기서 뽑아낸 규칙이다. 인스펙터는 팔레트, 타입 스케일, 그리드와 리듬, 계층, blocks, 아키타입 골격, 장식, 목업을 한 페이지에 모아 보여준다.</p>
     <svg class="diagram" viewBox="0 0 1040 470" xmlns="http://www.w3.org/2000/svg" font-family="Inter">
       <!-- palette -->
       <text x="20" y="30" font-size="12" font-weight="700" fill="#6b6b6b" letter-spacing="1.2">PALETTE</text>
@@ -247,13 +247,13 @@ layout novelty &lt; 6 → reject</span></p></div>
       </g>
       <text x="20" y="372" font-size="12" fill="#6b6b6b">11 device mockups · 26 decoration assets · 30 type roles · 3 themes — all extracted, not authored</text>
     </svg>
-    <p class="lead" style="margin-top:16px">생성 인스펙터(<span class="mono" style="display:inline;padding:2px 6px">scripts/design-system.mjs</span>)는 GrammarSpec를 디자이너 문서처럼 렌더하고, 각 골격을 <b>실제 예시 슬라이드와 쌍</b>으로 보여준다 — 추상 패턴과 실물을 나란히.</p>
+    <p class="lead" style="margin-top:16px">인스펙터(<span class="mono" style="display:inline;padding:2px 6px">scripts/design-system.mjs</span>)는 GrammarSpec를 디자이너 문서처럼 그리고, 각 골격을 실제 예시 슬라이드와 나란히 놓는다. 추상 패턴과 실물을 같이 봐야 이해가 된다.</p>
   </section>
 
   <!-- MOCKUPS -->
   <section>
     <h2>Device mockups · 목업 자산 (place the frame, user fills the screen)</h2>
-    <p class="lead">목업(아이폰·맥북)은 <b>틀+빈 화면 한 세트의 재사용 자산</b>으로 추출된다. 합성 슬라이드는 프레임을 그대로 스탬프하고, 화면은 정확한 모양(둥근 모서리·노치)으로 clip된 빈 자리로 둔다 — 이미지는 우리가 만들지 않고 <b>사용자가 직접 끼운다</b>. 배치(개수·정렬)는 한 슬라이드의 관계 그래프에서 가져온다(예: 3-up 폰 행). black·colorful 두 테마에서 <b>11개 목업 자산</b>(iPhone·MacBook 등)을 추출.</p>
+    <p class="lead">목업(아이폰·맥북)은 틀과 빈 화면을 한 세트로 묶어 재사용 자산으로 떼어낸다. 합성할 땐 프레임을 그대로 찍고, 화면은 둥근 모서리와 노치까지 맞춘 빈 자리로 남긴다. 이미지는 우리가 만들지 않는다. 사용자가 직접 넣는다. 한 슬라이드에 여러 대가 들어갈 땐 그 슬라이드가 원래 쓰던 배열(예: 폰 3대 나란히)을 그대로 가져온다. black·colorful 두 테마에서 목업 11개를 뽑았다.</p>
     <div class="grid g3">
       <figure><img class="shot" src="assets/mk-phone.png" alt="colorful phone mockup"><figcaption><span class="tag">colorful · phone</span> 텍스트 좌측 + 아이폰 우측, 테마 장식(주황 블롭) 배경</figcaption></figure>
       <figure><img class="shot" src="assets/mk-fill.png" alt="phone empty screen"><figcaption><span class="tag">black · phone</span> 빈 화면(노치 모양 그대로) — 사용자가 채움</figcaption></figure>
@@ -266,53 +266,53 @@ layout novelty &lt; 6 → reject</span></p></div>
     <h2>Hard problems · 풀어낸 난제</h2>
     <div class="grid g2">
       <div class="prob">
-        <div class="pt">"글자만 바꾸기" 함정 (in-place fill)</div>
-        <div class="row"><b>문제</b><span>슬롯 채우기·LLM 직접 배치는 결국 원본 슬라이드를 복제한다.</span></div>
-        <div class="row"><b>난점</b><span>원본의 감성·간격·계층은 지키되 레이아웃 구조는 새로 만들어야 한다.</span></div>
-        <div class="row"><b>해법</b><span>아키타입별 예시 region을 정규화·median 집계한 <b>스켈레톤(패턴)</b>을 새 콘텐츠로 인스턴스화.</span></div>
-        <div class="row res"><b>결과</b><span>원본 미복사 + 신규성&lt;6 reject 게이트로 보장.</span></div>
+        <div class="pt">"글자만 바꾸기" 함정</div>
+        <div class="row"><b>문제</b><span>슬롯만 채우거나 배치를 통째로 LLM에 맡기면 결국 원본 슬라이드를 그대로 베끼게 된다.</span></div>
+        <div class="row"><b>난점</b><span>원본의 분위기·간격·계층은 살리면서 레이아웃 구조는 새로 짜야 한다.</span></div>
+        <div class="row"><b>해법</b><span>아키타입별 예시의 영역을 정규화해 중앙값으로 합친 골격을 만들고, 거기에 새 콘텐츠를 끼웠다.</span></div>
+        <div class="row res"><b>결과</b><span>원본을 복사하지 않고, 신규성 6점 미만이면 reject하는 게이트로 베끼기를 막았다.</span></div>
       </div>
       <div class="prob">
         <div class="pt">LLM은 픽셀 정밀도가 없다</div>
-        <div class="row"><b>문제</b><span>모델에 좌표를 맡기면 겹침·캔버스 이탈·동일 입력 비재현.</span></div>
-        <div class="row"><b>난점</b><span>창의적 구성은 원하지만 결과는 깨지면 안 된다.</span></div>
-        <div class="row"><b>해법</b><span>LLM은 의미만, 좌표는 grammar+solver가 전담. 골격이 창의성을 제약 안에 가둔다.</span></div>
-        <div class="row res"><b>결과</b><span>겹침 0 · 이탈 0 · 완전 재현.</span></div>
+        <div class="row"><b>문제</b><span>좌표를 모델에 맡기면 글자가 겹치고 화면을 벗어나고, 같은 입력에도 결과가 달라진다.</span></div>
+        <div class="row"><b>난점</b><span>구성은 창의적이길 바라지만 결과물이 깨지면 안 된다.</span></div>
+        <div class="row"><b>해법</b><span>의미만 LLM이 정하고 좌표는 grammar와 solver가 전담했다. 골격이 창의성을 제약 안에 가둔다.</span></div>
+        <div class="row res"><b>결과</b><span>겹침도 화면 이탈도 없고, 같은 입력이면 같은 결과가 나온다.</span></div>
       </div>
       <div class="prob">
-        <div class="pt">텍스트 오버플로우 = measure ≠ render</div>
-        <div class="row"><b>문제</b><span>휴리스틱 폭 추정은 실제 렌더와 어긋나 줄바꿈·넘침이 예측 불가.</span></div>
-        <div class="row"><b>난점</b><span>생성 텍스트는 길이를 통제할 수 없다.</span></div>
-        <div class="row"><b>해법</b><span>opentype.js 정확 메트릭 + resvg 폰트 동기화로 <b>측정=렌더 일치</b>. 폭·높이 동시 축소.</span></div>
-        <div class="row res"><b>결과</b><span>줄바꿈·자동 축소가 정확, 넘침 사라짐.</span></div>
+        <div class="pt">텍스트 넘침 — 측정과 렌더가 어긋난다</div>
+        <div class="row"><b>문제</b><span>글자 폭을 어림짐작하면 실제 렌더와 어긋나서 줄바꿈과 넘침을 예측할 수 없다.</span></div>
+        <div class="row"><b>난점</b><span>생성된 텍스트는 길이를 미리 통제할 수 없다.</span></div>
+        <div class="row"><b>해법</b><span>opentype.js로 폭을 정확히 재고 resvg와 폰트를 맞춰 측정과 렌더를 일치시켰다. 폭과 높이를 같이 줄인다.</span></div>
+        <div class="row res"><b>결과</b><span>줄바꿈과 자동 축소가 정확해져서 넘침이 사라졌다.</span></div>
       </div>
       <div class="prob">
         <div class="pt">목업 안에 이미지를 어떻게 넣나</div>
-        <div class="row"><b>문제</b><span>합성한 새 슬라이드에서 디바이스 목업을 재사용하고 화면에만 이미지를 넣어야 한다.</span></div>
-        <div class="row"><b>난점</b><span>화면은 사각형이 아니라 둥근 모서리+노치의 path. 프레임은 통째 유지하되 화면만 교체 대상.</span></div>
-        <div class="row"><b>해법</b><span>목업을 <b>틀+화면 path</b> 자기완결 자산으로 추출 → 임의 위치·크기로 스탬프 → 사용자 이미지를 화면 path로 clip. 다중 목업 배열은 슬라이드의 관계 그래프에서.</span></div>
-        <div class="row res"><b>결과</b><span>노치까지 정확히 clip · 3-up 행 재현 · 이미지는 사용자가 채움.</span></div>
+        <div class="row"><b>문제</b><span>새로 합성한 슬라이드에서도 디바이스 목업을 재사용하고, 화면에만 이미지가 들어가야 한다.</span></div>
+        <div class="row"><b>난점</b><span>화면이 사각형이 아니라 둥근 모서리에 노치까지 있는 path다. 프레임은 통째로 두고 화면만 바꿔야 한다.</span></div>
+        <div class="row"><b>해법</b><span>목업을 틀과 화면 path가 들어간 독립 자산으로 떼어내, 원하는 위치·크기로 찍고 사용자 이미지를 화면 path 모양으로 clip한다. 여러 대를 놓을 땐 그 슬라이드의 배열을 그대로 쓴다.</span></div>
+        <div class="row res"><b>결과</b><span>노치까지 정확히 clip되고 폰 3대 배열도 재현된다. 이미지는 사용자가 채운다.</span></div>
       </div>
       <div class="prob">
         <div class="pt">공간 관계를 버리고 있었다</div>
-        <div class="row"><b>문제</b><span>모든 슬라이드를 단일 중앙 컬럼에 세로 스택 — 단조롭다.</span></div>
-        <div class="row"><b>난점</b><span>스켈레톤은 zone별 수평 밴드(anchored 좌/우)를 담는데 합성이 그 x를 폐기.</span></div>
-        <div class="row"><b>해법</b><span>mined xFrac을 직접 소비 — title 좌/body 우처럼 분리되면 <b>side-by-side</b>로 합성.</span></div>
-        <div class="row res"><b>결과</b><span>테마가 실제로 하는 2단 구성을 재현, 단조 탈피.</span></div>
+        <div class="row"><b>문제</b><span>처음엔 모든 슬라이드를 가운데 한 컬럼에 세로로만 쌓아서 단조로웠다.</span></div>
+        <div class="row"><b>난점</b><span>골격에는 영역별 수평 위치(왼쪽/오른쪽)가 들어 있는데, 합성이 그 x값을 버리고 있었다.</span></div>
+        <div class="row"><b>해법</b><span>골격의 x값을 그대로 살려서, 제목이 왼쪽·본문이 오른쪽처럼 갈라져 있으면 좌우 2단으로 합성한다.</span></div>
+        <div class="row res"><b>결과</b><span>테마가 실제로 쓰던 2단 구성이 살아나면서 단조로움이 사라졌다.</span></div>
       </div>
       <div class="prob">
-        <div class="pt">AI 출력의 신뢰성</div>
-        <div class="row"><b>문제</b><span>모델이 가끔 스키마를 벗어난 형태(비배열 등)를 내 파이프라인이 깨졌다.</span></div>
-        <div class="row"><b>난점</b><span>확률적 출력 위에 결정론 파이프라인을 올려야 한다.</span></div>
-        <div class="row"><b>해법</b><span>tool-use 스키마 강제 + 경계에서 형태 방어·정규화.</span></div>
-        <div class="row res"><b>결과</b><span>모델 변동에도 파이프라인 안정.</span></div>
+        <div class="pt">모델 출력이 가끔 어긋난다</div>
+        <div class="row"><b>문제</b><span>모델이 이따금 스키마를 벗어난 형태(배열이 아닌 값 등)를 내보내 파이프라인이 깨졌다.</span></div>
+        <div class="row"><b>난점</b><span>확률적인 출력 위에 결정론적 파이프라인을 올려야 한다.</span></div>
+        <div class="row"><b>해법</b><span>tool-use로 형태를 강제하고, 경계에서 한 번 더 형태를 검사하고 정규화했다.</span></div>
+        <div class="row res"><b>결과</b><span>모델이 흔들려도 파이프라인은 안 깨진다.</span></div>
       </div>
       <div class="prob">
         <div class="pt">"왜 이 에셋을 썼나"에 답할 수 없었다</div>
-        <div class="row"><b>문제</b><span>장식·배치가 인덱스 회전 등 임의 선택이라 설명 불가.</span></div>
-        <div class="row"><b>난점</b><span>생성 결과는 설명 가능해야 신뢰받는다.</span></div>
-        <div class="row"><b>해법</b><span>각 결정에 근거를 기록 — "가장 빈 코너 + 여유 반경 + 팔레트색", 장식량은 테마 측정 coverage.</span></div>
-        <div class="row res"><b>결과</b><span>모든 배치/장식 선택을 한 줄로 설명 가능.</span></div>
+        <div class="row"><b>문제</b><span>장식과 배치를 인덱스 순서로 돌려쓰다 보니 왜 여기에 이걸 놨는지 설명할 수가 없었다.</span></div>
+        <div class="row"><b>난점</b><span>결과를 설명할 수 있어야 믿고 쓸 수 있다.</span></div>
+        <div class="row"><b>해법</b><span>결정마다 근거를 남겼다. 예를 들어 "가장 비어 있는 코너에, 안 겹치는 최대 반경으로, 팔레트 색으로". 장식 양도 테마가 원래 쓰던 정도에서 가져온다.</span></div>
+        <div class="row res"><b>결과</b><span>이제 모든 배치·장식 선택을 한 줄로 설명할 수 있다.</span></div>
       </div>
     </div>
   </section>
@@ -369,12 +369,12 @@ layout novelty &lt; 6 → reject</span></p></div>
   <!-- WHAT'S NEXT -->
   <section>
     <h2>What's next · 차기 기술 로드맵</h2>
-    <p class="lead" style="margin-bottom:22px">현재 결정론 배치는 안정적이지만, 다음 단계는 같은 책임 분리 위에 더 강한 도구를 얹는 것이다.</p>
-    <div class="next"><div class="h">Constraint solver<small>Cassowary / kiwi</small></div><div class="b">스켈레톤을 하드·소프트 제약으로 표현해 단순 스택을 넘어선 자유 배치. 골격은 "관계 우선, 좌표는 마지막" 철학과 맞물린다.</div></div>
-    <div class="next"><div class="h">Embedding retrieval<small>vector similarity</small></div><div class="b">아키타입 매칭과 유사도 페널티(현재 구조 거리)를 임베딩 거리로 — 더 풍부한 신규성·검색.</div></div>
-    <div class="next"><div class="h">Preference learning<small>DPO-style</small></div><div class="b">evaluator 7지표를 보상 신호로 삼아 아키타입·콘텐츠 선택 정책을 학습 — 휴먼 피드백 없이 자기 개선.</div></div>
-    <div class="next"><div class="h">Multi-agent decomposition<small>planner · designer · critic</small></div><div class="b">현재 단일 루프를 역할별 독립 에이전트로 분해해 병렬·전문화. 비평가는 항상 별도 레인.</div></div>
-    <div class="next"><div class="h">VLM-grounded decoration<small>+ Code Connect sync</small></div><div class="b">장식·이미지 선택을 비전-언어 모델로 콘텐츠에 정합. 디자인 토큰/컴포넌트 양방향 동기화.</div></div>
+    <p class="lead" style="margin-bottom:22px">지금 결정론 배치는 안정적으로 돌아간다. 다음은 같은 역할 분리를 유지하면서 더 센 도구를 얹는 것이다.</p>
+    <div class="next"><div class="h">Constraint solver<small>Cassowary / kiwi</small></div><div class="b">골격을 하드·소프트 제약으로 표현해서 단순 세로 스택을 넘는 자유로운 배치를 하려 한다. "관계 먼저, 좌표는 나중에"라는 골격 철학과도 잘 맞는다.</div></div>
+    <div class="next"><div class="h">Embedding retrieval<small>vector similarity</small></div><div class="b">아키타입 매칭과 유사도 점수를 지금은 구조 거리로 재는데, 임베딩 거리로 바꾸면 신규성 판단과 검색이 더 풍부해진다.</div></div>
+    <div class="next"><div class="h">Preference learning<small>DPO-style</small></div><div class="b">evaluator의 7개 지표를 보상으로 써서 아키타입·콘텐츠 고르는 방식을 학습시키면, 사람 피드백 없이도 스스로 나아질 수 있다.</div></div>
+    <div class="next"><div class="h">Multi-agent decomposition<small>planner · designer · critic</small></div><div class="b">지금은 한 루프 안에서 다 하는데, planner·designer·critic으로 역할을 나누면 병렬로 돌리고 전문화할 수 있다. 비평은 항상 따로 둔다.</div></div>
+    <div class="next"><div class="h">VLM-grounded decoration<small>+ Code Connect sync</small></div><div class="b">장식과 이미지 선택을 비전-언어 모델로 콘텐츠에 맞추고, 디자인 토큰·컴포넌트를 코드와 양방향으로 동기화하려 한다.</div></div>
   </section>
 
   <!-- REFERENCE DIAGRAMS -->
@@ -387,8 +387,8 @@ layout novelty &lt; 6 → reject</span></p></div>
   </section>
 
   <div class="foot">
-    Invariants · 불변 원칙 — never copy a source frame · LLM writes content + picks archetype, never coordinates · geometry from grammar · deterministic, no randomness<br>
-    Stencil · agentic generative slide synthesis — project report
+    원칙: 원본 프레임은 복사하지 않는다 · LLM은 콘텐츠를 쓰고 아키타입을 고를 뿐 좌표는 만들지 않는다 · 좌표는 전부 문법에서 나온다 · 랜덤 없이 결정론으로 돌아간다<br>
+    Stencil · 디자인 문법 기반 슬라이드 합성 — 개인 프로젝트
   </div>
 
 </div>
