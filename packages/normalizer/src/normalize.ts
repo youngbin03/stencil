@@ -142,7 +142,7 @@ function buildImageSlot(el: Element, index: number): ManifestSlot {
 
 /** Axis-aligned bbox of an SVG path `d` (endpoints + control points). Handles the
  *  Figma command set (M/L/H/V/C/S/Q/T/A/Z, absolute + relative). */
-function pathBBox(d: string): BBox | null {
+export function pathBBox(d: string): BBox | null {
   const toks = d.match(/[a-zA-Z]|-?\d*\.?\d+(?:e[-+]?\d+)?/g);
   if (!toks) return null;
   let i = 0, cx = 0, cy = 0, minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
