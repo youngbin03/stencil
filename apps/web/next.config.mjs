@@ -23,7 +23,7 @@ process.env.STENCIL_FONTS_DIR ??= resolve(root, "fonts");
 const nextConfig = {
   // Node-only libraries used by the assemble pipeline — keep them external so
   // Next does not try to bundle native binaries / Node built-ins for the server.
-  serverExternalPackages: ["@anthropic-ai/sdk", "opentype.js", "@xmldom/xmldom"],
+  serverExternalPackages: ["@anthropic-ai/sdk", "opentype.js", "@xmldom/xmldom", "@resvg/resvg-js", "@stencil/classifier"],
 };
 
 export default nextConfig;

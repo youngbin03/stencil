@@ -4,6 +4,7 @@ import "./globals.css";
 export const metadata = {
   title: "Stencil — AI deck generation",
   description: "Generate on-brand slide decks from a baked design system.",
+  icons: { icon: "/logo.png" },
 };
 
 // The rendered slide SVGs reference the themes' font families by name; load them

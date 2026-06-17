@@ -17,3 +17,4 @@ fixtures/sample/
 
 # Next.js generated
 next-env.d.ts
+apps/web/.data/

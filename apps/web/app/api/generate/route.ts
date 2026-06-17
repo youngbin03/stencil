@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { generateDeck, isTheme } from "@/lib/generate";
+import { existsSync } from "node:fs";
+import { generateDeck } from "@/lib/generate";
 import { generateSynthDeck } from "@/lib/synth";
+import { resolveTheme } from "@/lib/themes";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -18,7 +20,11 @@ export async function POST(req: Request): Promise<Response> {
   const slideCount = Math.min(12, Math.max(1, Number(body.slideCount) || 6));
   const mode = body.mode === "synthesis" ? "synthesis" : "filler";
 
-  if (!isTheme(theme)) return NextResponse.json({ error: "unknown theme" }, { status: 400 });
+  const resolved = resolveTheme(theme);
+  if (!resolved) return NextResponse.json({ error: "unknown theme" }, { status: 400 });
+  if (!existsSync(resolved.systemPath)) {
+    return NextResponse.json({ error: "theme not baked yet — add slides and Rebake first" }, { status: 400 });
+  }
   if (prompt.length < 4) return NextResponse.json({ error: "prompt too short" }, { status: 400 });
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: "ANTHROPIC_API_KEY not configured on the server" }, { status: 500 });

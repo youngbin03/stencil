@@ -1,17 +1,16 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUp, Download, FileText, FolderOpen, Loader2, Paperclip, X } from "lucide-react";
+import { ArrowUp, Download, FileText, Loader2, Paperclip, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TemplateManager } from "@/components/template-manager";
+import { TemplateManager, type ThemeInfo } from "@/components/template-manager";
 import { cn } from "@/lib/utils";
 
-const THEMES = ["colorful", "black", "green"] as const;
-type Theme = (typeof THEMES)[number];
+type Theme = string;
 type Mode = "synthesis" | "filler";
 
 interface Slide {
@@ -38,8 +37,18 @@ interface Attachment {
 }
 
 export default function Page() {
-  const [theme, setTheme] = useState<Theme>("colorful");
+  const [themes, setThemes] = useState<ThemeInfo[]>([]);
+  const [theme, setTheme] = useState<Theme>("");
   const [mode, setMode] = useState<Mode>("synthesis");
+
+  const loadThemes = useCallback(async () => {
+    const d = await fetch("/api/themes").then((r) => r.json()).catch(() => ({ themes: [] }));
+    const list: ThemeInfo[] = d.themes ?? [];
+    setThemes(list);
+    setTheme((cur) => (cur && list.some((t) => t.slug === cur && t.baked) ? cur : list.find((t) => t.baked)?.slug ?? ""));
+  }, []);
+  useEffect(() => { void loadThemes(); }, [loadThemes]);
+  const bakedThemes = themes.filter((t) => t.baked);
   const [prompt, setPrompt] = useState("");
   const [slideCount, setSlideCount] = useState(6);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -104,7 +113,8 @@ export default function Page() {
         className="mb-10 text-center"
       >
         <div className="mb-5 inline-flex items-center gap-2 text-[15px] font-semibold tracking-tight">
-          <span className="inline-block size-4 rounded-[5px] bg-primary" /> Stencil
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Stencil" className="size-5 rounded-[6px]" /> Stencil
         </div>
         <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-[40px] sm:leading-[1.08]">
           Describe a deck. Get new layouts.
@@ -199,17 +209,19 @@ export default function Page() {
             </TabsList>
           </Tabs>
 
-          <Tabs value={theme} onValueChange={(v) => setTheme(v as Theme)}>
-            <TabsList className="h-8">
-              {THEMES.map((t) => (
-                <TabsTrigger key={t} value={t}>{t}</TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+          {bakedThemes.length > 0 && (
+            <Tabs value={theme} onValueChange={(v) => setTheme(v as Theme)}>
+              <TabsList className="h-8">
+                {bakedThemes.map((t) => (
+                  <TabsTrigger key={t.slug} value={t.slug}>{t.name}</TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          )}
 
           <div className="ml-auto flex items-center gap-1.5">
             <Stepper value={slideCount} setValue={setSlideCount} />
-            <Button size="icon" onClick={generate} disabled={loading || prompt.trim().length < 4} title="Generate (⌘↵)">
+            <Button size="icon" onClick={generate} disabled={loading || prompt.trim().length < 4 || !theme} title="Generate (⌘↵)">
               {loading ? <Loader2 className="size-[18px] animate-spin" /> : <ArrowUp className="size-[18px]" />}
             </Button>
           </div>
@@ -218,7 +230,7 @@ export default function Page() {
 
       {/* secondary actions */}
       <div className="mt-3 flex items-center justify-between px-1">
-        <TemplateManager theme={theme} />
+        <TemplateManager themes={themes} onChanged={loadThemes} />
         <AnimatePresence>
           {error && (
             <motion.span

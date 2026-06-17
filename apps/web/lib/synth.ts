@@ -1,19 +1,17 @@
 import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import { buildGrammarSpec, synthesizeFromGrammar, evaluateSlide, archetypeSchema, chooseDecoration, type ContentPlan } from "@stencil/synthesizer";
 import { solveDeckSlide } from "@stencil/solver";
 import { renderComposite } from "@stencil/renderer";
 import type { DesignSystemIR } from "@stencil/ir";
 import type { Theme } from "./generate";
+import { resolveTheme } from "./themes";
 
 /**
  * Synthesis path (DEVDOC Phase 6): Claude plans an archetype sequence + writes
  * content; the synthesizer builds NEW layouts from the grammar (no frame copy);
  * the evaluator gates each slide. Returns composite SVGs + quality scores.
  */
-
-const ROOT = process.env.STENCIL_ROOT ?? process.cwd();
 
 export interface SynthSlide {
   archetype: string;
@@ -44,7 +42,9 @@ const mapLimit = async <T, R>(items: T[], n: number, fn: (x: T) => Promise<R>): 
 };
 
 export async function generateSynthDeck(theme: Theme, prompt: string, slideCount: number): Promise<SynthDeck> {
-  const system = JSON.parse(await readFile(resolve(ROOT, `fixtures/assets/${theme}/system.json`), "utf8")) as DesignSystemIR;
+  const t = resolveTheme(theme);
+  if (!t) throw new Error("unknown theme");
+  const system = JSON.parse(await readFile(t.systemPath, "utf8")) as DesignSystemIR;
   const spec = buildGrammarSpec(system);
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const model = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
