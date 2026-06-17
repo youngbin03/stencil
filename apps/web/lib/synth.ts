@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import Anthropic from "@anthropic-ai/sdk";
-import { buildGrammarSpec, synthesizeFromGrammar, evaluateSlide, archetypeSchema, chooseDecoration, type ContentPlan } from "@stencil/synthesizer";
+import { buildGrammarSpec, synthesizeFromGrammar, evaluateSlide, archetypeSchema, describeRoles, chooseDecoration, type ContentPlan } from "@stencil/synthesizer";
 import { solveDeckSlide } from "@stencil/solver";
 import { renderComposite } from "@stencil/renderer";
 import { placeMockup, type MockupAsset } from "@stencil/normalizer";
@@ -68,11 +68,17 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
   const model = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
 
   const archetypes = spec.archetypes.filter((a) => a.zones.some((z) => z.id !== "footer")).map((a) => a.archetype);
-  const catalog = archetypes.map((a) => { const s = archetypeSchema(spec, a); return `- ${a}: singles[${s.singles.join(",")}]${s.cardRoles.length ? ` cards[${s.cardRoles.join("/")}]` : ""}`; }).join("\n");
+  // Structure-first: surface each archetype's MEDIA (device mockups show a product
+  // UI; photos) so the planner picks product/feature archetypes for product slides.
+  const catalog = archetypes.map((a) => {
+    const s = archetypeSchema(spec, a);
+    const media = [s.mockups ? `${s.mockups} device mockup(s) (product UI on screen)` : "", s.photos ? `${s.photos} image(s)` : ""].filter(Boolean).join(", ");
+    return `- ${a}: singles[${s.singles.join(",")}]${s.cardRoles.length ? ` cards[${s.cardRoles.join("/")}]` : ""}${media ? ` | media: ${media}` : ""}`;
+  }).join("\n");
 
   const outline = await callTool<{ title: string; slides: { archetype: string; purpose: string }[] }>(
     client, model,
-    "You plan a presentation as a sequence of composition ARCHETYPES (not fixed templates). Cover first, closing/section last.",
+    "You plan a presentation as a sequence of composition ARCHETYPES (not fixed templates). Cover first, closing/section last. Prefer an archetype whose media fits the slide — e.g. one with a device mockup for product/feature/demo slides.",
     `Topic: ${prompt}\n\nAvailable archetypes:\n${catalog}\n\nPlan about ${slideCount} slides.`,
     { type: "object", properties: { title: { type: "string" }, slides: { type: "array", items: { type: "object", properties: { archetype: { type: "string" }, purpose: { type: "string" } }, required: ["archetype", "purpose"], additionalProperties: false } } }, required: ["title", "slides"], additionalProperties: false });
   if (!Array.isArray(outline.slides) || outline.slides.length === 0) throw new Error("planner returned no slides");
@@ -82,11 +88,13 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
   const writeContent = async (archetype: string, purpose: string, shorter: boolean): Promise<ContentPlan> => {
     const s = archetypeSchema(spec, archetype);
     const cardLine = s.cardRoles.length ? `\nAlso write 3 cards, each with: ${s.cardRoles.join(", ")} (kpi = a short metric e.g. +38%, 120K).` : "";
+    const roleHints = describeRoles([...s.singles, ...s.cardRoles]);
+    const mockupLine = s.mockups ? `\nThis slide shows ${s.mockups} device mockup(s) — write copy that frames a product/app shown on screen.` : "";
     const brief = shorter ? " Keep every value SHORT (title <= 5 words, body <= 12 words)." : "";
     const input = await callTool<{ singles: { role: string; text: string }[]; cards?: { slots: { role: string; text: string }[] }[] }>(
       client, model,
       `You write slide copy. Concise text per role. Title/headline punchy; body one short sentence; caption/label a few words; quote one sentence.${brief}`,
-      `Deck: ${outline.title}\nTopic: ${prompt}\nThis slide (${archetype}): ${purpose}\nWrite singles for roles: ${s.singles.join(", ")}.${cardLine}`,
+      `Deck: ${outline.title}\nTopic: ${prompt}\nThis slide (${archetype}): ${purpose}\nWrite singles for roles: ${s.singles.join(", ")}.${cardLine}${mockupLine}\nRole meanings: ${roleHints}.`,
       { type: "object", properties: {
           singles: { type: "array", items: { type: "object", properties: { role: { type: "string" }, text: { type: "string" } }, required: ["role", "text"], additionalProperties: false } },
           cards: { type: "array", items: { type: "object", properties: { slots: { type: "array", items: { type: "object", properties: { role: { type: "string" }, text: { type: "string" } }, required: ["role", "text"], additionalProperties: false } } }, required: ["slots"], additionalProperties: false } },

@@ -45,7 +45,22 @@ const NEEDS_CARDS: Record<string, Role[]> = {
   agenda: ["label", "body"],
 };
 
-export function archetypeSchema(spec: GrammarSpec, archetype: string): { archetype: string; singles: Role[]; cardRoles: Role[]; images: number } {
+/** What each role means — deterministic semantics exposed to the content planner
+ *  so copy fits the slot (no vision, no baking). */
+const ROLE_HINTS: Partial<Record<Role, string>> = {
+  title: "the slide's main heading", headline: "a bold statement headline",
+  subtitle: "a supporting line under the title", eyebrow: "a small kicker/label above the title",
+  body: "one short explanatory sentence", bullet: "a short list item",
+  kpi: "a headline metric, e.g. +38% or 120K", caption: "a few words labeling something",
+  label: "a short tag or name", quote: "a one-sentence quotation",
+  footer: "a small footer line", pagenum: "a page number",
+};
+/** "title = …; kpi = …" for the given roles (deduped). */
+export function describeRoles(roles: Role[]): string {
+  return [...new Set(roles)].filter((r) => ROLE_HINTS[r]).map((r) => `${r} = ${ROLE_HINTS[r]}`).join("; ");
+}
+
+export function archetypeSchema(spec: GrammarSpec, archetype: string): { archetype: string; singles: Role[]; cardRoles: Role[]; images: number; mockups: number; photos: number } {
   const sk = spec.archetypes.find((a) => a.archetype === archetype) ?? spec.archetypes[0]!;
   const singles: Role[] = [];
   for (const z of sk.zones) {
@@ -62,7 +77,8 @@ export function archetypeSchema(spec: GrammarSpec, archetype: string): { archety
     const measured = Object.keys(spec.cardSpecs).find((k) => k.split("/").some((r) => want.includes(r as Role)));
     cardRoles = measured ? (measured.split("/") as Role[]) : want;
   }
-  return { archetype, singles, cardRoles, images: sk.imageZones.length };
+  const mockups = sk.imageZones.filter((z) => z.mockupRef).length;
+  return { archetype, singles, cardRoles, images: sk.imageZones.length, mockups, photos: sk.imageZones.length - mockups };
 }
 
 function snap(guides: number[], v: number, tol: number): number {
