@@ -14,9 +14,24 @@ const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 const ZC = { header: "#e6194b", title: "#3cb44b", cards: "#4363d8", body: "#f58231", footer: "#911eb4" };
 const W = 1600;
 
-// representative real slide per archetype
-const repByArch = {};
-for (const L of sys.layouts) { const a = L.archetype; if (a && !repByArch[a]) repByArch[a] = L.id.replace(`${theme}_`, ""); }
+// representative = the real slide whose regions are CLOSEST to the median skeleton
+// (not just the first member), so the example actually matches the mined pattern.
+function nearestRep(sk) {
+  const cands = sys.layouts.filter((L) => L.archetype === sk.archetype && L.regions?.length);
+  let best = null, bd = Infinity;
+  for (const L of cands) {
+    let d = 0;
+    for (const z of sk.zones) {
+      const r = L.regions.find((r) => r.id === z.id);
+      if (!r) { d += 1; continue; }
+      const fx0 = r.bbox.x / 1920, fx1 = (r.bbox.x + r.bbox.w) / 1920, fy0 = r.bbox.y / 1080, fy1 = (r.bbox.y + r.bbox.h) / 1080;
+      d += Math.abs(fx0 - z.xFrac[0]) + Math.abs(fx1 - z.xFrac[1]) + Math.abs(fy0 - z.yFrac[0]) + Math.abs(fy1 - z.yFrac[1]);
+    }
+    d /= Math.max(1, sk.zones.length);
+    if (d < bd) { bd = d; best = L; }
+  }
+  return best ? { name: best.id.replace(`${theme}_`, ""), dist: bd } : null;
+}
 const exampleURI = (name) => {
   const p = `templates/${DIR}/${name}.svg`;
   if (!existsSync(p)) return null;
@@ -74,11 +89,16 @@ const gp = s.spacing.gaps;
 let y = 470;
 svg += lab(48, y, "ARCHETYPE SKELETONS · real example + the pattern mined across slides (not a copied frame)");
 y += 22;
-const tops = s.archetypes.filter((a) => a.archetype !== "other").slice(0, 4);
+// rank archetypes by how well their best example matches the skeleton (closest first)
+const tops = s.archetypes.filter((a) => a.archetype !== "other")
+  .map((sk) => ({ sk, rep: nearestRep(sk) }))
+  .filter((a) => a.rep)
+  .sort((a, b) => a.rep.dist - b.rep.dist)
+  .slice(0, 4);
 const pw = 320, ph = 180, gapMid = 14, blockW = pw * 2 + gapMid, perRow = 2, gapX = 56, gapY = 60;
-tops.forEach((sk, i) => {
+tops.forEach(({ sk, rep }, i) => {
   const bx = 48 + (i % perRow) * (blockW + gapX), by = y + Math.floor(i / perRow) * (ph + gapY);
-  const ex = exampleURI(repByArch[sk.archetype]);
+  const ex = exampleURI(rep.name);
   if (ex) svg += `<image href="${ex}" x="${bx}" y="${by}" width="${pw}" height="${ph}" preserveAspectRatio="xMidYMid meet"/><rect x="${bx}" y="${by}" width="${pw}" height="${ph}" rx="6" fill="none" stroke="#ddd"/>`;
   else svg += `<rect x="${bx}" y="${by}" width="${pw}" height="${ph}" rx="6" fill="#f0f0f0" stroke="#ddd"/>`;
   svg += skel(sk, bx + pw + gapMid, by, pw, ph);
