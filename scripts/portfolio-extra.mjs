@@ -70,5 +70,35 @@ function blackLaptop() {
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs><rect width="${W}" height="${H}" fill="${s.colors.bg}"/>${t}${markup}</svg>`;
 }
 
-const out = [["colorful_timeline_f16", timelineFrame16()], ["green_title", greenTitle()], ["black_laptop", blackLaptop()]];
+// [4] colorful phone mockup (Frame-28 style): orange blobs + text left + iPhone right (empty screen)
+function colorfulPhone() {
+  const s = spec("colorful");
+  const asset = JSON.parse(readFileSync("fixtures/assets/colorful/mockups/colorful_mockup_1.json", "utf8"));
+  const { defs, markup } = placeMockup(asset, asset.frameBBox); // native position, empty checker screen
+  const nf = s.type.title?.family ?? s.fontFamily, bf = s.type.body?.family ?? s.fontFamily;
+  const blobs = `<g fill="#FF542D"><path d="M1874 1310.97C1874 1695.35 1766.7 1873.5 1627 1910.96L1627 1347.97L1194 1347.97C1212.59 865.55 1431.6 163.991 1156 -463C1382.45 -185.041 1874 560.48 1874 1310.97Z"/><path d="M1189 2163.95C1189 2367.43 1276.88 2444.29 1381 2441.95L1381 2177.95L1604 2177.95C1591.61 1957 1454.58 1637.96 1622 1351.97C1483.82 1479.33 1189 1820.08 1189 2163.95Z"/></g>`;
+  let t = `<text x="64" y="120" font-family="${bf}" font-size="22" font-weight="600" letter-spacing="2" fill="${s.colors.text}" opacity="0.6">PRODUCT</text>`;
+  t += `<text x="64" y="380" font-family="${nf}" font-size="96" font-weight="200" letter-spacing="-2" fill="${s.colors.text}">Ship faster</text>`;
+  t += `<text x="64" y="480" font-family="${nf}" font-size="96" font-weight="200" letter-spacing="-2" fill="${s.colors.text}">with Pulse</text>`;
+  wrap("Your AI copilot handles the busywork so your team can focus on what matters.", 38).forEach((ln, i) => { t += `<text x="64" y="${580 + i * 36}" font-family="${bf}" font-size="28" fill="${s.colors.text}" opacity="0.75">${esc(ln)}</text>`; });
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs><rect width="${W}" height="${H}" fill="${s.colors.bg}"/>${blobs}${t}${markup}</svg>`;
+}
+
+// [5] black phone mockup with a USER IMAGE filled into the screen (clip demo)
+function blackPhoneFilled() {
+  const s = spec("black");
+  const asset = JSON.parse(readFileSync("fixtures/assets/black/mockups/black_mockup_2.json", "utf8"));
+  const photo = "data:image/jpeg;base64," + readFileSync("fixtures/sample/photo1.jpg").toString("base64");
+  const { defs, markup } = placeMockup(asset, asset.frameBBox, photo);
+  const nf = s.type.title?.family ?? s.fontFamily, bf = s.type.body?.family ?? s.fontFamily;
+  let t = `<text x="${M}" y="120" font-family="${bf}" font-size="22" font-weight="600" letter-spacing="2" fill="${s.colors.text}" opacity="0.6">IN THE APP</text>`;
+  t += `<text x="${M}" y="440" font-family="${nf}" font-size="80" font-weight="300" letter-spacing="-2" fill="${s.colors.text}">See it in action</text>`;
+  wrap("Drop a screenshot into the device and it clips to the exact screen — notch and all.", 32).forEach((ln, i) => { t += `<text x="${M}" y="${510 + i * 36}" font-family="${bf}" font-size="28" fill="${s.colors.text}" opacity="0.8">${esc(ln)}</text>`; });
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs><rect width="${W}" height="${H}" fill="${s.colors.bg}"/>${t}${markup}</svg>`;
+}
+
+const out = [
+  ["colorful_timeline_f16", timelineFrame16()], ["green_title", greenTitle()], ["black_laptop", blackLaptop()],
+  ["colorful_phone", colorfulPhone()], ["black_phone_filled", blackPhoneFilled()],
+];
 for (const [name, svg] of out) { const p = `fixtures/out/extra/${name}.png`; writeFileSync(p, rasterize(svg, 1280)); console.log(p); }
