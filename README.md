@@ -21,7 +21,7 @@ Claude (vision + tool-use) classifies slots, picks archetypes, writes content, a
   <img src="docs/assets/ex-stat.png" width="32%" alt="stat" />
 </p>
 
-> 📊 **Full project report:** open [`docs/portfolio.html`](docs/portfolio.html) for the pipeline, AI-engineering decisions, hard problems solved, and the design-system inspector.
+> 📊 **Live project report → https://youngbin03.github.io/stencil/** — the full pipeline, AI-engineering decisions, hard problems, results, and the colorful design-system board. (Source: [`docs/portfolio.html`](docs/portfolio.html).)
 
 ---
 
