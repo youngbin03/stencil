@@ -27,6 +27,17 @@ export interface MockupAsset {
 }
 
 const SCREEN_ID = /screen|insert\s*design/i;
+const DEVICE_ID = /iphone|ipad|mac\s?book|imac|apple\s*watch|android|pixel|galaxy|tablet|laptop|device|mockup/i;
+
+/** Nearest ancestor <g> whose id names a device (the device group). */
+function nearestDeviceGroup(el: Element): Element | null {
+  let n: Element | null = el.parentNode as Element | null;
+  while (n && n.nodeType === 1) {
+    if (DEVICE_ID.test(n.getAttribute?.("id") ?? "")) return n;
+    n = n.parentNode as Element | null;
+  }
+  return null;
+}
 
 function bboxOf(el: Element): BBox | null {
   const d = el.getAttribute("d");
@@ -75,23 +86,32 @@ function collectDefs(doc: Document, markup: string): string {
 export function extractMockupAsset(svg: string): MockupAsset | null {
   const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
   // Find the screen: a pattern-filled <path> whose id reads like an insert target.
+  // The screen is a pattern-filled <path> (the notched rounded-rect). Figma may
+  // name it ("Screen"/"Insert Designs") or leave it id-less inside an "Image" group
+  // — so we accept any pattern path that sits inside a device group (id names a
+  // device), falling back to the id heuristic. This handles both export styles.
   const paths = doc.getElementsByTagName("path");
   let screen: Element | null = null;
+  let group: Element | null = null;
   for (let i = 0; i < paths.length; i++) {
     const p = paths[i]!;
-    const fill = p.getAttribute("fill") ?? "";
-    if (fill.startsWith("url(#pattern") && SCREEN_ID.test(p.getAttribute("id") ?? "")) { screen = p; break; }
+    if (!(p.getAttribute("fill") ?? "").startsWith("url(#pattern")) continue;
+    const dg = nearestDeviceGroup(p);
+    if (dg || SCREEN_ID.test(p.getAttribute("id") ?? "")) {
+      screen = p;
+      group = dg ?? (p.parentNode as Element | null);
+      break;
+    }
   }
   if (!screen) return null;
   const screenClip = screen.getAttribute("d");
   const screenBBox = bboxOf(screen);
   if (!screenClip || !screenBBox) return null;
 
-  // The device group is the screen's parent; the chassis (frame) bbox is the union
-  // of the group's pattern-filled rect(s) plus the screen.
-  const group = (screen.parentNode as Element | null) ?? screen;
+  // The chassis (frame) bbox is the union of the device group's pattern-filled rects.
+  const dev: Element = group ?? (screen.parentNode as Element | null) ?? screen;
   let frameBBox: BBox | null = null;
-  const rects = group.getElementsByTagName?.("rect");
+  const rects = dev.getElementsByTagName?.("rect");
   for (let i = 0; rects && i < rects.length; i++) {
     if ((rects[i]!.getAttribute("fill") ?? "").startsWith("url(#pattern")) {
       const b = bboxOf(rects[i]!);
@@ -100,7 +120,7 @@ export function extractMockupAsset(svg: string): MockupAsset | null {
   }
   frameBBox = frameBBox ?? screenBBox;
 
-  const body = group.toString();
+  const body = dev.toString();
   const defs = collectDefs(doc, body);
   return { defs, body, frameBBox, screenClip, screenBBox };
 }

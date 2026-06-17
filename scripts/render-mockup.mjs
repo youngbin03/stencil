@@ -6,7 +6,7 @@ import { renderComposite } from "../packages/renderer/dist/index.js";
 import { placeMockup } from "../packages/normalizer/dist/index.js";
 import { rasterize } from "../packages/classifier/dist/rasterize.js";
 
-const theme = "black";
+const theme = process.argv[2] ?? "black";
 const sys = JSON.parse(readFileSync(`fixtures/assets/${theme}/system.json`, "utf8"));
 const spec = buildGrammarSpec(sys);
 const mockups = {};
