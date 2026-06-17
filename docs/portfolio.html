@@ -81,7 +81,7 @@
   <section>
     <div class="kicker"><span class="logo"></span> Stencil · 프로젝트 보고서</div>
     <h1>An agentic generative system<br>for design-grammar slide synthesis</h1>
-    <p class="lead">업로드한 슬라이드를 채워 넣을 틀로 쓰지 않는다. 디자인 예시로 보고 간격·정렬·계층·컴포넌트 관계를 뽑아낸 다음, 그걸로 원본에 없던 레이아웃을 새로 만든다. 만들면서 계속 부딪힌 끝에 내린 결론은 단순하다. <b>의미를 판단하는 일은 LLM이 잘하고, 좌표 같은 정밀한 숫자는 코드가 맡아야 한다.</b> 실제로 좌표까지 LLM에 시켜 보니 글자가 겹치고 화면 밖으로 나가고 같은 입력에도 결과가 달라졌다. 그래서 그 경계를 처음부터 갈라놨다.</p>
+    <p class="lead">업로드한 슬라이드를 채워 넣을 틀로 쓰지 않는다. 디자인 예시로 보고 간격·정렬·계층·컴포넌트 관계를 뽑아낸 다음, 그 규칙으로 원본에 없던 레이아웃을 새로 만든다. 핵심은 하나다. <b>의미를 판단하는 일은 LLM이 맡고, 좌표 같은 정밀한 숫자는 코드가 맡는다.</b> 좌표까지 모델에 맡기면 글자가 겹치고 화면을 벗어나며 같은 입력에도 결과가 달라지기 때문에, 그 경계를 처음부터 갈라 두었다.</p>
     <div>
       <span class="pill">agentic generative system</span>
       <span class="pill">AI for semantics · code for geometry</span>
@@ -128,7 +128,7 @@
   <!-- AI ENGINEERING -->
   <section>
     <h2>AI engineering · 역할을 어디서 가를 것인가</h2>
-    <p class="lead" style="margin-bottom:24px">구조를 이렇게 가른 이유는 하나다. <b>LLM은 '무엇이 무엇인지', '뭐가 보기 좋은지'는 잘 맞히는데 좌표 같은 숫자는 자주 틀린다.</b> 그래서 의미 판단은 모델에, 픽셀은 코드에 맡겼다. 좌표까지 모델에 맡겨 본 버전에서 겹침·화면 이탈·재현 불가가 바로 나와서, 그 선을 분명히 그었다.</p>
+    <p class="lead" style="margin-bottom:24px">역할을 가른 기준은 분명하다. <b>LLM은 '무엇이 무엇인지', '무엇이 보기 좋은지'는 잘 맞히지만 좌표 같은 숫자는 자주 틀린다.</b> 그래서 의미 판단은 모델이, 픽셀은 코드가 맡는다. 좌표까지 모델에 맡긴 구성에서는 겹침과 화면 이탈, 재현 불가가 그대로 드러났다.</p>
     <div class="fault">
       <div>
         <div class="hd"><span class="dot" style="background:#1f6feb"></span> Claude — 의미 (probabilistic)</div>
@@ -184,7 +184,7 @@ layout novelty &lt; 6 → reject</span></p></div>
   <!-- RESULTS -->
   <section>
     <h2>Results · 합성 결과 (no frame copied · grammar-synthesized)</h2>
-    <p class="lead" style="margin-bottom:24px">같은 제품(Pulse, AI 고객지원 코파일럿)으로 세 테마에서 6장을 뽑았다. 텍스트 슬라이드부터 데이터 시각화, 디바이스 목업, 타이틀까지 들어 있다. 전부 원본 프레임을 복사하지 않고 GrammarSpec에서 좌표를 새로 만든 것이고, 장식은 테마가 원래 쓰던 만큼만 따라간다. colorful은 과감하게, black은 거의 안 쓰고, green은 차분하게.</p>
+    <p class="lead" style="margin-bottom:24px">같은 제품(Pulse, AI 고객지원 코파일럿)으로 세 테마에서 6장을 만들었다. 텍스트 슬라이드부터 데이터 시각화, 디바이스 목업, 타이틀까지 포함된다. 모두 원본 프레임을 복사하지 않고 GrammarSpec에서 좌표를 새로 생성한 것이며, 장식은 테마가 원래 쓰던 정도만 따른다. colorful은 과감하게, black은 거의 쓰지 않고, green은 차분하게 쓰는 것을 확인할 수 있다.</p>
     <div class="grid g2">
       <figure><img class="shot" src="assets/ex-timeline.png" alt="colorful timeline"><figcaption><span class="tag">colorful · timeline</span> 날짜 + 연결선 + 테마 장식 어휘(유기적 블롭)</figcaption></figure>
       <figure><img class="shot" src="assets/ex-metric.png" alt="colorful metric"><figcaption><span class="tag">colorful · metric</span> 메트릭 콜아웃 + 2×2 버블 사분면</figcaption></figure>
@@ -375,15 +375,6 @@ layout novelty &lt; 6 → reject</span></p></div>
     <div class="next"><div class="h">Preference learning<small>DPO-style</small></div><div class="b">evaluator의 7개 지표를 보상으로 써서 아키타입·콘텐츠 고르는 방식을 학습시키면, 사람 피드백 없이도 스스로 나아질 수 있다.</div></div>
     <div class="next"><div class="h">Multi-agent decomposition<small>planner · designer · critic</small></div><div class="b">지금은 한 루프 안에서 다 하는데, planner·designer·critic으로 역할을 나누면 병렬로 돌리고 전문화할 수 있다. 비평은 항상 따로 둔다.</div></div>
     <div class="next"><div class="h">VLM-grounded decoration<small>+ Code Connect sync</small></div><div class="b">장식과 이미지 선택을 비전-언어 모델로 콘텐츠에 맞추고, 디자인 토큰·컴포넌트를 코드와 양방향으로 동기화하려 한다.</div></div>
-  </section>
-
-  <!-- REFERENCE DIAGRAMS -->
-  <section>
-    <h2>Reference diagrams · 참조 도식</h2>
-    <div class="grid g2">
-      <figure><img class="shot" style="aspect-ratio:auto" src="assets/architecture.png" alt="architecture"><figcaption>Pipeline & invariants</figcaption></figure>
-      <figure><img class="shot" style="aspect-ratio:auto" src="assets/progress.png" alt="progress board"><figcaption>Progress board (EN/KR)</figcaption></figure>
-    </div>
   </section>
 
   <div class="foot">
