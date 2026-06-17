@@ -163,6 +163,7 @@
 novelty &lt; 6 → reject &amp; re-synthesize
 N ≤ 2 (bounded)</span>생성기와 평가기를 분리한 자기교정 루프.</p></div>
       <div class="card"><div class="n">D</div><h3>Bake-once, stamp-many</h3><p>비싼 AI 분석(흡수·문법 추출·비전 분류)은 <b>테마당 1회</b> 실행해 GrammarSpec로 캐시한다. 요청 시점에는 원본 SVG를 다시 읽지 않고 캐시만 조합 — 저렴하고 빠르고 결정론적.</p></div>
+      <div class="card"><div class="n">E</div><h3>Structure-first context</h3><p>에이전트가 더 잘 고르도록 <b>이미 추출한 구조를 노출</b>한다 — 역할 의미(kpi=헤드라인 지표), 아키타입의 미디어(이 골격은 제품 UI 목업을 가짐). 비싼 의미 프롬프트를 굽는 대신 결정론적 구조를 먼저 쓴다 — 무료·환각 0·기하 우선.</p></div>
     </div>
   </section>
 
@@ -193,6 +194,17 @@ layout novelty &lt; 6 → reject</span></p></div>
     </div>
   </section>
 
+  <!-- MOCKUPS -->
+  <section>
+    <h2>Device mockups · 목업 자산 (place the frame, user fills the screen)</h2>
+    <p class="lead">목업(아이폰·맥북)은 <b>틀+빈 화면 한 세트의 재사용 자산</b>으로 추출된다. 합성 슬라이드는 프레임을 그대로 스탬프하고, 화면은 정확한 모양(둥근 모서리·노치)으로 clip된 빈 자리로 둔다 — 이미지는 우리가 만들지 않고 <b>사용자가 직접 끼운다</b>. 배치(개수·정렬)는 한 슬라이드의 관계 그래프에서 가져온다(예: 3-up 폰 행).</p>
+    <div class="grid g3">
+      <figure><img class="shot" src="assets/mockup-single.png" alt="single mockup"><figcaption><span class="tag">synthesis</span> 새 레이아웃: 좌측 텍스트 + 우측 목업(빈 화면), 겹침 없음</figcaption></figure>
+      <figure><img class="shot" src="assets/mockup-row.png" alt="3-up mockup row"><figcaption><span class="tag">arrangement</span> 슬라이드의 3-up 배열을 일관 그룹으로 재현</figcaption></figure>
+      <figure><img class="shot" src="assets/mockup-fill.png" alt="screen filled"><figcaption><span class="tag">screen clip</span> 사용자 이미지가 화면 모양(노치 포함)에 정확히 clip</figcaption></figure>
+    </div>
+  </section>
+
   <!-- HARD PROBLEMS -->
   <section>
     <h2>Hard problems · 풀어낸 난제</h2>
@@ -217,6 +229,13 @@ layout novelty &lt; 6 → reject</span></p></div>
         <div class="row"><b>난점</b><span>생성 텍스트는 길이를 통제할 수 없다.</span></div>
         <div class="row"><b>해법</b><span>opentype.js 정확 메트릭 + resvg 폰트 동기화로 <b>측정=렌더 일치</b>. 폭·높이 동시 축소.</span></div>
         <div class="row res"><b>결과</b><span>줄바꿈·자동 축소가 정확, 넘침 사라짐.</span></div>
+      </div>
+      <div class="prob">
+        <div class="pt">목업 안에 이미지를 어떻게 넣나</div>
+        <div class="row"><b>문제</b><span>합성한 새 슬라이드에서 디바이스 목업을 재사용하고 화면에만 이미지를 넣어야 한다.</span></div>
+        <div class="row"><b>난점</b><span>화면은 사각형이 아니라 둥근 모서리+노치의 path. 프레임은 통째 유지하되 화면만 교체 대상.</span></div>
+        <div class="row"><b>해법</b><span>목업을 <b>틀+화면 path</b> 자기완결 자산으로 추출 → 임의 위치·크기로 스탬프 → 사용자 이미지를 화면 path로 clip. 다중 목업 배열은 슬라이드의 관계 그래프에서.</span></div>
+        <div class="row res"><b>결과</b><span>노치까지 정확히 clip · 3-up 행 재현 · 이미지는 사용자가 채움.</span></div>
       </div>
       <div class="prob">
         <div class="pt">공간 관계를 버리고 있었다</div>
