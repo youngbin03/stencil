@@ -23,7 +23,7 @@
   p{margin:0 0 12px;color:#2a2a2a}
   .lead{font-size:19px;color:var(--muted);max-width:680px}
   .pills{margin:8px 0 22px}
-  .overview{border:1px solid var(--line2);border-radius:20px;padding:24px 28px;background:var(--fill);max-width:820px;margin-top:0}
+  .overview{border:1px solid var(--line);border-radius:20px;padding:24px 28px;background:#fcfcfd;max-width:820px;margin-top:0}
   .overview p{margin:0;font-size:16.5px;line-height:1.7;color:#2a2a2a}
   .overview p b{color:var(--ink)}
   .kicker{display:inline-flex;align-items:center;gap:9px;font-weight:700;font-size:15px;margin-bottom:22px}
@@ -185,7 +185,7 @@ layout novelty &lt; 6 → reject</span></p></div>
   <section>
     <h2>Design systems · 템플릿 → 정립된 시스템</h2>
     <p class="lead" style="margin-bottom:24px">테마마다 슬라이드들을 하나의 재사용 디자인 시스템으로 정리한다. 복사한 슬라이드가 아니라 거기서 뽑아낸 규칙이다. 인스펙터는 팔레트, 타입 스케일, 그리드와 리듬, 계층, blocks, 아키타입 골격, 장식, 목업을 한 페이지에 모아 보여준다.</p>
-    <svg class="diagram" viewBox="0 0 1040 470" xmlns="http://www.w3.org/2000/svg" font-family="Inter">
+    <svg class="diagram" viewBox="0 0 1040 392" xmlns="http://www.w3.org/2000/svg" font-family="Inter">
       <text x="20" y="30" font-size="12" font-weight="700" fill="#6b6b6b" letter-spacing="1.2">PALETTE</text>
       <g>
         <rect x="20" y="42" width="30" height="30" rx="6" fill="#000000" stroke="#ddd"/>
@@ -380,13 +380,15 @@ layout novelty &lt; 6 → reject</span></p></div>
 
   <!-- WHAT'S NEXT -->
   <section>
-    <h2>What's next · 차기 기술 로드맵</h2>
-    <p class="lead" style="margin-bottom:22px">지금 결정론 배치는 안정적으로 돌아간다. 다음은 같은 역할 분리를 유지하면서 더 센 도구를 얹는 것이다.</p>
-    <div class="next"><div class="h">Constraint solver<small>Cassowary / kiwi</small></div><div class="b">골격을 하드·소프트 제약으로 표현해서 단순 세로 스택을 넘는 자유로운 배치를 하려 한다. "관계 먼저, 좌표는 나중에"라는 골격 철학과도 잘 맞는다.</div></div>
-    <div class="next"><div class="h">Embedding retrieval<small>vector similarity</small></div><div class="b">아키타입 매칭과 유사도 점수를 지금은 구조 거리로 재는데, 임베딩 거리로 바꾸면 신규성 판단과 검색이 더 풍부해진다.</div></div>
-    <div class="next"><div class="h">Preference learning<small>DPO-style</small></div><div class="b">evaluator의 7개 지표를 보상으로 써서 아키타입·콘텐츠 고르는 방식을 학습시키면, 사람 피드백 없이도 스스로 나아질 수 있다.</div></div>
-    <div class="next"><div class="h">Multi-agent decomposition<small>planner · designer · critic</small></div><div class="b">지금은 한 루프 안에서 다 하는데, planner·designer·critic으로 역할을 나누면 병렬로 돌리고 전문화할 수 있다. 비평은 항상 따로 둔다.</div></div>
-    <div class="next"><div class="h">VLM-grounded decoration<small>+ Code Connect sync</small></div><div class="b">장식과 이미지 선택을 비전-언어 모델로 콘텐츠에 맞추고, 디자인 토큰·컴포넌트를 코드와 양방향으로 동기화하려 한다.</div></div>
+    <h2>What's next · 차기 로드맵</h2>
+    <p class="lead" style="margin-bottom:22px">방향은 두 축이다. <b>남은 기술적 제약을 풀어 배치 표현력을 넓히는 것</b>, 그리고 <b>추출–합성 파이프라인을 실제로 쓸 수 있는 제품으로 만드는 것</b>. 둘 다 "의미는 LLM, 픽셀은 코드"라는 같은 구조 위에서 진행한다.</p>
+    <div class="next"><div class="h">Constraint solver<small>기술 제약 · kiwi</small></div><div class="b">골격을 하드·소프트 제약으로 표현해 세로 스택을 넘는 자유 배치로 간다. 지금 부분적으로만 쓰는 관계 그래프(over·avoids·aligned)를 제약으로 직접 풀어, 표현력과 안정성을 동시에 올린다.</div></div>
+    <div class="next"><div class="h">템플릿 업로드 → 자동 에셋화<small>제품화 기반</small></div><div class="b">지금은 미리 구운 3개 테마만 쓴다. 사용자가 자기 덱을 올리면 그 자리에서 GrammarSpec을 구워 바로 생성하도록, 업로드–흡수–문법 추출을 한 흐름으로 잇는다.</div></div>
+    <div class="next"><div class="h">사용자 자산 연결 + Export<small>제품화 기반</small></div><div class="b">이미지·로고를 올려 목업 화면과 이미지 zone에 배치하는 UX(생성이 아니라 배치)와, 결과를 PPTX·PDF로 내보내 실제 발표에 쓰는 경로를 붙인다.</div></div>
+    <div class="next"><div class="h">평가기 학습 · 멀티에이전트<small>자기 개선</small></div><div class="b">7개 품질 지표를 보상으로 삼아 아키타입·콘텐츠 선택 정책을 학습하고, planner·designer·critic을 분리해 병렬·전문화한다. 비평은 항상 별도 레인.</div></div>
+
+    <h2 style="margin-top:40px">결론</h2>
+    <p class="lead">이 프로젝트는 LLM 생성에서 반복되는 <b>겹침·캔버스 이탈·결과 비일관성</b>을, 의미와 픽셀의 책임을 가르는 구조로 해결했다. 템플릿에서 추출한 디자인 문법을 제약으로 삼아, 단순 치환이 아니라 <b>일관성과 신규성을 함께 갖춘 새 레이아웃</b>을 결정론적으로 합성한다. 같은 구조 위에 업로드–에셋화–생성–export를 얹으면, 연구 프로토타입을 넘어 <b>사용자가 자기 템플릿으로 발표 자료를 만드는 제품</b>으로 이어진다.</p>
   </section>
 
   <div class="foot">

@@ -106,24 +106,7 @@ tops.forEach(({ sk, rep }, i) => {
 });
 y += 2 * (ph + gapY) + 6;
 
-// DEVICE MOCKUPS
-let mockDefs = "", mockBody = "";
-const mdir = `fixtures/assets/${theme}/mockups`;
-if (existsSync(mdir)) {
-  svg += lab(48, y, "DEVICE MOCKUPS · reusable frame, empty screen = user image slot");
-  const files = readdirSync(mdir).filter((f) => f.endsWith(".json"));
-  files.slice(0, 6).forEach((f, i) => {
-    const asset = JSON.parse(readFileSync(`${mdir}/${f}`, "utf8"));
-    const box = { x: 48 + i * 200, y: y + 16, w: 170, h: 230 };
-    svg += `<rect x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="8" fill="${s.colors.bg}" stroke="#e5e5e5"/>`;
-    const { defs, markup } = placeMockup(asset, box);
-    mockDefs += defs; mockBody += markup;
-    svg += `<text x="${box.x}" y="${box.y + box.h + 16}" font-family="Inter" font-size="10" fill="#999">${Math.round(asset.frameBBox.w)}×${Math.round(asset.frameBBox.h)}</text>`;
-  });
-  y += 230 + 40;
-}
-
 const H = y + 10;
-const out = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><defs>${mockDefs}</defs><rect width="${W}" height="${H}" fill="#fafafa"/>${svg}${mockBody}</svg>`;
+const out = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><rect width="${W}" height="${H}" fill="#fafafa"/>${svg}</svg>`;
 writeFileSync(`docs/assets/ds-${theme}.png`, rasterize(out, 1600));
 console.log(`docs/assets/ds-${theme}.png  (${W}x${H})`);
