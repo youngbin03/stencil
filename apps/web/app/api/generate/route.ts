@@ -7,7 +7,16 @@ import { resolveTheme } from "@/lib/themes";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
+// Abuse/cost guard for the public deployment: when GATE_PASSWORD is set on the
+// server, generation requires a matching x-gate header (the UI prompts once).
+function gateOk(req: Request): boolean {
+  const pw = process.env.GATE_PASSWORD;
+  if (!pw) return true;
+  return req.headers.get("x-gate") === pw;
+}
+
 export async function POST(req: Request): Promise<Response> {
+  if (!gateOk(req)) return NextResponse.json({ error: "access code required" }, { status: 401 });
   let body: { theme?: string; prompt?: string; slideCount?: number; mode?: string };
   try {
     body = await req.json();

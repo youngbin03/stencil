@@ -89,12 +89,18 @@ export default function Page() {
     setError("");
     setDeck(null);
     try {
+      // Public-demo access code (only needed if the server sets GATE_PASSWORD).
+      let gate = typeof window !== "undefined" ? window.localStorage.getItem("gate") ?? "" : "";
       const res = await fetch("/api/generate", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(gate ? { "x-gate": gate } : {}) },
         body: JSON.stringify({ theme, prompt, slideCount, mode }),
       });
       const data = await res.json();
+      if (res.status === 401 && typeof window !== "undefined") {
+        gate = window.prompt("이 데모는 접근 코드가 필요합니다 (Access code):") ?? "";
+        if (gate) { window.localStorage.setItem("gate", gate); setError("코드를 입력했습니다. 다시 생성해 주세요."); return; }
+      }
       if (!res.ok) throw new Error(data.error ?? "generation failed");
       setDeck(data as Deck);
     } catch (e) {

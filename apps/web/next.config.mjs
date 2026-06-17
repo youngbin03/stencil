@@ -24,6 +24,17 @@ const nextConfig = {
   // Node-only libraries used by the assemble pipeline — keep them external so
   // Next does not try to bundle native binaries / Node built-ins for the server.
   serverExternalPackages: ["@anthropic-ai/sdk", "opentype.js", "@xmldom/xmldom", "@resvg/resvg-js", "@stencil/classifier"],
+  // Monorepo: trace from the repo root and force-include the runtime assets the
+  // route handlers read via fs (baked design systems + mockups + embedded fonts)
+  // so they ship inside the serverless functions on Vercel.
+  outputFileTracingRoot: root,
+  outputFileTracingIncludes: {
+    "/**": [
+      "fixtures/assets/*/system.json",
+      "fixtures/assets/*/mockups/**",
+      "fonts/**",
+    ],
+  },
 };
 
 export default nextConfig;
