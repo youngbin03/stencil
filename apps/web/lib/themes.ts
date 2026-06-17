@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { extractThemeSystem, type ClassifyFn, type SlideInput } from "@stencil/extractor";
@@ -89,21 +89,48 @@ export interface ThemeInfo {
   builtin: boolean;
   slides: number;
   baked: boolean;
+  /** A few representative colors (normalized hex) for a visual identity chip. */
+  swatches: string[];
+}
+
+const NAMED: Record<string, string> = { black: "#000000", white: "#ffffff", transparent: "#ffffff" };
+function toHex(c: string): string | null {
+  const v = c.trim().toLowerCase();
+  if (NAMED[v]) return NAMED[v];
+  if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/.test(v)) return v;
+  return null;
+}
+
+/** Pull a small, de-duplicated swatch set from a baked theme's palette/colors. */
+function themeSwatches(systemPath: string): string[] {
+  try {
+    const sys = JSON.parse(readFileSync(systemPath, "utf8")) as { tokens?: { palette?: string[]; colors?: Record<string, string> } };
+    const raw = sys.tokens?.palette?.length ? sys.tokens.palette : Object.values(sys.tokens?.colors ?? {});
+    const out: string[] = [];
+    for (const c of raw) {
+      const hex = toHex(c);
+      if (hex && !out.includes(hex)) out.push(hex);
+      if (out.length >= 5) break;
+    }
+    return out;
+  } catch {
+    return [];
+  }
 }
 
 export function listThemes(): ThemeInfo[] {
   const out: ThemeInfo[] = [];
-  for (const slug of Object.keys(BUILTIN)) {
-    const t = resolveTheme(slug)!;
-    out.push({ slug, name: t.name, builtin: true, slides: countSvgs(t.templatesDir), baked: existsSync(t.systemPath) });
-  }
+  const entry = (slug: string, name: string, builtin: boolean, t: ThemePaths): ThemeInfo => {
+    const baked = existsSync(t.systemPath);
+    return { slug, name, builtin, slides: countSvgs(t.templatesDir), baked, swatches: baked ? themeSwatches(t.systemPath) : [] };
+  };
+  for (const slug of Object.keys(BUILTIN)) out.push(entry(slug, resolveTheme(slug)!.name, true, resolveTheme(slug)!));
   const root = userThemesRoot();
   if (existsSync(root)) {
     for (const e of readdirSync(root, { withFileTypes: true })) {
       if (!e.isDirectory() || !SLUG_RE.test(e.name) || BUILTIN[e.name]) continue;
       const t = resolveTheme(e.name);
-      if (!t) continue;
-      out.push({ slug: e.name, name: e.name, builtin: false, slides: countSvgs(t.templatesDir), baked: existsSync(t.systemPath) });
+      if (t) out.push(entry(e.name, e.name, false, t));
     }
   }
   return out;

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TemplateManager, type ThemeInfo } from "@/components/template-manager";
+import { ThemePicker } from "@/components/theme-picker";
 import { cn } from "@/lib/utils";
 
 type Theme = string;
@@ -48,13 +49,13 @@ export default function Page() {
     setTheme((cur) => (cur && list.some((t) => t.slug === cur && t.baked) ? cur : list.find((t) => t.baked)?.slug ?? ""));
   }, []);
   useEffect(() => { void loadThemes(); }, [loadThemes]);
-  const bakedThemes = themes.filter((t) => t.baked);
   const [prompt, setPrompt] = useState("");
   const [slideCount, setSlideCount] = useState(6);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [deck, setDeck] = useState<Deck | null>(null);
+  const [managerOpen, setManagerOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
 
@@ -209,15 +210,7 @@ export default function Page() {
             </TabsList>
           </Tabs>
 
-          {bakedThemes.length > 0 && (
-            <Tabs value={theme} onValueChange={(v) => setTheme(v as Theme)}>
-              <TabsList className="h-8">
-                {bakedThemes.map((t) => (
-                  <TabsTrigger key={t.slug} value={t.slug}>{t.name}</TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-          )}
+          <ThemePicker themes={themes} value={theme} onChange={setTheme} onManage={() => setManagerOpen(true)} />
 
           <div className="ml-auto flex items-center gap-1.5">
             <Stepper value={slideCount} setValue={setSlideCount} />
@@ -230,7 +223,7 @@ export default function Page() {
 
       {/* secondary actions */}
       <div className="mt-3 flex items-center justify-between px-1">
-        <TemplateManager themes={themes} onChanged={loadThemes} />
+        <TemplateManager themes={themes} onChanged={loadThemes} open={managerOpen} onOpenChange={setManagerOpen} />
         <AnimatePresence>
           {error && (
             <motion.span

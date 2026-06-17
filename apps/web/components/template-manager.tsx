@@ -14,11 +14,14 @@ export interface ThemeInfo {
   builtin: boolean;
   slides: number;
   baked: boolean;
+  swatches: string[];
 }
 interface SlideRef { id: string }
 
-export function TemplateManager({ themes, onChanged }: { themes: ThemeInfo[]; onChanged: () => void | Promise<void> }) {
-  const [open, setOpen] = useState(false);
+export function TemplateManager({ themes, onChanged, open: openProp, onOpenChange }: { themes: ThemeInfo[]; onChanged: () => void | Promise<void>; open?: boolean; onOpenChange?: (o: boolean) => void }) {
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (o: boolean) => { onOpenChange?.(o); setOpenState(o); };
   const [folder, setFolder] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
