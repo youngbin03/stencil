@@ -56,6 +56,8 @@ export interface GrammarSpec {
   canvas: Canvas;
   palette: string[];
   colors: { primary: string; accent: string; bg: string; text: string };
+  /** Default font family (fallback for roles whose type token omits one). */
+  fontFamily: string;
   type: Record<string, TypeToken>;
   spacing: SpacingRhythm;
   alignment: AlignmentGrid;
@@ -219,6 +221,7 @@ export function buildGrammarSpec(system: DesignSystemIR): GrammarSpec {
     canvas: system.canvas,
     palette: system.tokens.palette ?? [],
     colors: system.tokens.colors,
+    fontFamily: system.tokens.fontFamily ?? Object.values(system.tokens.type)[0]?.family ?? "Inter",
     type: system.tokens.type,
     spacing: system.grammar.spacingRhythm,
     alignment: system.grammar.alignmentGrid,
