@@ -121,9 +121,13 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
     const minX = Math.min(...boxes.map((b) => b.x));
     const maxR = Math.max(...boxes.map((b) => b.x + b.w));
     const minY = Math.min(...boxes.map((b) => b.y));
-    if (maxR - minX > W * 0.6) textBottomCap = Math.max(H * 0.4, minY - section); // image row → text above
-    else if (minX > W * 0.5) tx1 = minX - section;                                 // images right → text left
-    else tx0 = maxR + section;                                                      // images left → text right
+    // Give text the roomier side of the image block; if neither side has enough
+    // width (image spans the middle), put text above it. Prevents text hiding
+    // behind a centered mockup.
+    const leftRoom = minX - margin, rightRoom = (W - margin) - maxR;
+    if (leftRoom >= rightRoom && leftRoom >= W * 0.3) tx1 = minX - section;       // text left
+    else if (rightRoom > leftRoom && rightRoom >= W * 0.3) tx0 = maxR + section;  // text right
+    else textBottomCap = Math.max(H * 0.36, minY - section);                       // text above
   }
 
   // Disposition (relation/spatial consumption): the mined skeleton encodes each

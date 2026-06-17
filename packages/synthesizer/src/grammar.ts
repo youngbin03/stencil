@@ -90,7 +90,7 @@ function mineImageZones(slots: ImgSlot[]): ImageZone[] {
     const col = cols.find((c) => Math.abs(c[0]!.xFrac - s.xFrac) < 0.1);
     if (col) col.push(s); else cols.push([s]);
   }
-  return cols.map((c) => {
+  const zones = cols.map((c) => {
     const x = median(c.map((s) => s.xFrac)), w = median(c.map((s) => s.wFrac));
     const y = median(c.map((s) => s.yFrac)), h = median(c.map((s) => s.hFrac));
     const zone: ImageZone = { xFrac: [x, x + w], yFrac: [y, y + h], ratio: median(c.map((s) => s.ratio)) };
@@ -100,6 +100,12 @@ function mineImageZones(slots: ImgSlot[]): ImageZone[] {
     if (ref) zone.mockupRef = ref;
     return zone;
   });
+  // A slide carries at most ONE device mockup — keep the dominant (largest) one and
+  // drop the rest, so a skeleton that aggregated mockups at several positions never
+  // stamps overlapping frames.
+  const area = (z: ImageZone): number => (z.xFrac[1] - z.xFrac[0]) * (z.yFrac[1] - z.yFrac[0]);
+  const mock = zones.filter((z) => z.mockupRef).sort((a, b) => area(b) - area(a));
+  return [...zones.filter((z) => !z.mockupRef), ...mock.slice(0, 1)];
 }
 
 /** Aggregate the regions of one archetype's example slides into a median skeleton. */
