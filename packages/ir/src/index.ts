@@ -456,6 +456,9 @@ export interface PlacedSlot {
   /** Exact fill/clip shape (SVG path `d`, canvas coords) for non-rect image slots
    *  such as a device-mockup screen. A user image is clipped to this shape. */
   clip?: string;
+  /** When set, this slot is a device-mockup frame: the renderer stamps the mockup
+   *  asset (by ref) into the slot bbox and drops a user image into its screen. */
+  mockupRef?: string;
   /** Free-form note from the classifier (debugging / human review). */
   note?: string;
 }

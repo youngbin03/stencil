@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { extractThemeSystem, type ClassifyFn, type SlideInput } from "@stencil/extractor";
+import type { MockupAsset } from "@stencil/normalizer";
 
 /**
  * Dynamic theme registry. A "theme" is a folder of example slides plus a baked
@@ -172,6 +173,21 @@ export async function rebakeTheme(slug: string, classify?: ClassifyFn): Promise<
     await Promise.all(mockups.map((m) => writeFile(resolve(mockupDir, `${m.id}.json`), JSON.stringify(m.asset), "utf8")));
   }
   return { layouts: system.layouts.length, slides: slides.length, mockups: mockups.length };
+}
+
+/** Load a theme's baked device-mockup assets (id → asset), if any. */
+export async function loadMockups(slug: string): Promise<Record<string, MockupAsset>> {
+  const t = resolveTheme(slug);
+  if (!t) return {};
+  const dir = resolve(dirname(t.systemPath), "mockups");
+  if (!existsSync(dir)) return {};
+  const out: Record<string, MockupAsset> = {};
+  await Promise.all(
+    readdirSync(dir).filter((f) => f.endsWith(".json")).map(async (f) => {
+      out[f.replace(/\.json$/, "")] = JSON.parse(await readFile(resolve(dir, f), "utf8")) as MockupAsset;
+    }),
+  );
+  return out;
 }
 
 /** Allow only safe slide ids (Frame-12, my-upload_3) — blocks path traversal. */

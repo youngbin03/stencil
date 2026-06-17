@@ -26,6 +26,9 @@ export interface ImageZone {
   yFrac: [number, number];
   ratio: number;              // target aspect (w/h) — user image is cover-cropped to it
   mediaKind?: string;         // photo | device_mockup | avatar | chart_line | logo
+  /** When set, this zone is a device mockup: stamp this frame asset and drop the
+   *  user image into its screen (clipped). The frame bbox is the zone box. */
+  mockupRef?: string;
 }
 
 /** How much decoration this archetype's examples actually carry — so synthesis
@@ -77,7 +80,7 @@ function mode<T>(xs: T[]): T | undefined {
   return best;
 }
 
-interface ImgSlot { xFrac: number; yFrac: number; wFrac: number; hFrac: number; ratio: number; mediaKind?: string }
+interface ImgSlot { xFrac: number; yFrac: number; wFrac: number; hFrac: number; ratio: number; mediaKind?: string; mockupRef?: string }
 
 /** Cluster example image slots into representative image cells (columns). */
 function mineImageZones(slots: ImgSlot[]): ImageZone[] {
@@ -93,6 +96,8 @@ function mineImageZones(slots: ImgSlot[]): ImageZone[] {
     const zone: ImageZone = { xFrac: [x, x + w], yFrac: [y, y + h], ratio: median(c.map((s) => s.ratio)) };
     const mk = mode(c.map((s) => s.mediaKind).filter(Boolean));
     if (mk) zone.mediaKind = mk;
+    const ref = mode(c.map((s) => s.mockupRef).filter(Boolean));
+    if (ref) zone.mockupRef = ref;
     return zone;
   });
 }
@@ -151,12 +156,25 @@ export function buildGrammarSpec(system: DesignSystemIR): GrammarSpec {
   for (const L of system.layouts) {
     const a = L.archetype ?? "other";
     if (!L.regions?.length && !L.slots.some((s) => s.type === "image")) continue;
-    const imgSlots: ImgSlot[] = L.slots.filter((s) => s.type === "image").map((s) => ({
-      xFrac: s.bbox.x / system.canvas.w, yFrac: s.bbox.y / system.canvas.h,
-      wFrac: s.bbox.w / system.canvas.w, hFrac: s.bbox.h / system.canvas.h,
-      ratio: s.bbox.h > 0 ? s.bbox.w / s.bbox.h : 1,
-      ...(s.mediaKind ? { mediaKind: s.mediaKind } : {}),
-    }));
+    // Image zones. For a device mockup the FRAME rect (the chrome) is the placement
+    // box and carries mockupRef; the screen path's geometry comes from the asset, so
+    // we skip clip slots. Plain photos pass through unchanged.
+    const imgs = L.slots.filter((s) => s.type === "image");
+    const screens = imgs.filter((s) => s.clip);
+    const contains = (a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }): boolean =>
+      a.x <= b.x + 1 && a.y <= b.y + 1 && a.x + a.w >= b.x + b.w - 1 && a.y + a.h >= b.y + b.h - 1;
+    const imgSlots: ImgSlot[] = imgs.flatMap((s) => {
+      if (s.clip) return []; // screen — geometry supplied by the mockup asset
+      const isFrame = !!L.mockupRef && screens.some((sc) => contains(s.bbox, sc.bbox));
+      const z: ImgSlot = {
+        xFrac: s.bbox.x / system.canvas.w, yFrac: s.bbox.y / system.canvas.h,
+        wFrac: s.bbox.w / system.canvas.w, hFrac: s.bbox.h / system.canvas.h,
+        ratio: s.bbox.h > 0 ? s.bbox.w / s.bbox.h : 1,
+        ...(s.mediaKind ? { mediaKind: s.mediaKind } : {}),
+      };
+      if (isFrame && L.mockupRef) z.mockupRef = L.mockupRef;
+      return [z];
+    });
     const deco = (L.decorationModel?.elements ?? []).filter((d) => d.kind !== "background");
     const decoCoverage = deco.reduce((s, d) => s + Math.min(d.bbox.w * d.bbox.h, canvasArea), 0) / canvasArea;
     (byArch.get(a) ?? byArch.set(a, []).get(a)!).push({ regions: L.regions ?? [], imgSlots, decoCoverage, decoCount: deco.length, canvas: system.canvas });

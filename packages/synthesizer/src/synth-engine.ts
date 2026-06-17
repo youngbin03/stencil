@@ -105,13 +105,22 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
     const y = Math.round(z.yFrac[0] * H), y1 = Math.round(z.yFrac[1] * H);
     return { x, y, w: Math.max(60, x1 - x), h: Math.max(60, y1 - y) };
   };
-  const useImages = (plan.images ?? []).slice(0, skeleton.imageZones.length);
-  const imageBoxes = skeleton.imageZones.slice(0, useImages.length).map(snapBox);
+  interface PlacedImg { box: BBox; mockupRef?: string; mediaKind?: string; url?: string }
+  const mockupZones = skeleton.imageZones.filter((z) => z.mockupRef);
+  const photoZones = skeleton.imageZones.filter((z) => !z.mockupRef);
+  const usePhotos = (plan.images ?? []).slice(0, photoZones.length);
+  // Mockups always render (frame stamped, screen left empty for the user to fill);
+  // plain photo zones are placed only when the user actually supplies images.
+  const placedImgs: PlacedImg[] = [
+    ...mockupZones.map((z) => ({ box: snapBox(z), ...(z.mockupRef ? { mockupRef: z.mockupRef } : {}), ...(z.mediaKind ? { mediaKind: z.mediaKind } : {}) })),
+    ...photoZones.slice(0, usePhotos.length).map((z, i) => ({ box: snapBox(z), url: usePhotos[i]!.url, ...(z.mediaKind ? { mediaKind: z.mediaKind } : {}) })),
+  ];
   let tx0 = margin, tx1 = W - margin, textBottomCap = H;
-  if (imageBoxes.length) {
-    const minX = Math.min(...imageBoxes.map((b) => b.x));
-    const maxR = Math.max(...imageBoxes.map((b) => b.x + b.w));
-    const minY = Math.min(...imageBoxes.map((b) => b.y));
+  if (placedImgs.length) {
+    const boxes = placedImgs.map((p) => p.box);
+    const minX = Math.min(...boxes.map((b) => b.x));
+    const maxR = Math.max(...boxes.map((b) => b.x + b.w));
+    const minY = Math.min(...boxes.map((b) => b.y));
     if (maxR - minX > W * 0.6) textBottomCap = Math.max(H * 0.4, minY - section); // image row → text above
     else if (minX > W * 0.5) tx1 = minX - section;                                 // images right → text left
     else tx0 = maxR + section;                                                      // images left → text right
@@ -125,7 +134,7 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
   // images) so card archetypes and the overlap-safe stack path are untouched.
   type Col = "left" | "right" | "main";
   const titleZ = zoneById.get("title"), bodyZ = zoneById.get("body");
-  const split = !hasCards && imageBoxes.length === 0 && !!titleZ && !!bodyZ
+  const split = !hasCards && placedImgs.length === 0 && !!titleZ && !!bodyZ
     && titleZ.xFrac[1] <= 0.56 && bodyZ.xFrac[0] >= 0.42
     && bodyZ.xFrac[0] - titleZ.xFrac[0] >= 0.2;
   let splitX = tx1;
@@ -271,15 +280,16 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
     defaultSlots.push("footer");
   }
 
-  // Place user images into the reserved zones (cover-crop), bound by order.
+  // Emit image slots: mockup frames carry a mockupRef (renderer stamps the frame +
+  // empty screen); plain photos carry a bound url (cover-cropped by the renderer).
   const images: Record<string, string> = {};
-  imageBoxes.forEach((bbox, i) => {
+  placedImgs.forEach((p, i) => {
     const id = `image_${i}`;
-    const slot: PlacedSlot = { id, role: "image", type: "image", bbox, align: "left" };
-    const mk = skeleton.imageZones[i]?.mediaKind;
-    if (mk) slot.mediaKind = mk as NonNullable<PlacedSlot["mediaKind"]>;
+    const slot: PlacedSlot = { id, role: "image", type: "image", bbox: p.box, align: "left" };
+    if (p.mockupRef) slot.mockupRef = p.mockupRef;
+    if (p.mediaKind) slot.mediaKind = p.mediaKind as NonNullable<PlacedSlot["mediaKind"]>;
     slots.push(slot);
-    images[id] = useImages[i]!.url;
+    if (p.url) images[id] = p.url;
   });
 
   const layout: Layout = {

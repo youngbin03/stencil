@@ -3,9 +3,26 @@ import Anthropic from "@anthropic-ai/sdk";
 import { buildGrammarSpec, synthesizeFromGrammar, evaluateSlide, archetypeSchema, chooseDecoration, type ContentPlan } from "@stencil/synthesizer";
 import { solveDeckSlide } from "@stencil/solver";
 import { renderComposite } from "@stencil/renderer";
-import type { DesignSystemIR } from "@stencil/ir";
+import { placeMockup, type MockupAsset } from "@stencil/normalizer";
+import type { DesignSystemIR, Layout } from "@stencil/ir";
 import type { Theme } from "./generate";
-import { resolveTheme } from "./themes";
+import { resolveTheme, loadMockups } from "./themes";
+
+/** Stamp each mockup frame the synthesized layout placed (screen left empty for the
+ *  user to fill), injecting the asset + its defs into the composite SVG. */
+function injectMockups(svg: string, layout: Layout, mockups: Record<string, MockupAsset>): string {
+  const seen = new Set<string>();
+  let defs = "", body = "";
+  for (const s of layout.slots) {
+    if (!s.mockupRef) continue;
+    const asset = mockups[s.mockupRef];
+    if (!asset) continue;
+    const { defs: d, markup } = placeMockup(asset, s.bbox);
+    if (!seen.has(s.mockupRef)) { defs += d; seen.add(s.mockupRef); }
+    body += markup;
+  }
+  return body ? svg.replace("</svg>", `${defs}${body}</svg>`) : svg;
+}
 
 /**
  * Synthesis path (DEVDOC Phase 6): Claude plans an archetype sequence + writes
@@ -46,6 +63,7 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
   if (!t) throw new Error("unknown theme");
   const system = JSON.parse(await readFile(t.systemPath, "utf8")) as DesignSystemIR;
   const spec = buildGrammarSpec(system);
+  const mockups = await loadMockups(theme);
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const model = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
 
@@ -93,7 +111,7 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
     }
     return {
       archetype: o.archetype, purpose: o.purpose,
-      svg: renderComposite(slide, chooseDecoration(spec, slide, o.archetype, i).svg),
+      svg: injectMockups(renderComposite(slide, chooseDecoration(spec, slide, o.archetype, i).svg), r.layout, mockups),
       gate: v.reject ? "REJECT" : v.pass ? "PASS" : "REVISE",
       novelty: v.scores.layoutNovelty, overall: v.scores.overall,
     };
