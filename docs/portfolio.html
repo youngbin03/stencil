@@ -22,6 +22,9 @@
   h3{font-size:20px;letter-spacing:-0.02em;margin:0 0 6px;font-weight:700}
   p{margin:0 0 12px;color:#2a2a2a}
   .lead{font-size:19px;color:var(--muted);max-width:680px}
+  .overview{border:1px solid var(--line2);border-radius:20px;padding:22px 26px;background:var(--fill);max-width:820px;margin-top:8px}
+  .overview p{margin:0;font-size:16.5px;line-height:1.7;color:#2a2a2a}
+  .overview p b{color:var(--ink)}
   .kicker{display:inline-flex;align-items:center;gap:9px;font-weight:700;font-size:15px;margin-bottom:22px}
   .logo{width:24px;height:24px;display:inline-block;vertical-align:-6px}
   .pill{display:inline-block;font-size:12px;font-weight:600;color:var(--muted);border:1px solid var(--line2);border-radius:30px;padding:4px 12px;margin:4px 6px 0 0}
@@ -81,7 +84,9 @@
   <section>
     <div class="kicker"><svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="11" fill="#0a0a0a"/><circle cx="24" cy="24" r="14" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="34 7 20 7" stroke-dashoffset="4"/><line x1="13.5" y1="34" x2="34" y2="13.5" stroke="#fff" stroke-width="3" stroke-linecap="round"/><line x1="20" y1="36" x2="36.5" y2="19.5" stroke="#fff" stroke-width="3" stroke-linecap="round"/><line x1="26.5" y1="35" x2="35" y2="26.5" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg> Stencil · 프로젝트 보고서</div>
     <h1>An agentic generative system<br>for design-grammar slide synthesis</h1>
-    <p class="lead">본 프로젝트는 프레젠테이션 템플릿을 고정된 편집 틀이 아니라 학습 가능한 디자인 사례로 간주하고, 그로부터 추출한 디자인 문법을 기반으로 새로운 슬라이드 레이아웃을 합성하는 시스템을 제안한다. 입력 슬라이드는 객체 단위로 분석되며, 시스템은 간격, 정렬, 시각적 계층, 역할별 컴포넌트 구조, 객체 간 관계를 명시적 규칙으로 변환한다. 이후 사용자 프롬프트에 따라 슬라이드의 의도와 콘텐츠 구조를 해석하고, 추출된 문법을 제약 조건으로 사용해 원본에 없던 새로운 배치를 생성한다. 특히 본 시스템은 LLM의 역할을 의미 해석과 계획 수립으로 제한하고, 좌표 계산·텍스트 측정·충돌 회피·여백 보정 등 픽셀 정밀도가 필요한 작업은 결정론적 코드에 위임한다. 이는 LLM 기반 생성에서 빈번히 발생하는 레이아웃 겹침, 캔버스 이탈, 결과 비일관성 문제를 줄이기 위한 핵심 설계다. 결과적으로 본 프로젝트는 단순한 템플릿 치환을 넘어, 디자인 규칙의 추출·추상화·재조합을 통해 일관성과 신규성을 동시에 갖춘 프레젠테이션을 생성하는 파이프라인을 구현했다.</p>
+    <div class="overview">
+      <p>프레젠테이션 템플릿을 고정된 편집 틀이 아니라 <b>학습 가능한 디자인 사례</b>로 본다. 입력 슬라이드를 객체 단위로 분석해 간격·정렬·계층·컴포넌트 구조·객체 간 관계를 <b>명시적 규칙</b>으로 바꾸고, 사용자 프롬프트의 의도를 해석한 뒤 그 규칙을 제약으로 원본에 없던 배치를 생성한다. <b>LLM은 의미 해석과 계획까지만</b> 맡고, 좌표·텍스트 측정·충돌 회피·여백 보정 같은 픽셀 작업은 결정론 코드에 위임한다. 이 분리가 겹침·캔버스 이탈·결과 비일관성을 줄이는 핵심 설계다.</p>
+    </div>
     <div>
       <span class="pill">agentic generative system</span>
       <span class="pill">AI for semantics · code for geometry</span>
