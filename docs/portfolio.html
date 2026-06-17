@@ -23,7 +23,7 @@
   p{margin:0 0 12px;color:#2a2a2a}
   .lead{font-size:19px;color:var(--muted);max-width:680px}
   .kicker{display:inline-flex;align-items:center;gap:9px;font-weight:700;font-size:15px;margin-bottom:22px}
-  .logo{width:18px;height:18px;border-radius:5px;background:var(--ink);display:inline-block}
+  .logo{width:24px;height:24px;display:inline-block;vertical-align:-6px}
   .pill{display:inline-block;font-size:12px;font-weight:600;color:var(--muted);border:1px solid var(--line2);border-radius:30px;padding:4px 12px;margin:4px 6px 0 0}
   .grid{display:grid;gap:18px}
   .g2{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:repeat(3,1fr)}
@@ -79,21 +79,15 @@
 
   <!-- HERO -->
   <section>
-    <div class="kicker"><span class="logo"></span> Stencil · 프로젝트 보고서</div>
+    <div class="kicker"><svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="11" fill="#0a0a0a"/><circle cx="24" cy="24" r="14" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="34 7 20 7" stroke-dashoffset="4"/><line x1="13.5" y1="34" x2="34" y2="13.5" stroke="#fff" stroke-width="3" stroke-linecap="round"/><line x1="20" y1="36" x2="36.5" y2="19.5" stroke="#fff" stroke-width="3" stroke-linecap="round"/><line x1="26.5" y1="35" x2="35" y2="26.5" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg> Stencil · 프로젝트 보고서</div>
     <h1>An agentic generative system<br>for design-grammar slide synthesis</h1>
-    <p class="lead">업로드한 슬라이드를 채워 넣을 틀로 쓰지 않는다. 디자인 예시로 보고 간격·정렬·계층·컴포넌트 관계를 뽑아낸 다음, 그 규칙으로 원본에 없던 레이아웃을 새로 만든다. 핵심은 하나다. <b>의미를 판단하는 일은 LLM이 맡고, 좌표 같은 정밀한 숫자는 코드가 맡는다.</b> 좌표까지 모델에 맡기면 글자가 겹치고 화면을 벗어나며 같은 입력에도 결과가 달라지기 때문에, 그 경계를 처음부터 갈라 두었다.</p>
+    <p class="lead">본 프로젝트는 프레젠테이션 템플릿을 고정된 편집 틀이 아니라 학습 가능한 디자인 사례로 간주하고, 그로부터 추출한 디자인 문법을 기반으로 새로운 슬라이드 레이아웃을 합성하는 시스템을 제안한다. 입력 슬라이드는 객체 단위로 분석되며, 시스템은 간격, 정렬, 시각적 계층, 역할별 컴포넌트 구조, 객체 간 관계를 명시적 규칙으로 변환한다. 이후 사용자 프롬프트에 따라 슬라이드의 의도와 콘텐츠 구조를 해석하고, 추출된 문법을 제약 조건으로 사용해 원본에 없던 새로운 배치를 생성한다. 특히 본 시스템은 LLM의 역할을 의미 해석과 계획 수립으로 제한하고, 좌표 계산·텍스트 측정·충돌 회피·여백 보정 등 픽셀 정밀도가 필요한 작업은 결정론적 코드에 위임한다. 이는 LLM 기반 생성에서 빈번히 발생하는 레이아웃 겹침, 캔버스 이탈, 결과 비일관성 문제를 줄이기 위한 핵심 설계다. 결과적으로 본 프로젝트는 단순한 템플릿 치환을 넘어, 디자인 규칙의 추출·추상화·재조합을 통해 일관성과 신규성을 동시에 갖춘 프레젠테이션을 생성하는 파이프라인을 구현했다.</p>
     <div>
       <span class="pill">agentic generative system</span>
       <span class="pill">AI for semantics · code for geometry</span>
       <span class="pill">vision-in-the-loop</span>
       <span class="pill">evaluator–optimizer gate</span>
       <span class="pill">no frame copy · 원본 미복사</span>
-    </div>
-    <div class="metrics">
-      <div class="m"><div class="v">2-phase</div><div class="l">bake-once · stamp-many</div></div>
-      <div class="m"><div class="v">7</div><div class="l">자동 품질 지표 + 게이트</div></div>
-      <div class="m"><div class="v">0</div><div class="l">LLM이 찍는 좌표</div></div>
-      <div class="m"><div class="v">11</div><div class="l">목업 자산 (iPhone·MacBook)</div></div>
     </div>
   </section>
 
@@ -271,6 +265,13 @@ layout novelty &lt; 6 → reject</span></p></div>
         <div class="row"><b>난점</b><span>원본의 분위기·간격·계층은 살리면서 레이아웃 구조는 새로 짜야 한다.</span></div>
         <div class="row"><b>해법</b><span>아키타입별 예시의 영역을 정규화해 중앙값으로 합친 골격을 만들고, 거기에 새 콘텐츠를 끼웠다.</span></div>
         <div class="row res"><b>결과</b><span>원본을 복사하지 않고, 신규성 6점 미만이면 reject하는 게이트로 베끼기를 막았다.</span></div>
+      </div>
+      <div class="prob">
+        <div class="pt">관계 그래프 — 요소 사이의 의도를 잃지 않기</div>
+        <div class="row"><b>문제</b><span>좌표만 뽑으면 "제목 위에 본문", "지표와 캡션은 한 쌍", "이미지를 피해 배치" 같은 요소 간 의도가 사라진다.</span></div>
+        <div class="row"><b>난점</b><span>같은 좌표라도 관계가 다르면 다른 레이아웃이다. 관계를 잃으면 재조합할 때 어긋난다.</span></div>
+        <div class="row"><b>해법</b><span>슬라이드에서 요소 간 관계 — 겹침(over), 정렬축(aligned), 한 쌍 묶음(coupled), 좌·우 위치(anchored), 회피(avoids) — 를 그래프로 추출해 문법에 저장한다. 합성은 좌표보다 이 관계를 먼저 만족시킨다. anchored 좌·우는 좌우 2단으로, coupled는 카드 내부 묶음으로, avoids는 장식을 콘텐츠 빈 영역에 두는 식으로 반영한다.</span></div>
+        <div class="row res"><b>결과</b><span>제목 좌·본문 우 2단, 지표+캡션 묶음, 콘텐츠를 피한 장식이 원본 의도대로 재현된다.</span></div>
       </div>
       <div class="prob">
         <div class="pt">LLM은 픽셀 정밀도가 없다</div>
