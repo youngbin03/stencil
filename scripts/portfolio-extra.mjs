@@ -84,12 +84,11 @@ function colorfulPhone() {
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs><rect width="${W}" height="${H}" fill="${s.colors.bg}"/>${blobs}${t}${markup}</svg>`;
 }
 
-// [5] black phone mockup with a USER IMAGE filled into the screen (clip demo)
+// [5] black phone mockup with an EMPTY screen (user fills it later)
 function blackPhoneFilled() {
   const s = spec("black");
   const asset = JSON.parse(readFileSync("fixtures/assets/black/mockups/black_mockup_2.json", "utf8"));
-  const photo = "data:image/jpeg;base64," + readFileSync("fixtures/sample/photo1.jpg").toString("base64");
-  const { defs, markup } = placeMockup(asset, asset.frameBBox, photo);
+  const { defs, markup } = placeMockup(asset, asset.frameBBox); // empty checker screen
   const nf = s.type.title?.family ?? s.fontFamily, bf = s.type.body?.family ?? s.fontFamily;
   let t = `<text x="${M}" y="120" font-family="${bf}" font-size="22" font-weight="600" letter-spacing="2" fill="${s.colors.text}" opacity="0.6">IN THE APP</text>`;
   t += `<text x="${M}" y="440" font-family="${nf}" font-size="80" font-weight="300" letter-spacing="-2" fill="${s.colors.text}">See it in action</text>`;
