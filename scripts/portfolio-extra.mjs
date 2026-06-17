@@ -41,11 +41,19 @@ function greenTitle() {
   const BG = "#003310", LIME = "#C7EF4E";
   const nf = s.type.title?.family ?? s.type.headline?.family ?? "Neuton";
   const bf = s.type.body?.family ?? s.fontFamily;
+  // subtle decoration: a large low-opacity lime arc anchored bottom-right + a small
+  // lime dot top-left as an eyebrow marker (clear of the title).
+  const deco = `<path d="M${W} ${H - 520} C ${W - 300} ${H - 520}, ${W - 520} ${H - 220}, ${W - 520} ${H} L ${W} ${H} Z" fill="${LIME}" fill-opacity="0.10"/>`;
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">` +
     `<rect width="${W}" height="${H}" fill="${BG}"/>` +
-    `<rect x="64" y="146" width="56" height="56" rx="28" fill="${LIME}"/>` +
-    `<text x="64" y="300" font-family="${nf}" font-size="170" font-weight="300" letter-spacing="-5" fill="${LIME}">Project Aero</text>` +
-    `<text x="68" y="380" font-family="${bf}" font-size="30" font-weight="600" letter-spacing="1" fill="${LIME}">A NEW STANDARD FOR SMART HOME DESIGN</text>` +
+    deco +
+    `<circle cx="76" cy="150" r="9" fill="${LIME}"/>` +
+    `<text x="64" y="190" font-family="${bf}" font-size="22" font-weight="600" letter-spacing="3" fill="${LIME}" opacity="0.8">PROJECT BRIEF</text>` +
+    `<text x="64" y="420" font-family="${nf}" font-size="170" font-weight="300" letter-spacing="-5" fill="${LIME}">Project Aero</text>` +
+    // divider + bold accent segment
+    `<line x1="64" y1="478" x2="900" y2="478" stroke="${LIME}" stroke-opacity="0.35"/>` +
+    `<rect x="64" y="475" width="180" height="6" rx="3" fill="${LIME}"/>` +
+    `<text x="64" y="528" font-family="${bf}" font-size="30" font-weight="600" letter-spacing="1" fill="${LIME}">A NEW STANDARD FOR SMART HOME DESIGN</text>` +
     `<text x="64" y="940" font-family="${bf}" font-size="28" font-weight="600" fill="${LIME}">Alison Lee</text>` +
     `<text x="64" y="978" font-family="${bf}" font-size="24" fill="${LIME}" opacity="0.7">Project Lead · 2026</text></svg>`;
 }
