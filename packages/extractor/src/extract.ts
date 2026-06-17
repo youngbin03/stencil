@@ -12,7 +12,7 @@ import type {
   TypeScale,
   TypeToken,
 } from "@stencil/ir";
-import { normalizeSvg } from "@stencil/normalizer";
+import { normalizeSvg, extractMockupAsset, type MockupAsset } from "@stencil/normalizer";
 import { extractGroups, extractThemeGrammar, placeSlots, textSlots, type SlotLabelLite } from "./grammar.js";
 import { buildRelationGraph, extractDecorationModel, relationConventions } from "./relations.js";
 import { extractBlocks, extractCardSpec, extractRegions } from "./layout.js";
@@ -156,9 +156,16 @@ export interface ThemeDecoration {
   svg: string;
 }
 
+export interface ThemeMockup {
+  id: string;
+  asset: MockupAsset;
+}
+
 export interface ThemeResult {
   system: DesignSystemIR;
   decorations: ThemeDecoration[];
+  /** Reusable device-mockup assets (deduped), referenced by Layout.mockupRef. */
+  mockups: ThemeMockup[];
 }
 
 export interface ThemeOptions {
@@ -222,6 +229,8 @@ export async function extractThemeSystem(slides: SlideInput[], opts: ThemeOption
   const decorations: ThemeDecoration[] = [];
   const layouts: Layout[] = [];
   const convInput: { graph: RelationGraph; slotRole: Map<string, string> }[] = [];
+  // Device mockups, deduped by shape (the same iPhone reused across slides → one asset).
+  const mockupBySig = new Map<string, ThemeMockup>();
   let canvas: Canvas = { w: 0, h: 0 };
 
   for (const p of prepared) {
@@ -254,6 +263,14 @@ export async function extractThemeSystem(slides: SlideInput[], opts: ThemeOption
     };
     const archetype = archetypes.get(p.layoutId);
     if (archetype) layout.archetype = archetype;
+    // Device mockup (deterministic geometry): extract once, reuse the asset.
+    const mk = extractMockupAsset(p.slide.svg);
+    if (mk) {
+      const sig = `${Math.round(mk.frameBBox.x)}_${Math.round(mk.frameBBox.y)}_${Math.round(mk.frameBBox.w)}_${mk.screenClip.length}`;
+      let entry = mockupBySig.get(sig);
+      if (!entry) { entry = { id: `${opts.theme}_mockup_${mockupBySig.size}`, asset: mk }; mockupBySig.set(sig, entry); }
+      layout.mockupRef = entry.id;
+    }
     layouts.push(layout);
     decorations.push({ layoutId: p.layoutId, svg: decoSvg });
     convInput.push({ graph: relationGraph, slotRole: new Map(p.manifest.slots.map((s) => [s.id, s.role])) });
@@ -295,5 +312,5 @@ export async function extractThemeSystem(slides: SlideInput[], opts: ThemeOption
     layouts,
   };
 
-  return { system, decorations };
+  return { system, decorations, mockups: [...mockupBySig.values()] };
 }

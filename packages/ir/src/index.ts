@@ -477,6 +477,8 @@ export interface Layout {
   /** Repeatable card definition (assetize-computed; assembler consumes this). */
   cardSpec?: CardSpec;
   regions: Region[];
+  /** Id of the device-mockup asset this layout uses (stored separately), if any. */
+  mockupRef?: string;
   /**
    * Slot ids in authoring order. Assemble's inplace special case maps content
    * 1:1 onto these; full re-composition uses `slots` + grammar instead.

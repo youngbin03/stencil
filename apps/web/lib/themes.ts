@@ -149,7 +149,7 @@ export async function createTheme(name: string): Promise<string> {
 
 /** Re-assetize a theme: read its template SVGs → build one design system →
  *  write system.json + decoration fragments. Vision classify is optional. */
-export async function rebakeTheme(slug: string, classify?: ClassifyFn): Promise<{ layouts: number; slides: number }> {
+export async function rebakeTheme(slug: string, classify?: ClassifyFn): Promise<{ layouts: number; slides: number; mockups: number }> {
   const t = resolveTheme(slug);
   if (!t) throw new Error("unknown theme");
   const files = readdirSync(t.templatesDir).filter((f) => f.toLowerCase().endsWith(".svg")).sort();
@@ -157,16 +157,21 @@ export async function rebakeTheme(slug: string, classify?: ClassifyFn): Promise<
   const slides: SlideInput[] = await Promise.all(
     files.map(async (f) => ({ name: f.replace(/\.svg$/i, ""), svg: await readFile(resolve(t.templatesDir, f), "utf8") })),
   );
-  const { system, decorations } = await extractThemeSystem(slides, {
+  const { system, decorations, mockups } = await extractThemeSystem(slides, {
     theme: slug as never,
     decorationRef: (layoutId) => `${slug}/decorations/${layoutId}.svg`,
     ...(classify ? { classify } : {}),
   });
+  const mockupDir = resolve(dirname(t.systemPath), "mockups");
   await mkdir(t.decoDir, { recursive: true });
   await mkdir(dirname(t.systemPath), { recursive: true });
   await writeFile(t.systemPath, JSON.stringify(system, null, 2), "utf8");
   await Promise.all(decorations.map((d) => writeFile(resolve(t.decoDir, `${d.layoutId}.svg`), d.svg, "utf8")));
-  return { layouts: system.layouts.length, slides: slides.length };
+  if (mockups.length) {
+    await mkdir(mockupDir, { recursive: true });
+    await Promise.all(mockups.map((m) => writeFile(resolve(mockupDir, `${m.id}.json`), JSON.stringify(m.asset), "utf8")));
+  }
+  return { layouts: system.layouts.length, slides: slides.length, mockups: mockups.length };
 }
 
 /** Allow only safe slide ids (Frame-12, my-upload_3) — blocks path traversal. */
