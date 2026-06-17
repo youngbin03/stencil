@@ -90,22 +90,41 @@ function mineImageZones(slots: ImgSlot[]): ImageZone[] {
     const col = cols.find((c) => Math.abs(c[0]!.xFrac - s.xFrac) < 0.1);
     if (col) col.push(s); else cols.push([s]);
   }
-  const zones = cols.map((c) => {
+  return cols.map((c) => {
     const x = median(c.map((s) => s.xFrac)), w = median(c.map((s) => s.wFrac));
     const y = median(c.map((s) => s.yFrac)), h = median(c.map((s) => s.hFrac));
     const zone: ImageZone = { xFrac: [x, x + w], yFrac: [y, y + h], ratio: median(c.map((s) => s.ratio)) };
     const mk = mode(c.map((s) => s.mediaKind).filter(Boolean));
     if (mk) zone.mediaKind = mk;
-    const ref = mode(c.map((s) => s.mockupRef).filter(Boolean));
-    if (ref) zone.mockupRef = ref;
     return zone;
   });
-  // A slide carries at most ONE device mockup — keep the dominant (largest) one and
-  // drop the rest, so a skeleton that aggregated mockups at several positions never
-  // stamps overlapping frames.
-  const area = (z: ImageZone): number => (z.xFrac[1] - z.xFrac[0]) * (z.yFrac[1] - z.yFrac[0]);
-  const mock = zones.filter((z) => z.mockupRef).sort((a, b) => area(b) - area(a));
-  return [...zones.filter((z) => !z.mockupRef), ...mock.slice(0, 1)];
+}
+
+/**
+ * Mockup arrangement. Devices are placed as a COHERENT GROUP by the designer (e.g.
+ * a 3-up phone row, evenly spaced) — that arrangement is a per-slide relationship,
+ * not something to blend across slides. So we take the dominant arrangement (the
+ * modal mockup count) and average positions only across slides that share it,
+ * preserving the real layout (and never overlapping).
+ */
+function mineMockupZones(arrangements: ImgSlot[][]): ImageZone[] {
+  const groups = arrangements.filter((a) => a.length > 0);
+  if (groups.length === 0) return [];
+  const byCount = new Map<number, ImgSlot[][]>();
+  for (const a of groups) (byCount.get(a.length) ?? byCount.set(a.length, []).get(a.length)!).push(a);
+  const [count, reps] = [...byCount.entries()].sort((x, y) => y[1].length - x[1].length || x[0] - y[0])[0]!;
+  const sorted = reps.map((a) => [...a].sort((p, q) => p.xFrac - q.xFrac));
+  const zones: ImageZone[] = [];
+  for (let i = 0; i < count; i++) {
+    const col = sorted.map((a) => a[i]).filter((s): s is ImgSlot => !!s);
+    const x = median(col.map((s) => s.xFrac)), w = median(col.map((s) => s.wFrac));
+    const y = median(col.map((s) => s.yFrac)), h = median(col.map((s) => s.hFrac));
+    const zone: ImageZone = { xFrac: [x, x + w], yFrac: [y, y + h], ratio: median(col.map((s) => s.ratio)) };
+    const ref = mode(col.map((s) => s.mockupRef).filter(Boolean));
+    if (ref) zone.mockupRef = ref;
+    zones.push(zone);
+  }
+  return zones;
 }
 
 /** Aggregate the regions of one archetype's example slides into a median skeleton. */
@@ -137,7 +156,10 @@ function mineSkeleton(archetype: string, examples: { regions: Region[]; imgSlots
     zones.push(zone);
   }
   zones.sort((a, b) => a.yFrac[0] - b.yFrac[0]);
-  const imageZones = mineImageZones(examples.flatMap((e) => e.imgSlots));
+  // Photos cluster across slides; mockups keep their per-slide arrangement.
+  const photoZones = mineImageZones(examples.flatMap((e) => e.imgSlots.filter((s) => !s.mockupRef)));
+  const mockupZones = mineMockupZones(examples.map((e) => e.imgSlots.filter((s) => s.mockupRef)));
+  const imageZones = [...photoZones, ...mockupZones];
   const decoration: DecorationProfile = {
     coverage: median(examples.map((e) => e.decoCoverage)),
     count: Math.round(median(examples.map((e) => e.decoCount))),
