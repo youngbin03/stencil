@@ -87,28 +87,32 @@ function openRegion(frag) {
 }
 
 // --- content structures (placeholder, consistent voice) placed INTO the region ---
-function txt(x, y, role, s, fill) {
-  return `<text x="${Math.round(x)}" y="${Math.round(y)}" font-family="${fam(role)}" font-size="${spec.type[role]?.size ?? 40}" font-weight="${spec.type[role]?.weight ?? 400}" fill="${fill}" style="white-space:pre">${esc(s)}</text>`;
+function txt(x, y, role, s, fill, maxW) {
+  let size = spec.type[role]?.size ?? 40;
+  if (maxW) { const est = s.length * size * 0.56; if (est > maxW) size = Math.max(14, Math.floor(maxW / (s.length * 0.56))); }
+  return `<text x="${Math.round(x)}" y="${Math.round(y)}" font-family="${fam(role)}" font-size="${size}" font-weight="${spec.type[role]?.weight ?? 400}" fill="${fill}" style="white-space:pre">${esc(s)}</text>`;
 }
 const STRUCTURES = {
-  title: { fits: (r) => r.h > H * 0.25 && r.w > W * 0.55, render: (r, fill, acc, d) => { const cy = r.y + r.h * 0.42; return txt(r.x, cy, "eyebrow", d.eyebrow, fill) + txt(r.x, cy + (spec.type.title?.size ?? 120) * 0.9, "title", d.title, fill); } },
+  title: { fits: (r) => r.h > H * 0.25 && r.w > W * 0.55, foot: () => (spec.type.title?.size ?? 120) * 1.2 + (spec.type.eyebrow?.size ?? 28) * 1.6, render: (r, fill, acc, d) => { const cy = r.y + r.h * 0.42; return txt(r.x, cy, "eyebrow", d.eyebrow, fill, r.w) + txt(r.x, cy + (spec.type.title?.size ?? 120) * 0.9, "title", d.title, fill, r.w); } },
   list: {
     fits: (r) => r.h > H * 0.45 && r.w > W * 0.45,
+    foot: (r) => 3 * Math.min(r.h / 4, 150) + 80,
     render: (r, fill, acc, d) => {
       const items = d.items; const gap = Math.min(r.h / (items.length + 1), 150); let y = r.y + gap * 0.9; let out = txt(r.x, r.y + 40, "eyebrow", d.header, fill);
-      items.forEach((t, idx) => { y += gap; out += txt(r.x, y, "headline", `0${idx + 1}`, fill) + txt(r.x + 260, y, "subtitle", t, fill) + `<line x1="${r.x}" y1="${Math.round(y + 24)}" x2="${Math.round(r.x + r.w)}" y2="${Math.round(y + 24)}" stroke="${acc}" stroke-width="3"/>`; });
+      items.forEach((t, idx) => { y += gap; out += txt(r.x, y, "headline", `0${idx + 1}`, fill) + txt(r.x + 260, y, "subtitle", t, fill, r.w - 280) + `<line x1="${r.x}" y1="${Math.round(y + 24)}" x2="${Math.round(r.x + r.w)}" y2="${Math.round(y + 24)}" stroke="${acc}" stroke-width="3"/>`; });
       return out;
     },
   },
   kpi: {
     fits: (r) => r.w > W * 0.6 && r.h > H * 0.25,
+    foot: () => (spec.type.kpi?.size ?? 120) + (spec.type.caption?.size ?? 28) * 2.2,
     render: (r, fill, acc, d) => {
       const cw = r.w / 3, cy = r.y + r.h * 0.5; let out = "";
-      d.k.forEach((v, idx) => { const x = r.x + idx * cw; out += txt(x, cy, "kpi", v, fill) + txt(x, cy + 56, "caption", d.cap[idx], fill); });
+      d.k.forEach((v, idx) => { const x = r.x + idx * cw; out += txt(x, cy, "kpi", v, fill, cw - 24) + txt(x, cy + 56, "caption", d.cap[idx], fill, cw - 24); });
       return out;
     },
   },
-  quote: { fits: (r) => r.h > H * 0.3 && r.w > W * 0.5, render: (r, fill, acc, d) => { const cy = r.y + r.h * 0.42, qs = spec.type.quote?.size ?? 120; let out = ""; d.q.forEach((line, i) => { out += txt(r.x, cy + i * qs, "quote", line, fill); }); return out + txt(r.x, cy + d.q.length * qs + 30, "caption", d.cap, fill); } },
+  quote: { fits: (r) => r.h > H * 0.3 && r.w > W * 0.5, foot: () => 2 * (spec.type.quote?.size ?? 120) + 70, render: (r, fill, acc, d) => { const cy = r.y + r.h * 0.42, qs = spec.type.quote?.size ?? 120; let out = ""; d.q.forEach((line, i) => { out += txt(r.x, cy + i * qs, "quote", line, fill, r.w); }); return out + txt(r.x, cy + d.q.length * qs + 30, "caption", d.cap, fill, r.w); } },
 };
 
 // Content pools — consistent voice (neutral product/design), parallel structure,
@@ -139,6 +143,13 @@ const POOL = {
 
 function isDark(hex) { const h = (hex || "").replace("#", ""); if (h.length !== 6) return false; const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16); return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.62; }
 function domColor(frag) { const m = frag.match(/fill="(#[0-9a-fA-F]{3,6})"/); return m ? m[1] : accent; }
+// A chart graphic (kind 'chart', or ≥3 narrow vertical bars by the model bboxes) is
+// content, not background decoration — pairing arbitrary text with it reads wrong.
+function isChartLayout(L) {
+  const els = (L.decorationModel?.elements ?? []).filter((e) => e.kind !== "background");
+  if (els.some((e) => e.kind === "chart")) return true;
+  return els.filter((e) => e.bbox.h > e.bbox.w && e.bbox.w < W * 0.18 && e.bbox.w > 0).length >= 3;
+}
 
 const N = Number(process.argv[3]) || 10;
 const structNames = Object.keys(STRUCTURES);
@@ -147,6 +158,7 @@ const cands = [];
 for (const L of sys.layouts) {
   const { frag, bg } = decoOf(L.id);
   if (!frag.trim()) continue;
+  if (isChartLayout(L)) continue;        // chart graphic = content, not decoration
   const region = openRegion(frag);
   if (!region) continue;
   // colour: full-colour bg → everything white; light bg → text=theme, accents harmonise with the decoration's own colour
@@ -156,11 +168,16 @@ for (const L of sys.layouts) {
   for (const sName of structNames) {
     if (sName === L.archetype) continue;
     if (!STRUCTURES[sName].fits(region)) continue;
-    cands.push({ id: L.id, sName, frag, bg, bgFill, region, fill, acc, area: region.w * region.h });
+    // QUALITY = how well the content fills the open region (balance). A short
+    // structure floating in a huge region scores low; a good fit scores high.
+    const fillR = STRUCTURES[sName].foot(region) / region.h;
+    if (fillR < 0.32 || fillR > 1.05) continue;   // too sparse (floats) or overflowing
+    const score = 1 - Math.abs(fillR - 0.6);
+    cands.push({ id: L.id, sName, frag, bg, bgFill, region, fill, acc, score });
   }
 }
-// 2) select ~N diverse: roomiest first, one per decoration, balanced across structures
-cands.sort((a, b) => b.area - a.area);
+// 2) select ~N diverse: best fit first, one per decoration, balanced across structures
+cands.sort((a, b) => b.score - a.score);
 const picked = []; const usedDeco = new Set(); const sc = {}; const capPer = Math.ceil(N / structNames.length);
 for (const c of cands) { if (picked.length >= N) break; if (usedDeco.has(c.id) || (sc[c.sName] || 0) >= capPer) continue; picked.push(c); usedDeco.add(c.id); sc[c.sName] = (sc[c.sName] || 0) + 1; }
 for (const c of cands) { if (picked.length >= N) break; if (!picked.includes(c)) picked.push(c); }
