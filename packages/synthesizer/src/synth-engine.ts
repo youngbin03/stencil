@@ -77,7 +77,14 @@ export function archetypeSchema(spec: GrammarSpec, archetype: string): { archety
     const measured = Object.keys(spec.cardSpecs).find((k) => k.split("/").some((r) => want.includes(r as Role)));
     cardRoles = measured ? (measured.split("/") as Role[]) : want;
   }
+  // Comparison reads as bare numbers when the mined block is kpi-only. Force a tier
+  // card — name + headline value + what's included — so columns are real comparisons.
+  if (archetype === "comparison") cardRoles = ["label", "headline", "body"];
   const mockups = sk.imageZones.filter((z) => z.mockupRef).length;
+  // Image/mockup slides present the device(s), not a card grid. Multiple devices →
+  // one caption each (labels the device); a single device → a supporting body line.
+  if (sk.imageZones.length > 1) cardRoles = ["caption"];
+  else if (sk.imageZones.length === 1) { cardRoles = []; if (!singles.includes("body")) singles.push("body"); }
   return { archetype, singles, cardRoles, images: sk.imageZones.length, mockups, photos: sk.imageZones.length - mockups };
 }
 
@@ -131,6 +138,13 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
     ...mockupZones.map((z) => ({ box: snapBox(z), ...(z.mockupRef ? { mockupRef: z.mockupRef } : {}), ...(z.mediaKind ? { mediaKind: z.mediaKind } : {}) })),
     ...photoZones.slice(0, usePhotos.length).map((z, i) => ({ box: snapBox(z), url: usePhotos[i]!.url, ...(z.mediaKind ? { mediaKind: z.mediaKind } : {}) })),
   ];
+  // A single device reads best as a clean side panel: pin it to the right half so
+  // the text gets the opposite column (mined boxes can be huge/centered and collide
+  // with the text, as seen on content slides). Gallery rows keep their arrangement.
+  if (placedImgs.length === 1 && plan.archetype !== "gallery") {
+    const bw = Math.round(W * 0.42), bh = Math.round(H * 0.72);
+    placedImgs[0]!.box = { x: W - margin - bw, y: Math.round((H - bh) / 2), w: bw, h: bh };
+  }
   let tx0 = margin, tx1 = W - margin, textBottomCap = H;
   if (placedImgs.length) {
     const boxes = placedImgs.map((p) => p.box);
@@ -191,7 +205,9 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
   };
 
   const relByCol: Record<Col, number> = { left: 0, right: 0, main: 0 };
-  const order = ["header", "title", hasCards ? "cards" : "body"];
+  // Devices carry the visual; don't also pack a card grid next to them (cramped).
+  const useCards = hasCards && placedImgs.length === 0;
+  const order = ["header", "title", useCards ? "cards" : "body"];
   let cardSpec: CardSpec | undefined;
   for (const zoneId of order) {
     if (zoneId === "cards") {
@@ -203,14 +219,31 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
       const blockId = z?.block ?? spec.blocks.find((b) => b.slots.some((s) => plan.cards![0]![s.role] !== undefined))?.id;
       const fromBlock = blockId ? cardSpecForBlock(spec, blockId) : { roles: [] as Role[], cs: undefined };
       const useRoles = planRoles.length ? planRoles : fromBlock.roles;
-      const cs = spec.cardSpecs[useRoles.join("/")] ?? fromBlock.cs;
+      // Only reuse a measured cardSpec when its role signature EXACTLY matches what
+      // the planner wrote — otherwise its template renders the wrong roles (e.g. a
+      // kpi-only template silently dropping a tier's label/body). Else build from grammar.
+      const cs = spec.cardSpecs[useRoles.join("/")];
       const rowW = tx1 - tx0;
       const cardW = Math.min(cs?.cardW ?? Math.round(rowW / Math.max(1, plan.cards!.length) * 0.9), Math.round(rowW / Math.max(1, plan.cards!.length)));
-      const rowH = cs ? cs.rowBBox.h : Math.ceil(useRoles.reduce((s, r) => s + (spec.type[r]?.size ?? 40) * lh * 1.4, 0));
-      const template: CardTemplateSlot[] = cs
-        ? cs.template.map((t) => (t.fontSize ? { ...t, fontSize: sz(t.fontSize) } : { ...t }))
-        : useRoles.map((role, i) => ({ role, type: "text" as const, dx: 0, dy: i * Math.ceil((spec.type[role]?.size ?? 40) * 1.4),
-            w: cardW, h: Math.ceil((spec.type[role]?.size ?? 40) * 1.3), fontSize: sz(spec.type[role]?.size ?? 40), fontWeight: spec.type[role]?.weight ?? 400, color: spec.colors.text, align: "left" as TextAlign }));
+      let template: CardTemplateSlot[];
+      let rowH: number;
+      if (cs) {
+        template = cs.template.map((t) => (t.fontSize ? { ...t, fontSize: sz(t.fontSize) } : { ...t }));
+        rowH = cs.rowBBox.h;
+      } else {
+        // Stack roles top-to-bottom with CUMULATIVE offsets (label → headline → body),
+        // sized by the type scale, so e.g. a tier name sits above its price and detail.
+        let dy = 0;
+        template = useRoles.map((role) => {
+          const fs = sz(spec.type[role]?.size ?? 40);
+          const lines = role === "body" || role === "subtitle" ? 2 : 1;
+          const hh = Math.ceil(fs * lh * lines);
+          const t: CardTemplateSlot = { role, type: "text", dx: 0, dy, w: cardW, h: hh, fontSize: fs, fontWeight: spec.type[role]?.weight ?? 400, color: spec.colors.text, align: "left" };
+          dy += hh + Math.round(tight * 0.6);
+          return t;
+        });
+        rowH = dy;
+      }
       items.push({ id: "cards", kind: "cards", x: tx0, w: rowW, h: rowH, relY: relByCol.main, col: "main" });
       cardSpec = { template, rowBBox: { x: tx0, y: 0, w: rowW, h: rowH }, cardW, colY0: 0, baseCount: plan.cards!.length, roles: useRoles, memberIds: [], decorationIds: [] };
       relByCol.main += rowH + section;
@@ -311,6 +344,28 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
     slots.push(slot);
     if (p.url) images[id] = p.url;
   });
+
+  // Gallery: caption the device row as an EVENLY-SPACED row beneath it (devices may
+  // overlap by design, so per-device boxes would collide — even columns never do).
+  if (placedImgs.length > 1 && plan.cards?.length) {
+    const bx0 = Math.min(...placedImgs.map((p) => p.box.x));
+    const bx1 = Math.max(...placedImgs.map((p) => p.box.x + p.box.w));
+    const yBot = Math.max(...placedImgs.map((p) => p.box.y + p.box.h));
+    const n = Math.min(placedImgs.length, plan.cards.length);
+    const colW = (bx1 - bx0) / n;
+    const ct = spec.type.caption ?? spec.type.label;
+    const fs = sz(ct?.size ?? 24);
+    for (let i = 0; i < n; i++) {
+      const capText = Object.values(plan.cards[i]!)[0];
+      if (!capText) continue;
+      const capId = `cap_${i}`;
+      const cb: BBox = { x: Math.round(bx0 + i * colW), y: Math.min(H - Math.ceil(fs * lh * 2) - 8, yBot + Math.round(tight)), w: Math.round(colW), h: Math.ceil(fs * lh * 2) };
+      slots.push({ id: capId, role: "caption", type: "text", bbox: cb, align: "center", fontSize: fs, fontWeight: ct?.weight ?? 400, color: spec.colors.text, ...(ct?.family ? { fontFamily: ct.family } : {}) });
+      regions.push({ id: capId, bbox: cb, flow: "row", gap: tight, allowedBlocks: [], slotIds: [capId] });
+      singles[capId] = capText;
+      defaultSlots.push(capId);
+    }
+  }
 
   const layout: Layout = {
     id: `synth_${plan.archetype}_${spec.theme}`,

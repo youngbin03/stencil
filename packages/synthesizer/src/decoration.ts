@@ -44,6 +44,38 @@ export function synthDecoration(spec: GrammarSpec, archetype: string, index: num
     `<rect width="${w}" height="${h}" fill="${spec.colors.bg}"/>${t(w, h, c)}</svg>`;
 }
 
+function hashStr(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+/**
+ * A VARIED corner composition (not always a plain circle) anchored at corner
+ * (cx,cy), drawn within radius `r` so it stays clear of content. `sx,sy` point
+ * into the slide. Uses two palette colours for richer, on-brand decoration that
+ * differs slide-to-slide and archetype-to-archetype.
+ */
+function cornerArt(v: number, cx: number, cy: number, r: number, sx: number, sy: number, c: string, c2: string, bg: string): string {
+  const ix = (f: number): number => Math.round(cx + sx * r * f);
+  const iy = (f: number): number => Math.round(cy + sy * r * f);
+  const sw = Math.max(8, Math.round(r * 0.07));
+  switch (((v % 6) + 6) % 6) {
+    case 1: // blob + small accent dot
+      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${c}"/><circle cx="${ix(0.52)}" cy="${iy(0.52)}" r="${Math.round(r * 0.26)}" fill="${c2}"/>`;
+    case 2: // blob + concentric outline ring
+      return `<circle cx="${cx}" cy="${cy}" r="${Math.round(r * 0.95)}" fill="${c}"/><circle cx="${ix(0.4)}" cy="${iy(0.4)}" r="${Math.round(r * 0.44)}" fill="none" stroke="${c2}" stroke-width="${sw}"/>`;
+    case 3: // organic ellipse
+      return `<ellipse cx="${cx}" cy="${cy}" rx="${r}" ry="${Math.round(r * 0.78)}" fill="${c}"/>`;
+    case 4: // twin overlapping blobs, two colours
+      return `<circle cx="${cx}" cy="${cy}" r="${Math.round(r * 0.9)}" fill="${c}"/><circle cx="${ix(0.55)}" cy="${iy(0.3)}" r="${Math.round(r * 0.36)}" fill="${c2}" fill-opacity="0.9"/>`;
+    case 5: // crescent (carved with a bg-coloured cutout)
+      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${c}"/><circle cx="${ix(0.58)}" cy="${iy(0.58)}" r="${Math.round(r * 0.6)}" fill="${bg}"/>`;
+    default: // single blob
+      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${c}"/>`;
+  }
+}
+
 /** Distance from a point to a box (0 inside). */
 function distToBox(px: number, py: number, b: BBox): number {
   const dx = Math.max(b.x - px, 0, px - (b.x + b.w));
@@ -70,6 +102,7 @@ export function chooseDecoration(spec: GrammarSpec, slide: RenderSlide, archetyp
 
   const cols = vivid(spec);
   const c = cols[index % cols.length]!;
+  const c2 = (cols.length > 1 ? cols[(index + 2) % cols.length] : undefined) ?? c;
   const content = slide.elements.map((e) => e.bbox).filter((b) => b.w > 0 && b.h > 0);
   const corners: { name: string; x: number; y: number }[] = [
     { name: "top-right", x: w, y: 0 }, { name: "bottom-right", x: w, y: h },
@@ -89,9 +122,11 @@ export function chooseDecoration(spec: GrammarSpec, slide: RenderSlide, archetyp
   const contentCover = content.reduce((s, b) => s + Math.min(b.w * b.h, w * h), 0) / (w * h);
   const contentCap = h * (contentCover < 0.06 ? 0.30 : contentCover < 0.14 ? 0.45 : 0.7);
   const r = Math.round(Math.min(bestR * 0.95, target, contentCap));
-  const shape = r > 50 ? `<circle cx="${best.x}" cy="${best.y}" r="${r}" fill="${c}"/>` : "";
+  const sx = best.x === 0 ? 1 : -1, sy = best.y === 0 ? 1 : -1;
+  const variant = index + hashStr(archetype);
+  const shape = r > 50 ? cornerArt(variant, best.x, best.y, r, sx, sy, c, c2, spec.colors.bg) : "";
   const reason = r > 50
-    ? `theme decorates '${archetype}' ~${(profile.coverage * 100).toFixed(0)}% → ${best.name} blob r=${r}px (clear), fill ${c}`
+    ? `theme decorates '${archetype}' ~${(profile.coverage * 100).toFixed(0)}% → ${best.name} composition r=${r}px (clear), fill ${c}${c2 !== c ? ` + ${c2}` : ""}`
     : `theme decoration for '${archetype}' is light and the layout is dense — none added`;
   return { svg: bgSvg + shape + "</svg>", reason };
 }
