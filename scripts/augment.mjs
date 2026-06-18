@@ -93,32 +93,32 @@ function txt(x, y, role, s, fill, maxW) {
   return `<text x="${Math.round(x)}" y="${Math.round(y)}" font-family="${fam(role)}" font-size="${size}" font-weight="${spec.type[role]?.weight ?? 400}" fill="${fill}" style="white-space:pre">${esc(s)}</text>`;
 }
 const STRUCTURES = {
-  title: { fits: (r) => r.h > H * 0.25 && r.w > W * 0.55, foot: () => (spec.type.title?.size ?? 120) * 1.2 + (spec.type.eyebrow?.size ?? 28) * 1.6, render: (r, fill, acc, d) => { const cy = r.y + r.h * 0.42; return txt(r.x, cy, "eyebrow", d.eyebrow, fill, r.w) + txt(r.x, cy + (spec.type.title?.size ?? 120) * 0.9, "title", d.title, fill, r.w); } },
+  title: { fits: (r) => r.h > H * 0.3 && r.w > W * 0.55, foot: () => (spec.type.title?.size ?? 120) * 1.2 + (spec.type.eyebrow?.size ?? 28) * 1.6 + (spec.type.body?.size ?? 28) * 2, render: (r, fill, acc, d) => { const ts = spec.type.title?.size ?? 120, cy = r.y + r.h * 0.34; let o = txt(r.x, cy, "eyebrow", d.eyebrow, fill, r.w) + txt(r.x, cy + ts * 0.9, "title", d.title, fill, r.w); if (d.body) o += txt(r.x, cy + ts * 0.9 + 78, "body", d.body, fill, r.w * 0.82); return o; } },
   list: {
     fits: (r) => r.h > H * 0.45 && r.w > W * 0.45,
-    foot: (r) => 3 * Math.min(r.h / 4, 150) + 80,
+    foot: (r) => 3 * Math.min(r.h / 3.4, 180) + 70,
     render: (r, fill, acc, d) => {
-      const items = d.items; const gap = Math.min(r.h / (items.length + 1), 150); let y = r.y + gap * 0.9; let out = txt(r.x, r.y + 40, "eyebrow", d.header, fill);
-      items.forEach((t, idx) => { y += gap; out += txt(r.x, y, "headline", `0${idx + 1}`, fill) + txt(r.x + 260, y, "headline", t, fill, r.w - 280) + `<line x1="${r.x}" y1="${Math.round(y + 24)}" x2="${Math.round(r.x + r.w)}" y2="${Math.round(y + 24)}" stroke="${acc}" stroke-width="3"/>`; });
+      const items = d.items; const gap = Math.min(r.h / (items.length + 0.4), 180); let y = r.y + gap * 0.6; let out = txt(r.x, r.y + 34, "eyebrow", d.header, fill);
+      items.forEach((it, idx) => { y += gap; out += txt(r.x, y, "headline", `0${idx + 1}`, fill) + txt(r.x + 240, y, "headline", it.label, fill, r.w - 540) + txt(r.x + 240, y + 42, "body", it.desc, fill, r.w - 260) + `<line x1="${r.x}" y1="${Math.round(y + 64)}" x2="${Math.round(r.x + r.w)}" y2="${Math.round(y + 64)}" stroke="${acc}" stroke-width="2"/>`; });
       return out;
     },
   },
   kpi: {
-    fits: (r) => r.w > W * 0.6 && r.h > H * 0.25,
-    foot: () => (spec.type.kpi?.size ?? 120) + (spec.type.caption?.size ?? 28) * 2.2,
+    fits: (r) => r.w > W * 0.6 && r.h > H * 0.38,
+    foot: () => (spec.type.headline?.size ?? 80) * 1.3 + (spec.type.kpi?.size ?? 120) + (spec.type.caption?.size ?? 28) * 2,
     render: (r, fill, acc, d) => {
-      const cw = r.w / 3, cy = r.y + r.h * 0.5; let out = "";
-      d.k.forEach((v, idx) => { const x = r.x + idx * cw; out += txt(x, cy, "kpi", v, fill, cw - 24) + txt(x, cy + 56, "caption", d.cap[idx], fill, cw - 24); });
+      let out = txt(r.x, r.y + (spec.type.headline?.size ?? 80) * 0.82, "headline", d.title, fill, r.w);
+      const cw = r.w / 3, cy = r.y + r.h * 0.68; d.k.forEach((v, idx) => { const x = r.x + idx * cw; out += txt(x, cy, "kpi", v, fill, cw - 24) + txt(x, cy + 56, "caption", d.cap[idx], fill, cw - 24); });
       return out;
     },
   },
   quote: { fits: (r) => r.h > H * 0.3 && r.w > W * 0.5, foot: () => 2 * (spec.type.quote?.size ?? 120) + 70, render: (r, fill, acc, d) => { const cy = r.y + r.h * 0.42, qs = spec.type.quote?.size ?? 120; let out = ""; d.q.forEach((line, i) => { out += txt(r.x, cy + i * qs, "quote", line, fill, r.w); }); return out + txt(r.x, cy + d.q.length * qs + 30, "caption", d.cap, fill, r.w); } },
   // one bold statement (2 short lines) + a small kicker
-  statement: { fits: (r) => r.w > W * 0.5 && r.h > H * 0.25, foot: () => (spec.type.headline?.size ?? 80) * 2.3 + (spec.type.eyebrow?.size ?? 28) * 1.5, render: (r, fill, acc, d) => { const hs = spec.type.headline?.size ?? 80, cy = r.y + r.h * 0.4; let out = txt(r.x, cy, "eyebrow", d.eyebrow, fill, r.w); d.lines.forEach((l, i) => { out += txt(r.x, cy + (i + 1) * hs * 1.05, "headline", l, fill, r.w); }); return out; } },
-  // a single focal metric — fits tighter clear areas a 3-up KPI row can't
-  bignum: { fits: (r) => r.w > W * 0.3 && r.h > H * 0.25, foot: () => (spec.type.kpi?.size ?? 120) + (spec.type.caption?.size ?? 28) * 1.6, render: (r, fill, acc, d) => { const cy = r.y + r.h * 0.5; return txt(r.x, cy, "kpi", d.n, fill, r.w) + txt(r.x, cy + 60, "caption", d.cap, fill, r.w); } },
+  statement: { fits: (r) => r.w > W * 0.5 && r.h > H * 0.3, foot: () => (spec.type.headline?.size ?? 80) * 2.3 + (spec.type.eyebrow?.size ?? 28) * 1.5 + (spec.type.body?.size ?? 28) * 2, render: (r, fill, acc, d) => { const hs = spec.type.headline?.size ?? 80, cy = r.y + r.h * 0.34; let out = txt(r.x, cy, "eyebrow", d.eyebrow, fill, r.w); d.lines.forEach((l, i) => { out += txt(r.x, cy + (i + 1) * hs * 1.05, "headline", l, fill, r.w); }); if (d.body) out += txt(r.x, cy + (d.lines.length + 1) * hs * 1.05 + 30, "body", d.body, fill, r.w * 0.82); return out; } },
+  // a single focal metric + a supporting line
+  bignum: { fits: (r) => r.w > W * 0.3 && r.h > H * 0.3, foot: () => (spec.type.kpi?.size ?? 120) + (spec.type.caption?.size ?? 28) + (spec.type.body?.size ?? 28) * 2, render: (r, fill, acc, d) => { const cy = r.y + r.h * 0.45; let out = txt(r.x, cy, "kpi", d.n, fill, r.w) + txt(r.x, cy + 56, "caption", d.cap, fill, r.w); if (d.body) out += txt(r.x, cy + 56 + 60, "body", d.body, fill, Math.min(r.w, W * 0.42)); return out; } },
   // horizontal numbered steps (vs the vertical list)
-  steps: { fits: (r) => r.w > W * 0.6 && r.h > H * 0.2, foot: () => (spec.type.headline?.size ?? 80) + (spec.type.label?.size ?? 28) * 2.2, render: (r, fill, acc, d) => { const cw = r.w / d.steps.length, cy = r.y + r.h * 0.5, gapL = (spec.type.headline?.size ?? 80) * 0.8; let out = ""; d.steps.forEach((s, i) => { const x = r.x + i * cw; out += txt(x, cy, "headline", s[0], fill, cw - 24) + txt(x, cy + gapL, "label", s[1], fill, cw - 24); }); return out; } },
+  steps: { fits: (r) => r.w > W * 0.6 && r.h > H * 0.25, foot: () => (spec.type.headline?.size ?? 80) + (spec.type.label?.size ?? 28) + (spec.type.body?.size ?? 28) * 2.4, render: (r, fill, acc, d) => { const cw = r.w / d.steps.length, cy = r.y + r.h * 0.4, gapL = (spec.type.headline?.size ?? 80) * 0.8; let out = ""; d.steps.forEach((s, i) => { const x = r.x + i * cw; out += txt(x, cy, "headline", s[0], fill, cw - 24) + txt(x, cy + gapL, "label", s[1], fill, cw - 24); if (s[2]) out += txt(x, cy + gapL + 40, "body", s[2], fill, cw - 24); }); return out; } },
   // two side-by-side blocks (label + short body) — before/after, problem/solution
   twocol: { fits: (r) => r.w > W * 0.6 && r.h > H * 0.3, foot: () => (spec.type.label?.size ?? 28) * 1.8 + (spec.type.body?.size ?? 28) * 2.6, render: (r, fill, acc, d) => { const cw = r.w / 2, cy = r.y + r.h * 0.42; let out = ""; d.cols.forEach((c, i) => { const x = r.x + i * cw; out += txt(x, cy, "label", c.label, fill, cw - 30); c.body.forEach((b, j) => { out += txt(x, cy + 50 + j * 36, "body", b, fill, cw - 30); }); }); return out; } },
 };
@@ -127,20 +127,20 @@ const STRUCTURES = {
 // fixed info amount per role. Each generated slide gets a DIFFERENT set.
 const POOL = {
   title: [
-    { eyebrow: "Overview", title: "Designing with intent" },
-    { eyebrow: "Vision", title: "Built for clarity" },
-    { eyebrow: "Principle", title: "Less, but better" },
-    { eyebrow: "Approach", title: "Start with the user" },
+    { eyebrow: "Overview", title: "Designing with intent", body: "A short, confident promise that frames the rest of the deck." },
+    { eyebrow: "Vision", title: "Built for clarity", body: "Where we're headed and why it matters to the people we serve." },
+    { eyebrow: "Principle", title: "Less, but better", body: "The fewer moving parts, the easier it is to trust the result." },
+    { eyebrow: "Approach", title: "Start with the user", body: "Every decision traces back to a real problem worth solving." },
   ],
   list: [
-    { header: "In this section", items: ["Start from the problem", "Shape the core idea", "Ship and learn"] },
-    { header: "How we work", items: ["Listen to users", "Prototype fast", "Measure what matters"] },
-    { header: "Our priorities", items: ["Reduce friction", "Earn trust", "Compound value"] },
+    { header: "In this section", items: [{ label: "Start from the problem", desc: "Name the real pain before reaching for a solution." }, { label: "Shape the core idea", desc: "Find the smallest thing that proves the value." }, { label: "Ship and learn", desc: "Release early, then let evidence guide the next step." }] },
+    { header: "How we work", items: [{ label: "Listen to users", desc: "Signals from real usage outrank internal opinions." }, { label: "Prototype fast", desc: "Make it tangible in days, not quarters." }, { label: "Measure what matters", desc: "A few honest metrics beat a wall of dashboards." }] },
+    { header: "Our priorities", items: [{ label: "Reduce friction", desc: "Remove steps until only the essential remain." }, { label: "Earn trust", desc: "Be predictable, fast, and quietly reliable." }, { label: "Compound value", desc: "Small wins that stack into a durable advantage." }] },
   ],
   kpi: [
-    { k: ["38%", "2.4×", "+12"], cap: ["Adoption lift", "Faster delivery", "Retention gain"] },
-    { k: ["94%", "3.1M", "-40%"], cap: ["Satisfaction", "Active users", "Response time"] },
-    { k: ["2×", "+18", "99.9%"], cap: ["Throughput", "NPS gain", "Uptime"] },
+    { title: "Results we can measure", k: ["38%", "2.4×", "+12"], cap: ["Adoption lift", "Faster delivery", "Retention gain"] },
+    { title: "The quarter in numbers", k: ["94%", "3.1M", "-40%"], cap: ["Satisfaction", "Active users", "Response time"] },
+    { title: "Performance at a glance", k: ["2×", "+18", "99.9%"], cap: ["Throughput", "NPS gain", "Uptime"] },
   ],
   quote: [
     { q: ["Simplicity is the", "keystone of design."], cap: "— Design Principle" },
@@ -148,18 +148,18 @@ const POOL = {
     { q: ["Make the right thing", "the easy thing."], cap: "— Product Maxim" },
   ],
   statement: [
-    { eyebrow: "North star", lines: ["Build things", "people love."] },
-    { eyebrow: "Mission", lines: ["Make complex", "feel simple."] },
-    { eyebrow: "Belief", lines: ["Ship small,", "learn fast."] },
+    { eyebrow: "North star", lines: ["Build things", "people love."], body: "Loved products earn the right to grow." },
+    { eyebrow: "Mission", lines: ["Make complex", "feel simple."], body: "Hide the machinery; show the outcome." },
+    { eyebrow: "Belief", lines: ["Ship small,", "learn fast."], body: "Momentum comes from many small, honest steps." },
   ],
   bignum: [
-    { n: "10×", cap: "Faster iteration" },
-    { n: "<2s", cap: "Median response" },
-    { n: "100K+", cap: "Teams onboarded" },
+    { n: "10×", cap: "Faster iteration", body: "From idea to shipped in a fraction of the time." },
+    { n: "<2s", cap: "Median response", body: "Fast enough that it feels invisible." },
+    { n: "100K+", cap: "Teams onboarded", body: "Adopted across organisations of every size." },
   ],
   steps: [
-    { steps: [["01", "Discover"], ["02", "Design"], ["03", "Deliver"]] },
-    { steps: [["01", "Listen"], ["02", "Build"], ["03", "Measure"]] },
+    { steps: [["01", "Discover", "Frame the real problem"], ["02", "Design", "Shape the core idea"], ["03", "Deliver", "Ship and then learn"]] },
+    { steps: [["01", "Listen", "Gather real signals"], ["02", "Build", "Make it tangible"], ["03", "Measure", "Let evidence lead"]] },
   ],
   twocol: [
     { cols: [{ label: "Before", body: ["Manual, slow,", "disconnected."] }, { label: "After", body: ["Automated, fast,", "unified."] }] },
