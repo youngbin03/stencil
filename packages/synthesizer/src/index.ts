@@ -6,4 +6,5 @@ export { synthesizeFromGrammar, archetypeSchema, describeRoles } from "./synth-e
 export type { ContentPlan, Asset } from "./synth-engine.js";
 export { evaluateSlide } from "./evaluate.js";
 export type { QualityScores, QualityVerdict } from "./evaluate.js";
-export { synthDecoration, chooseDecoration } from "./decoration.js";
+export { synthDecoration, chooseDecoration, pickDecoration } from "./decoration.js";
+export type { DecoFrag } from "./decoration.js";

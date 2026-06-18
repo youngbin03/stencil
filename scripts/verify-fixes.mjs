@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync, writeFileSync, mkdirSync } from "node:fs";
-import { buildGrammarSpec, synthesizeFromGrammar, archetypeSchema, chooseDecoration } from "../packages/synthesizer/dist/index.js";
+import { buildGrammarSpec, synthesizeFromGrammar, archetypeSchema, pickDecoration } from "../packages/synthesizer/dist/index.js";
 import { solveDeckSlide } from "../packages/solver/dist/index.js";
 import { renderComposite } from "../packages/renderer/dist/index.js";
 import { placeMockup } from "../packages/normalizer/dist/index.js";
@@ -8,6 +8,8 @@ import { rasterize } from "../packages/classifier/dist/rasterize.js";
 const theme = process.argv[2] ?? "colorful";
 const sys = JSON.parse(readFileSync(`fixtures/assets/${theme}/system.json`, "utf8"));
 const spec = buildGrammarSpec(sys);
+let decoLib = [];
+try { decoLib = JSON.parse(readFileSync(`fixtures/assets/${theme}/decorations-lib.json`, "utf8")); } catch {}
 const mockups = {};
 try { for (const f of readdirSync(`fixtures/assets/${theme}/mockups`)) mockups[f.replace(/\.json$/, "")] = JSON.parse(readFileSync(`fixtures/assets/${theme}/mockups/${f}`, "utf8")); } catch {}
 
@@ -55,7 +57,7 @@ let i = 0;
 for (const a of spec.archetypes) {
   const { layout, placement } = synthesizeFromGrammar(spec, content(a.archetype));
   const slide = solveDeckSlide(layout, placement, spec, { w: spec.canvas.w, h: spec.canvas.h });
-  const deco = chooseDecoration(spec, slide, a.archetype, i++);
+  const deco = pickDecoration(spec, slide, a.archetype, i++, decoLib);
   let svg = injectMockups(renderComposite(slide, deco.svg), layout);
   writeFileSync(`fixtures/out/verify/${theme}_${a.archetype}.png`, rasterize(svg, 1200));
   console.log(`${theme}_${a.archetype}: ${deco.reason}`);

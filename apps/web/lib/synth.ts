@@ -1,12 +1,12 @@
 import { readFile } from "node:fs/promises";
 import Anthropic from "@anthropic-ai/sdk";
-import { buildGrammarSpec, synthesizeFromGrammar, evaluateSlide, archetypeSchema, describeRoles, chooseDecoration, type ContentPlan } from "@stencil/synthesizer";
+import { buildGrammarSpec, synthesizeFromGrammar, evaluateSlide, archetypeSchema, describeRoles, pickDecoration, type ContentPlan } from "@stencil/synthesizer";
 import { solveDeckSlide } from "@stencil/solver";
 import { renderComposite } from "@stencil/renderer";
 import { placeMockup, type MockupAsset } from "@stencil/normalizer";
 import type { DesignSystemIR, Layout } from "@stencil/ir";
 import type { Theme } from "./generate";
-import { resolveTheme, loadMockups } from "./themes";
+import { resolveTheme, loadMockups, loadDecorations } from "./themes";
 
 /** Stamp each mockup frame the synthesized layout placed (screen left empty for the
  *  user to fill), injecting the asset + its defs into the composite SVG. */
@@ -64,6 +64,7 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
   const system = JSON.parse(await readFile(t.systemPath, "utf8")) as DesignSystemIR;
   const spec = buildGrammarSpec(system);
   const mockups = await loadMockups(theme);
+  const decoLib = await loadDecorations(theme);
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const model = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
 
@@ -119,7 +120,7 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
     }
     return {
       archetype: o.archetype, purpose: o.purpose,
-      svg: injectMockups(renderComposite(slide, chooseDecoration(spec, slide, o.archetype, i).svg), r.layout, mockups),
+      svg: injectMockups(renderComposite(slide, pickDecoration(spec, slide, o.archetype, i, decoLib).svg), r.layout, mockups),
       gate: v.reject ? "REJECT" : v.pass ? "PASS" : "REVISE",
       novelty: v.scores.layoutNovelty, overall: v.scores.overall,
     };

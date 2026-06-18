@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { extractThemeSystem, type ClassifyFn, type SlideInput } from "@stencil/extractor";
 import type { MockupAsset } from "@stencil/normalizer";
+import type { DecoFrag } from "@stencil/synthesizer";
 
 /**
  * Dynamic theme registry. A "theme" is a folder of example slides plus a baked
@@ -185,6 +186,22 @@ export async function rebakeTheme(slug: string, classify?: ClassifyFn): Promise<
   await mkdir(dirname(t.systemPath), { recursive: true });
   await writeFile(t.systemPath, JSON.stringify(system, null, 2), "utf8");
   await Promise.all(decorations.map((d) => writeFile(resolve(t.decoDir, `${d.layoutId}.svg`), d.svg, "utf8")));
+  // Organic decoration library (real free-form shapes) for synthesis backgrounds.
+  const decoLib = decorations.flatMap((d) => {
+    const m = d.svg.match(/<g id="Decorative"[^>]*>([\s\S]*?)<\/g>/);
+    const frag = m?.[1]?.trim();
+    if (!frag || !/<(path|circle|ellipse|polygon)\b/.test(frag)) return [];
+    const layout = system.layouts.find((l) => l.id === d.layoutId);
+    const els = (layout?.decorationModel?.elements ?? []).filter((e) => e.kind !== "background");
+    if (!els.length) return [];
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const e of els) { x0 = Math.min(x0, e.bbox.x); y0 = Math.min(y0, e.bbox.y); x1 = Math.max(x1, e.bbox.x + e.bbox.w); y1 = Math.max(y1, e.bbox.y + e.bbox.h); }
+    x0 = Math.max(0, x0); y0 = Math.max(0, y0); x1 = Math.min(system.canvas.w, x1); y1 = Math.min(system.canvas.h, y1);
+    if (x1 <= x0 || y1 <= y0) return [];
+    const colors = [...new Set([...frag.matchAll(/fill="(#[0-9a-fA-F]{3,6})"/g)].map((x) => x[1]))];
+    return [{ id: d.layoutId, frag, bbox: { x: Math.round(x0), y: Math.round(y0), w: Math.round(x1 - x0), h: Math.round(y1 - y0) }, colors, ...(layout?.archetype ? { archetype: layout.archetype } : {}) }];
+  });
+  await writeFile(resolve(dirname(t.systemPath), "decorations-lib.json"), JSON.stringify(decoLib), "utf8");
   if (mockups.length) {
     await mkdir(mockupDir, { recursive: true });
     await Promise.all(mockups.map((m) => writeFile(resolve(mockupDir, `${m.id}.json`), JSON.stringify(m.asset), "utf8")));
@@ -205,6 +222,19 @@ export async function loadMockups(slug: string): Promise<Record<string, MockupAs
     }),
   );
   return out;
+}
+
+/** Load a theme's organic decoration-shape library (for synthesis backgrounds). */
+export async function loadDecorations(slug: string): Promise<DecoFrag[]> {
+  const t = resolveTheme(slug);
+  if (!t) return [];
+  const p = resolve(dirname(t.systemPath), "decorations-lib.json");
+  if (!existsSync(p)) return [];
+  try {
+    return JSON.parse(await readFile(p, "utf8")) as DecoFrag[];
+  } catch {
+    return [];
+  }
 }
 
 /** Allow only safe slide ids (Frame-12, my-upload_3) — blocks path traversal. */

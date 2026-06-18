@@ -76,6 +76,57 @@ function cornerArt(v: number, cx: number, cy: number, r: number, sx: number, sy:
   }
 }
 
+/** A real decoration shape mined from a theme slide — the organic `<g Decorative>`
+ *  path(s), with their ink bbox and palette colours. Reused (recoloured, placed
+ *  clear of content) so synthesized backgrounds use the theme's ACTUAL free-form
+ *  shapes, not generated circles. */
+export interface DecoFrag { id: string; frag: string; bbox: BBox; colors: string[]; archetype?: string }
+
+function overlapFrac(a: BBox, b: BBox): number {
+  const ix = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
+  const iy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+  return (ix * iy) / Math.max(1, b.w * b.h);
+}
+function recolor(frag: string, c: string): string {
+  return frag.replace(/fill="#[0-9a-fA-F]{3,6}"/g, `fill="${c}"`);
+}
+
+/**
+ * Reuse a REAL theme decoration shape: pick an organic fragment whose ink avoids
+ * the slide's content, recolour it to a palette hue (variety), and place it as the
+ * background. Falls back to the synthesized composition when no fragment fits or no
+ * library is available — so output is never worse than before.
+ */
+export function pickDecoration(spec: GrammarSpec, slide: RenderSlide, archetype: string, index: number, lib: DecoFrag[]): { svg: string; reason: string } {
+  const { w, h } = spec.canvas;
+  const profile = spec.archetypes.find((a) => a.archetype === archetype)?.decoration ?? { coverage: 0, count: 0 };
+  if (profile.coverage < 0.02 || !lib?.length) {
+    return profile.coverage < 0.02
+      ? { svg: `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/></svg>`, reason: `theme keeps '${archetype}' undecorated` }
+      : chooseDecoration(spec, slide, archetype, index);
+  }
+  const content = slide.elements.map((e) => e.bbox).filter((b) => b.w > 0 && b.h > 0);
+  const cbox: BBox = content.length
+    ? { x: Math.min(...content.map((b) => b.x)), y: Math.min(...content.map((b) => b.y)), w: 0, h: 0 }
+    : { x: 0, y: 0, w: 0, h: 0 };
+  if (content.length) {
+    cbox.w = Math.max(...content.map((b) => b.x + b.w)) - cbox.x;
+    cbox.h = Math.max(...content.map((b) => b.y + b.h)) - cbox.y;
+  }
+  const big = lib.filter((f) => f.bbox.w > 120 && f.bbox.h > 120);
+  const clear = big.filter((f) => overlapFrac(f.bbox, cbox) < 0.08);
+  const sameArch = clear.filter((f) => f.archetype === archetype);
+  const pool = sameArch.length ? sameArch : clear.length ? clear : big;
+  if (!pool.length) return chooseDecoration(spec, slide, archetype, index);
+  const chosen = pool[index % pool.length]!;
+  const cols = vivid(spec);
+  const c = cols[index % cols.length]!;
+  return {
+    svg: `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/>${recolor(chosen.frag, c)}</svg>`,
+    reason: `theme decoration shape '${chosen.id}' (organic) recoloured ${c}`,
+  };
+}
+
 /** Distance from a point to a box (0 inside). */
 function distToBox(px: number, py: number, b: BBox): number {
   const dx = Math.max(b.x - px, 0, px - (b.x + b.w));
