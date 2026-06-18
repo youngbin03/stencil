@@ -131,7 +131,7 @@ export function extractMockupAsset(svg: string): MockupAsset | null {
  * shape. Returns the markup to inject (caller emits the `defs` once). When `image`
  * is omitted the screen stays empty (checker placeholder) for the user to fill.
  */
-export function placeMockup(asset: MockupAsset, target: BBox, image?: string): { defs: string; markup: string } {
+export function placeMockup(asset: MockupAsset, target: BBox, image?: string, screenFill?: string): { defs: string; markup: string } {
   const f = asset.frameBBox;
   const s = Math.min(target.w / f.w, target.h / f.h);
   // center within target
@@ -140,10 +140,15 @@ export function placeMockup(asset: MockupAsset, target: BBox, image?: string): {
   const transform = `translate(${tx} ${ty}) scale(${s}) translate(${-f.x} ${-f.y})`;
   const sb = asset.screenBBox;
   const clipId = `mock_${Math.random().toString(36).slice(2, 8)}`;
+  // With a real image: clip it to the screen shape. With no image: the asset's baked
+  // "Insert Designs here" CHECKER placeholder would show through (reads as broken) — so
+  // when a screenFill is given, paint the screen shape a clean solid to cover it.
   const overlay = image
     ? `<clipPath id="${clipId}"><path d="${asset.screenClip}"/></clipPath>` +
       `<image href="${image}" x="${sb.x}" y="${sb.y}" width="${sb.w}" height="${sb.h}" ` +
       `preserveAspectRatio="xMidYMid slice" clip-path="url(#${clipId})"/>`
-    : "";
+    : screenFill
+      ? `<path d="${asset.screenClip}" fill="${screenFill}"/>`
+      : "";
   return { defs: asset.defs, markup: `<g transform="${transform}">${asset.body}${overlay}</g>` };
 }

@@ -1,9 +1,36 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+import { Resvg } from "@resvg/resvg-js";
 import { extractThemeSystem, type ClassifyFn, type SlideInput } from "@stencil/extractor";
 import type { MockupAsset } from "@stencil/normalizer";
 import type { DecoFrag } from "@stencil/synthesizer";
+
+// AMBIENT-decoration gate (shared signal with scripts/decoration-lib.mjs): keep an
+// element only if its INKED bbox is edge-anchored AND large. Ambient background
+// decoration frames the canvas (touches/bleeds edges, big); content graphics (cards,
+// pills, bands, Venn, charts) sit in the interior. resvg is available server-side
+// (next.config serverExternalPackages), so rebaked user themes use the same gate.
+const DECO_W = 1920, DECO_H = 1080, DECO_EDGE = Math.round(DECO_W * 0.02), DECO_BW = 240;
+function inkBBox(el: string): { x: number; y: number; w: number; h: number } | null {
+  const bh = Math.round((DECO_BW * DECO_H) / DECO_W);
+  let px: Uint8Array;
+  try { px = new Resvg(`<svg width="${DECO_W}" height="${DECO_H}" viewBox="0 0 ${DECO_W} ${DECO_H}" xmlns="http://www.w3.org/2000/svg"><g>${el}</g></svg>`, { fitTo: { mode: "width", value: DECO_BW } }).render().pixels; }
+  catch { return null; }
+  let minx = DECO_BW, miny = bh, maxx = -1, maxy = -1;
+  for (let y = 0; y < bh; y++) for (let x = 0; x < DECO_BW; x++) {
+    if (px[(y * DECO_BW + x) * 4 + 3]! > 16) { if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y; }
+  }
+  if (maxx < 0) return null;
+  const sx = DECO_W / DECO_BW, sy = DECO_H / bh;
+  return { x: minx * sx, y: miny * sy, w: (maxx - minx + 1) * sx, h: (maxy - miny + 1) * sy };
+}
+function isAmbientDeco(el: string): boolean {
+  const b = inkBBox(el); if (!b) return false;
+  const edge = b.x <= DECO_EDGE || b.y <= DECO_EDGE || b.x + b.w >= DECO_W - DECO_EDGE || b.y + b.h >= DECO_H - DECO_EDGE;
+  const large = b.w >= DECO_W * 0.12 || b.h >= DECO_H * 0.12;
+  return edge && large;
+}
 
 /**
  * Dynamic theme registry. A "theme" is a folder of example slides plus a baked
@@ -186,9 +213,11 @@ export async function rebakeTheme(slug: string, classify?: ClassifyFn): Promise<
   await mkdir(dirname(t.systemPath), { recursive: true });
   await writeFile(t.systemPath, JSON.stringify(system, null, 2), "utf8");
   await Promise.all(decorations.map((d) => writeFile(resolve(t.decoDir, `${d.layoutId}.svg`), d.svg, "utf8")));
-  // Decoration library, generalised across vocabularies (organic <g Decorative>
-  // paths, solid colour-block rects, bands) — excludes the background rect, image
-  // holders (pattern fills) and divider lines. Mirrors scripts/decoration-lib.mjs.
+  // Decoration library: keep only AMBIENT background decoration (edge-anchored + large,
+  // measured via inkBBox — see isAmbientDeco). Excludes the background rect, image
+  // holders (pattern fills), dividers, and interior content graphics (cards/pills/bands
+  // /Venn/charts). Mirrors scripts/decoration-lib.mjs so built-in and user-imported
+  // themes use one principled gate (e.g. green/black → no ambient decoration → []).
   const NEUTRAL = new Set(["white", "#ffffff", "#fff", "#f3f3f3", "black", "#000000", "#000", "none"]);
   const bgToken = (system.tokens?.colors?.bg ?? "").toLowerCase();
   const decoLib = decorations.flatMap((d) => {
@@ -201,6 +230,7 @@ export async function rebakeTheme(slug: string, classify?: ClassifyFn): Promise<
       const full = /^<rect/.test(el) && /width="1920"/.test(el) && /height="1080"/.test(el);
       if (full && !bgSeen) { bgSeen = true; const f = (/fill="([^"]+)"/.exec(el)?.[1] ?? "").toLowerCase(); if (f && !NEUTRAL.has(f) && f !== bgToken) bg = f; continue; }
       if (/^<line/.test(el) || /fill="url\(/.test(el)) continue;
+      if (!isAmbientDeco(el)) continue;
       keep.push(el);
     }
     const frag = keep.join("");

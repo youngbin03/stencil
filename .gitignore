@@ -18,3 +18,8 @@ fixtures/sample/
 # Next.js generated
 next-env.d.ts
 apps/web/.data/
+
+# local-only: personal files, temp verification output, generated caches
+resume/
+apps/web/public/_verify/
+scripts/.thumbs-manifest.json

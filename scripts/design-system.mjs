@@ -103,14 +103,12 @@ for (const theme of themes) {
 
   sections.push(`<section>
     <h2>${theme}<span class="sub">design system · ${sys.layouts.length} slides distilled</span></h2>
-    <div class="grid2">
-      <div class="box"><h3>Palette</h3><div class="row">${palette}</div><div class="row roles">${roles}</div></div>
-      <div class="box"><h3>Type scale</h3>${type}</div>
+    <div class="box foundations">
+      <div><h3>Palette</h3><div class="row">${palette}</div><div class="row roles">${roles}</div></div>
+      <div><h3>Grid &amp; margin</h3>${gridSVG}<code>x:[${al.xGuides.join(", ")}] · margin ${al.margin}</code></div>
+      <div><h3>Spacing rhythm <small>base ${spec.spacing.baseUnit}</small></h3>${rhythm}<h3 style="margin-top:14px">Hierarchy</h3><code>title:body ${spec.hierarchy.titleToBodyRatio}<br>conventions: ${conv}</code></div>
     </div>
-    <div class="grid2">
-      <div class="box"><h3>Grid &amp; margin</h3>${gridSVG}<code>x:[${al.xGuides.join(", ")}] · margin ${al.margin}</code></div>
-      <div class="box"><h3>Spacing rhythm <small>base ${spec.spacing.baseUnit}</small></h3>${rhythm}<h3 style="margin-top:14px">Hierarchy</h3><code>title:body ${spec.hierarchy.titleToBodyRatio} · conventions: ${conv}</code></div>
-    </div>
+    <div class="box"><h3>Type scale</h3><div class="typegrid">${type}</div></div>
     <div class="box"><h3>Decoration language <small>the theme's actual visual vocabulary (extracted)</small></h3><div class="decos">${decoGallery}</div></div>
     <div class="box"><h3>Blocks <small>repeatable card templates</small></h3><div class="blocks">${blocks}</div></div>
     <div class="box"><h3>Archetype skeletons <small>real example + the pattern mined across slides (not a copied frame)</small></h3><div class="skels">${skels}</div></div>
@@ -134,8 +132,9 @@ const html = `<!doctype html><meta charset="utf-8"><title>Stencil — design sys
   h2 .sub{font-size:12px;color:#999;text-transform:none;font-weight:400}
   h3{font-size:13px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.04em;color:#444}
   h3 small{font-weight:400;text-transform:none;letter-spacing:0;color:#aaa;margin-left:6px}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
   .box{background:#fff;border:1px solid var(--b);border-radius:12px;padding:16px;margin-bottom:16px}
+  .foundations{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:28px;align-items:start}
+  .typegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:0 36px}
   .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
   .roles{margin-top:10px}
   .sw{display:flex;flex-direction:column;align-items:center;gap:3px}

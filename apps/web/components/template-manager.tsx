@@ -120,7 +120,8 @@ function FolderView({ slug, baked, onChanged }: { slug: string; baked: boolean; 
     for (const f of Array.from(files)) {
       if (!f.name.toLowerCase().endsWith(".svg")) continue;
       const svg = await f.text();
-      await fetch(`/api/templates?theme=${slug}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: f.name, svg }) });
+      const res = await fetch(`/api/templates?theme=${slug}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: f.name, svg }) });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error ?? `failed to add ${f.name}`); break; }
     }
     await load();
     await onChanged();
@@ -129,8 +130,9 @@ function FolderView({ slug, baked, onChanged }: { slug: string; baked: boolean; 
   async function remove(id: string) {
     if (!confirm(`Delete ${id}.svg from ${slug}?`)) return;
     setBusy(id);
-    await fetch(`/api/templates?theme=${slug}&id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    const res = await fetch(`/api/templates?theme=${slug}&id=${encodeURIComponent(id)}`, { method: "DELETE" });
     setBusy(null);
+    if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error ?? "delete failed"); return; }
     await load();
     await onChanged();
   }

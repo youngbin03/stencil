@@ -1,12 +1,13 @@
 import { readFile } from "node:fs/promises";
 import Anthropic from "@anthropic-ai/sdk";
-import { buildGrammarSpec, synthesizeFromGrammar, evaluateSlide, archetypeSchema, describeRoles, pickDecoration, type ContentPlan } from "@stencil/synthesizer";
+import { buildGrammarSpec, synthesizeFromGrammar, evaluateSlide, archetypeSchema, describeRoles, pickDecoration, makeStructures, STRUCTURE_FOR_ARCHETYPE, STRUCTURE_SCHEMA, type ContentPlan } from "@stencil/synthesizer";
 import { solveDeckSlide } from "@stencil/solver";
 import { renderComposite } from "@stencil/renderer";
 import { placeMockup, type MockupAsset } from "@stencil/normalizer";
 import type { DesignSystemIR, Layout } from "@stencil/ir";
 import type { Theme } from "./generate";
 import { resolveTheme, loadMockups, loadDecorations } from "./themes";
+import { openRegion, decoShapeFrag } from "./structgen";
 
 /** Stamp each mockup frame the synthesized layout placed (screen left empty for the
  *  user to fill), injecting the asset + its defs into the composite SVG. */
@@ -17,7 +18,7 @@ function injectMockups(svg: string, layout: Layout, mockups: Record<string, Mock
     if (!s.mockupRef) continue;
     const asset = mockups[s.mockupRef];
     if (!asset) continue;
-    const { defs: d, markup } = placeMockup(asset, s.bbox);
+    const { defs: d, markup } = placeMockup(asset, s.bbox, undefined, "#FFFFFF");
     if (!seen.has(s.mockupRef)) { defs += d; seen.add(s.mockupRef); }
     body += markup;
   }
@@ -76,6 +77,16 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const model = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
 
+  // DENSE structure path (unified with the augmentation engine): for text archetypes we
+  // render the same info-rich structures used offline, placed in the decoration's open
+  // region. Image/mockup archetypes keep the synth-engine path (they need real assets).
+  const W = system.canvas.w, H = system.canvas.h, SAFE = 96;
+  const structures = makeStructures(spec, W, H);
+  const themeBg = spec.colors.bg;
+  const colorTokens = system.tokens.colors as Record<string, string | undefined>;
+  const themeText = colorTokens.text ?? (isDark(themeBg) ? "#FFFFFF" : "#111111");
+  const accentCol = (spec.colors as Record<string, string | undefined>).accent ?? colorTokens.accent ?? "#5FA0FB";
+
   const archetypes = spec.archetypes.filter((a) => a.zones.some((z) => z.id !== "footer")).map((a) => a.archetype);
   // Structure-first: surface each archetype's MEDIA (device mockups show a product
   // UI; photos) so the planner picks product/feature archetypes for product slides.
@@ -114,8 +125,36 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
     return { archetype, singles, ...(cards.length ? { cards } : {}) };
   };
 
+  const writeStructure = async (structName: keyof typeof STRUCTURE_SCHEMA, archetype: string, purpose: string): Promise<Record<string, unknown>> => {
+    const { schema, hint } = STRUCTURE_SCHEMA[structName];
+    return callTool<Record<string, unknown>>(client, model,
+      `You write presentation slide copy as structured data. Be concrete and specific; use real, plausible metrics where the layout calls for numbers. ${hint}`,
+      `Deck: ${outline.title}\nTopic: ${prompt}\nThis slide (${archetype}): ${purpose}\nWrite the data for a "${structName}" layout.`,
+      schema as object);
+  };
+
   const indexed = outline.slides.map((o, i) => ({ o, i }));
   const slides = await mapLimit(indexed, 3, async ({ o, i }): Promise<SynthSlide> => {
+    const sch = archetypeSchema(spec, o.archetype);
+    const structName = STRUCTURE_FOR_ARCHETYPE[o.archetype];
+    // DENSE structure path — text archetypes (no real image/mockup assets). Renders the
+    // same info-rich layout as the augmentation engine into the decoration's open region.
+    if (structName && structures[structName] && sch.images === 0 && sch.mockups === 0) {
+      const data = await writeStructure(structName, o.archetype, o.purpose);
+      const struct = structures[structName];
+      const deco = pickDecoration(spec, { elements: [] } as never, o.archetype, i, decoLib, []);
+      const region = openRegion(decoShapeFrag(deco.svg), W, H, SAFE);
+      const decorated = !!region && struct.fits(region);
+      const r2 = decorated && region ? region : { x: SAFE, y: Math.round(H * 0.12), w: W - 2 * SAFE, h: Math.round(H * 0.74) };
+      const onColour = decorated && !!deco.bg;
+      const fill = (onColour ? isDark(deco.bg as string) : isDark(themeBg)) ? "#FFFFFF" : themeText;
+      const base = decorated
+        ? deco.svg
+        : `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><rect width="${W}" height="${H}" fill="${themeBg}"/></svg>`;
+      const svg = base.replace("</svg>", struct.render(r2, fill, accentCol, data) + "</svg>");
+      return { archetype: o.archetype, purpose: o.purpose, svg, gate: "PASS", novelty: 1, overall: 1 };
+    }
+    // Image/mockup archetypes → synth-engine path (real layout + assets).
     let content = await writeContent(o.archetype, o.purpose, false);
     let r = synthesizeFromGrammar(spec, content);
     let slide = solveDeckSlide(r.layout, r.placement, system.tokens, system.canvas);

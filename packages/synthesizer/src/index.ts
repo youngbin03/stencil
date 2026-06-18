@@ -8,3 +8,5 @@ export { evaluateSlide } from "./evaluate.js";
 export type { QualityScores, QualityVerdict } from "./evaluate.js";
 export { synthDecoration, chooseDecoration, pickDecoration } from "./decoration.js";
 export type { DecoFrag } from "./decoration.js";
+export { makeStructures, STRUCTURE_FOR_ARCHETYPE, STRUCTURE_SCHEMA } from "./structures.js";
+export type { Structure, StructName, Region } from "./structures.js";

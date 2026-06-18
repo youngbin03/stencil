@@ -95,10 +95,13 @@ function recolor(frag: string, c: string): string {
 export function pickDecoration(spec: GrammarSpec, slide: RenderSlide, archetype: string, index: number, lib: DecoFrag[], obstacles: BBox[] = []): { svg: string; reason: string; bg?: string } {
   const { w, h } = spec.canvas;
   const profile = spec.archetypes.find((a) => a.archetype === archetype)?.decoration ?? { coverage: 0, count: 0, treatments: [] };
-  if (profile.coverage < 0.02 || !lib?.length) {
-    return profile.coverage < 0.02
-      ? { svg: `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/></svg>`, reason: `theme keeps '${archetype}' undecorated` }
-      : chooseDecoration(spec, slide, archetype, index);
+  const bgSvg = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/></svg>`;
+  // Faithful-only: decoration is ALWAYS a real native shape from the theme's library.
+  // No library (theme has no ambient background decoration, e.g. green/black) or the
+  // archetype is kept plain → leave it undecorated. NEVER fabricate corner art, which
+  // would invent marks absent from the source deck.
+  if (!lib?.length || profile.coverage < 0.02) {
+    return { svg: bgSvg, reason: !lib?.length ? `theme has no native background decoration → '${archetype}' undecorated` : `theme keeps '${archetype}' undecorated` };
   }
   // Obstacles include device-mockup/image zones (injected after solve, so absent from
   // slide.elements) — without them the decoration would land on a device.
@@ -116,7 +119,7 @@ export function pickDecoration(spec: GrammarSpec, slide: RenderSlide, archetype:
     return (ix * iy) / a;
   };
   const big = lib.filter((f) => f.bbox.w > 120 && f.bbox.h > 120);
-  if (!big.length) return chooseDecoration(spec, slide, archetype, index);
+  if (!big.length) return { svg: bgSvg, reason: `no native decoration shape large enough for '${archetype}' → undecorated` };
   const t = profile.treatments?.[0];
   const tIds = new Set(t?.shapeIds ?? []);
   const ranked = [...big].sort((a, b) => (a.id < b.id ? -1 : 1));
@@ -127,14 +130,20 @@ export function pickDecoration(spec: GrammarSpec, slide: RenderSlide, archetype:
   // content, so it clears the synthesized content too) → on-brand AND varied.
   const tMatched = ranked.filter((f) => tIds.has(f.id));
   const tryPick = (arr: DecoFrag[]): DecoFrag | undefined => {
-    // Full-colour-bg shapes are WHITE = same colour as the (flipped) text, so they
-    // must NOT sit under any text → near-zero overlap. Normal shapes allow a little.
-    for (let k = 0; k < arr.length; k++) { const f = arr[(index + k) % arr.length]!; if (overlap(f.bbox) < (f.bg ? 0.03 : 0.18)) return f; }
+    // A normal (light-bg) decoration is a BACKGROUND layer (light blob behind text) —
+    // that's the brand, so text over it stays readable → always place the archetype's
+    // own one. Only the FULL-COLOUR-bg variant uses a WHITE shape = same colour as the
+    // (flipped) text, so it must NOT sit under text → require near-zero overlap.
+    for (let k = 0; k < arr.length; k++) { const f = arr[(index + k) % arr.length]!; if (!f.bg || overlap(f.bbox) < 0.03) return f; }
     return undefined;
   };
-  const chosen = tryPick(tMatched) ?? tryPick(ranked);
+  // FAITHFUL-ONLY: use the archetype's OWN native decoration. Never borrow another
+  // archetype's shape as a fallback — that invents marks the source slide never had
+  // AND collapses to the same large off-canvas blob on every slide (cross-archetype
+  // monotony). If this archetype's own shape can't clear the content → leave it blank.
+  const chosen = tryPick(tMatched);
   if (!chosen) {
-    return { svg: `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/></svg>`, reason: `dense '${archetype}' layout — no clear room for decoration` };
+    return { svg: `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/></svg>`, reason: tMatched.length ? `'${archetype}' own decoration overlaps content → undecorated` : `'${archetype}' has no native decoration → undecorated` };
   }
   // Full-colour-background variant: the source slide painted the whole canvas a
   // palette colour with WHITE decoration. Reproduce it (bg = the colour, shape =

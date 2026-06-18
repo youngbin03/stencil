@@ -1,12 +1,34 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
+import { Resvg } from "@resvg/resvg-js";
 
-// Build a reusable library of each theme's REAL background decoration — generalised
-// across decoration vocabularies: colorful = organic <g Decorative> paths, green =
-// solid colour-block rects, black = bands. We keep solid, non-content visual shapes
-// and EXCLUDE the background rect, image holders (pattern fills) and divider lines.
+// Build a reusable library of each theme's REAL AMBIENT background decoration.
+// Measured grammar signal (same gate as scripts/augment.mjs decoOf): ambient decoration
+// FRAMES the content — it anchors to / bleeds past the canvas edges and is large.
+// Content graphics (Venn diagrams, cards, pills, bands, charts) sit in the INTERIOR.
+// So keep an element iff its INKED bbox is edge-anchored AND large. This drops the
+// background rect, image holders, dividers, and — crucially — green/black's content
+// rects that the old "keep everything non-bg" logic mis-captured as decoration.
 const THEMES = ["colorful", "black", "green"];
 const NEUTRAL = new Set(["white", "#ffffff", "#fff", "#f3f3f3", "black", "#000000", "#000", "none"]);
+const W = 1920, H = 1080, EDGE = Math.round(W * 0.02), BW = 240;
+
+// True INKED bbox of one element, by rasterizing it alone and scanning painted pixels.
+// Robust for any shape (paths with H/V/curve/relative commands, strokes, transforms)
+// where naive coord-parsing fails. Returns canvas-space bbox or null if nothing paints.
+function inkBBox(el) {
+  const bh = Math.round((BW * H) / W);
+  let px;
+  try { px = new Resvg(`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><g>${el}</g></svg>`, { fitTo: { mode: "width", value: BW } }).render().pixels; }
+  catch { return null; }
+  let minx = BW, miny = bh, maxx = -1, maxy = -1;
+  for (let y = 0; y < bh; y++) for (let x = 0; x < BW; x++) {
+    if (px[(y * BW + x) * 4 + 3] > 16) { if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y; }
+  }
+  if (maxx < 0) return null;
+  const sx = W / BW, sy = H / bh;
+  return { x: minx * sx, y: miny * sy, w: (maxx - minx + 1) * sx, h: (maxy - miny + 1) * sy };
+}
 
 function extractDeco(svg, bgToken) {
   let inner = svg.replace(/<\?xml[\s\S]*?\?>/, "").replace(/<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "").replace(/<defs[\s\S]*?<\/defs>/g, "");
@@ -26,7 +48,14 @@ function extractDeco(svg, bgToken) {
     if (/fill="url\(/.test(el)) continue;   // pattern fill = image holder (content)
     keep.push(el);
   }
-  return { frag: keep.join(""), bg };
+  // keep only AMBIENT decoration: edge-anchored AND large (see header note)
+  const frag = keep.filter((el) => {
+    const b = inkBBox(el); if (!b) return false;
+    const edge = b.x <= EDGE || b.y <= EDGE || b.x + b.w >= W - EDGE || b.y + b.h >= H - EDGE;
+    const large = b.w >= W * 0.12 || b.h >= H * 0.12;
+    return edge && large;
+  }).join("");
+  return { frag, bg };
 }
 
 function colorsOf(frag) {
