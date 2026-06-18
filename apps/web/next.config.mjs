@@ -2,9 +2,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-// Repo root (apps/web → ../..). Used to locate baked design-system assets,
-// the embedded fonts (text measurement), and the shared .env.local secret.
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+// This app's dir (apps/web) and the repo root (../..). Used to locate baked
+// design-system assets, embedded fonts, the shared .env.local secret, and to
+// pin the "@/" import alias so resolution never depends on tsconfig discovery.
+const webDir = dirname(fileURLToPath(import.meta.url));
+const root = resolve(webDir, "../..");
 
 // Load the repo-root .env.local once at server start so route handlers see
 // ANTHROPIC_API_KEY without duplicating the secret into apps/web. Server-only:
@@ -34,6 +36,13 @@ const nextConfig = {
       "fixtures/assets/*/mockups/**",
       "fonts/**",
     ],
+  },
+  // Pin the "@/" alias explicitly so the build never depends on tsconfig paths
+  // discovery (which differed between local macOS and the Vercel/Linux build).
+  webpack: (config) => {
+    config.resolve = config.resolve || {};
+    config.resolve.alias = { ...(config.resolve.alias || {}), "@": webDir };
+    return config;
   },
 };
 
