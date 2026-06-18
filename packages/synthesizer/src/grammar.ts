@@ -31,13 +31,71 @@ export interface ImageZone {
   mockupRef?: string;
 }
 
-/** How much decoration this archetype's examples actually carry — so synthesis
- * reproduces the theme's habit instead of forcing a shape on every slide. */
+/** A learned decoration "recipe" for an archetype: what kind of shape, where it
+ *  sits, how strong/large, in which palette role — and which real shape fragments
+ *  carry it. Transfers the extracted decoration grammar (kind/salience/anchor) into
+ *  the synthesis stage so placement isn't purely geometric. */
+export interface DecoTreatment {
+  kind: string;          // emphasis | accent | frame | texture | ...
+  anchor: string;        // bottom-right | left | top | center | ... (where it sits)
+  salience: number;      // 0..1 visual weight → size/strength
+  sizeFrac: number;      // median on-canvas area / canvas
+  colorRole: "primary" | "accent" | "secondary";
+  shapeIds: string[];    // DecoFrag ids (layout ids) whose shape realises this
+  support: number;       // how many example elements backed it
+}
+
+/** How much decoration this archetype's examples carry + the learned treatments. */
 export interface DecorationProfile {
   /** Median non-background decoration area as a fraction of the canvas (0 = none). */
   coverage: number;
   /** Median count of non-background decoration elements. */
   count: number;
+  /** Learned decoration recipes (most common first). */
+  treatments: DecoTreatment[];
+}
+
+interface DecoEl { kind: string; bbox: { x: number; y: number; w: number; h: number }; salience?: number; color?: string; layoutId: string }
+
+/** Which quadrant/edge an element's (clamped) centre falls in. */
+function anchorOf(b: DecoEl["bbox"], cw: number, ch: number): string {
+  const cx = Math.min(Math.max((b.x + b.w / 2) / cw, 0), 1);
+  const cy = Math.min(Math.max((b.y + b.h / 2) / ch, 0), 1);
+  const hx = cx < 0.4 ? "left" : cx > 0.6 ? "right" : "center";
+  const vy = cy < 0.4 ? "top" : cy > 0.6 ? "bottom" : "mid";
+  if (hx === "center" && vy === "mid") return "center";
+  if (hx === "center") return vy;
+  if (vy === "mid") return hx;
+  return `${vy}-${hx}`;
+}
+function roleOf(color: string | undefined, colors: { primary: string; accent: string }): "primary" | "accent" | "secondary" {
+  const c = (color ?? "").toLowerCase();
+  if (c && c === (colors.accent ?? "").toLowerCase()) return "accent";
+  if (c && c === (colors.primary ?? "").toLowerCase()) return "primary";
+  return "secondary";
+}
+/** Cluster decoration elements by (kind, anchor) into the archetype's treatments. */
+function buildTreatments(els: DecoEl[], cw: number, ch: number, colors: { primary: string; accent: string }): DecoTreatment[] {
+  const area = cw * ch;
+  const groups = new Map<string, { kind: string; anchor: string; sal: number[]; size: number[]; roles: string[]; ids: Set<string> }>();
+  // Only true background decoration drives treatments — image_holder/chart/divider
+  // are content media or structural lines, not the slide's decorative shapes.
+  const SKIP = new Set(["background", "image_holder", "chart", "divider", "frame"]);
+  for (const el of els) {
+    if (SKIP.has(el.kind)) continue;
+    const anchor = anchorOf(el.bbox, cw, ch);
+    const key = `${el.kind}@${anchor}`;
+    const g = groups.get(key) ?? { kind: el.kind, anchor, sal: [], size: [], roles: [], ids: new Set<string>() };
+    g.sal.push(el.salience ?? 0.5);
+    g.size.push(Math.min(1, (el.bbox.w * el.bbox.h) / area));
+    g.roles.push(roleOf(el.color, colors));
+    g.ids.add(el.layoutId);
+    groups.set(key, g);
+  }
+  return [...groups.values()]
+    .sort((a, b) => b.sal.length - a.sal.length)
+    .slice(0, 3)
+    .map((g) => ({ kind: g.kind, anchor: g.anchor, salience: median(g.sal), sizeFrac: median(g.size), colorRole: (mode(g.roles) ?? "secondary") as DecoTreatment["colorRole"], shapeIds: [...g.ids], support: g.sal.length }));
 }
 
 export interface ArchetypeSkeleton {
@@ -130,7 +188,7 @@ function mineMockupZones(arrangements: ImgSlot[][]): ImageZone[] {
 }
 
 /** Aggregate the regions of one archetype's example slides into a median skeleton. */
-function mineSkeleton(archetype: string, examples: { regions: Region[]; imgSlots: ImgSlot[]; decoCoverage: number; decoCount: number; canvas: Canvas }[]): ArchetypeSkeleton | undefined {
+function mineSkeleton(archetype: string, examples: { regions: Region[]; imgSlots: ImgSlot[]; decoCoverage: number; decoCount: number; decoEls: DecoEl[]; canvas: Canvas }[], colors: { primary: string; accent: string }): ArchetypeSkeleton | undefined {
   const byZone = new Map<string, { x0: number[]; x1: number[]; y0: number[]; y1: number[]; flow: FlowDirection[]; block: (string | undefined)[]; role: (Role | undefined)[] }>();
   for (const ex of examples) {
     for (const r of ex.regions) {
@@ -162,9 +220,11 @@ function mineSkeleton(archetype: string, examples: { regions: Region[]; imgSlots
   const photoZones = mineImageZones(examples.flatMap((e) => e.imgSlots.filter((s) => !s.mockupRef)));
   const mockupZones = mineMockupZones(examples.map((e) => e.imgSlots.filter((s) => s.mockupRef)));
   const imageZones = [...photoZones, ...mockupZones];
+  const cv = examples[0]?.canvas ?? { w: 1920, h: 1080 };
   const decoration: DecorationProfile = {
     coverage: median(examples.map((e) => e.decoCoverage)),
     count: Math.round(median(examples.map((e) => e.decoCount))),
+    treatments: buildTreatments(examples.flatMap((e) => e.decoEls), cv.w, cv.h, colors),
   };
   if (zones.length === 0 && imageZones.length === 0) return undefined;
   return { archetype, support: examples.length, zones, imageZones, decoration };
@@ -182,7 +242,7 @@ export function buildGrammarSpec(system: DesignSystemIR): GrammarSpec {
 
   // Mine a normalized skeleton per archetype from its example slides' regions.
   const canvasArea = system.canvas.w * system.canvas.h;
-  const byArch = new Map<string, { regions: Region[]; imgSlots: ImgSlot[]; decoCoverage: number; decoCount: number; canvas: Canvas }[]>();
+  const byArch = new Map<string, { regions: Region[]; imgSlots: ImgSlot[]; decoCoverage: number; decoCount: number; decoEls: DecoEl[]; canvas: Canvas }[]>();
   for (const L of system.layouts) {
     const a = L.archetype ?? "other";
     if (!L.regions?.length && !L.slots.some((s) => s.type === "image")) continue;
@@ -207,11 +267,12 @@ export function buildGrammarSpec(system: DesignSystemIR): GrammarSpec {
     });
     const deco = (L.decorationModel?.elements ?? []).filter((d) => d.kind !== "background");
     const decoCoverage = deco.reduce((s, d) => s + Math.min(d.bbox.w * d.bbox.h, canvasArea), 0) / canvasArea;
-    (byArch.get(a) ?? byArch.set(a, []).get(a)!).push({ regions: L.regions ?? [], imgSlots, decoCoverage, decoCount: deco.length, canvas: system.canvas });
+    const decoEls: DecoEl[] = deco.map((d) => ({ kind: d.kind, bbox: d.bbox, ...(d.salience !== undefined ? { salience: d.salience } : {}), ...(d.color ? { color: d.color } : {}), layoutId: L.id }));
+    (byArch.get(a) ?? byArch.set(a, []).get(a)!).push({ regions: L.regions ?? [], imgSlots, decoCoverage, decoCount: deco.length, decoEls, canvas: system.canvas });
   }
   const archetypes: ArchetypeSkeleton[] = [];
   for (const [a, exs] of byArch) {
-    const sk = mineSkeleton(a, exs);
+    const sk = mineSkeleton(a, exs, system.tokens.colors);
     if (sk) archetypes.push(sk);
   }
   archetypes.sort((a, b) => b.support - a.support);

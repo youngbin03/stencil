@@ -94,7 +94,7 @@ function recolor(frag: string, c: string): string {
  */
 export function pickDecoration(spec: GrammarSpec, slide: RenderSlide, archetype: string, index: number, lib: DecoFrag[], obstacles: BBox[] = []): { svg: string; reason: string } {
   const { w, h } = spec.canvas;
-  const profile = spec.archetypes.find((a) => a.archetype === archetype)?.decoration ?? { coverage: 0, count: 0 };
+  const profile = spec.archetypes.find((a) => a.archetype === archetype)?.decoration ?? { coverage: 0, count: 0, treatments: [] };
   if (profile.coverage < 0.02 || !lib?.length) {
     return profile.coverage < 0.02
       ? { svg: `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/></svg>`, reason: `theme keeps '${archetype}' undecorated` }
@@ -103,33 +103,42 @@ export function pickDecoration(spec: GrammarSpec, slide: RenderSlide, archetype:
   // Obstacles include device-mockup/image zones (injected after solve, so absent from
   // slide.elements) — without them the decoration would land on a device.
   const content = [...slide.elements.map((e) => e.bbox), ...obstacles].filter((b) => b.w > 0 && b.h > 0);
-  // Clear corner = the corner farthest from the content mass; size the decoration to
-  // that clearance so it sits in the open space and never crowds the layout.
+  // Clearance per corner (distance to nearest content). The learned treatment says
+  // WHERE the theme anchors this archetype's decoration + HOW big (salience/size) +
+  // WHICH shapes — we honour that, but always clamp to real clearance so it never
+  // crowds the slide.
   const corners = [
     { name: "top-right", x: w, y: 0 }, { name: "bottom-right", x: w, y: h },
     { name: "bottom-left", x: 0, y: h }, { name: "top-left", x: 0, y: 0 },
-  ];
-  let best = corners[0]!, bestR = 0;
-  for (const k of corners) {
-    const r = content.length ? Math.min(...content.map((b) => distToBox(k.x, k.y, b))) : h * 0.5;
-    if (r > bestR) { bestR = r; best = k; }
+  ].map((k) => ({ ...k, r: content.length ? Math.min(...content.map((b) => distToBox(k.x, k.y, b))) : h * 0.5 }));
+  const byName = (n: string): typeof corners[number] => corners.find((c) => c.name === n) ?? corners[0]!;
+  const globalBest = corners.reduce((a, b) => (b.r > a.r ? b : a));
+  const ANCHOR_CORNERS: Record<string, string[]> = {
+    "bottom-right": ["bottom-right"], "bottom-left": ["bottom-left"], "top-right": ["top-right"], "top-left": ["top-left"],
+    right: ["top-right", "bottom-right"], left: ["top-left", "bottom-left"], top: ["top-left", "top-right"], bottom: ["bottom-left", "bottom-right"],
+  };
+  const t = profile.treatments?.[0];
+  let best = globalBest;
+  if (t) {
+    const cand = (ANCHOR_CORNERS[t.anchor] ?? []).map(byName);
+    const pick = cand.length ? cand.reduce((a, b) => (b.r > a.r ? b : a)) : globalBest;
+    // Honour the learned anchor only when it has real room (not a cramped corner).
+    if (pick.r >= h * 0.12 && pick.r >= globalBest.r * 0.7) best = pick;
   }
-  const r = bestR * 0.95;
-  // Tie size to the theme's decoration habit for this archetype, capped by clearance.
-  const want = Math.sqrt((Math.max(profile.coverage, 0.04) * w * h * 4) / Math.PI);
-  const radius = Math.min(r, want);
+  // Size from the treatment's area scaled by its salience (subtle decoration stays
+  // subtle), capped WELL within the clearance so the placed shape never grazes content.
+  const sizeFrac = Math.max((t?.sizeFrac ?? profile.coverage) * (0.45 + 0.55 * (t?.salience ?? 0.6)), 0.03);
+  const radius = Math.min(best.r * 0.78, Math.sqrt((sizeFrac * w * h * 4) / Math.PI));
   const big = lib.filter((f) => f.bbox.w > 120 && f.bbox.h > 120);
   if (radius < h * 0.12 || !big.length) {
-    // Dense layout (or no usable shape): a small generated accent rather than crowding.
     return radius < h * 0.12
       ? { svg: `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/></svg>`, reason: `dense '${archetype}' layout — minimal/no decoration` }
       : chooseDecoration(spec, slide, archetype, index);
   }
-  // Full pool, deterministic per-slide rotation → a different shape each slide (no
-  // repeated background across a deck). Transform the chosen shape so its bbox-centre
-  // lands on the clear corner, scaled so its on-canvas quadrant ≈ the clearance.
-  const sorted = [...big].sort((a, b) => (a.id < b.id ? -1 : 1));
-  const chosen = sorted[index % sorted.length]!;
+  // Prefer the treatment's own shapes (kind/anchor-matched); else the full pool.
+  const tShapes = t?.shapeIds?.length ? big.filter((f) => t.shapeIds.includes(f.id)) : [];
+  const pool = (tShapes.length ? tShapes : big).sort((a, b) => (a.id < b.id ? -1 : 1));
+  const chosen = pool[index % pool.length]!;
   const fb = chosen.bbox;
   // Anchor ~75% of the shape inside the clear corner (25% bleeds off the edge for the
   // theme's look) — centring on the corner could expose an empty quadrant of the bbox.
@@ -142,9 +151,10 @@ export function pickDecoration(spec: GrammarSpec, slide: RenderSlide, archetype:
   const cols = vivid(spec);
   const c = cols[index % cols.length]!;
   const g = `<g transform="translate(${tx},${ty}) scale(${s.toFixed(4)})">${recolor(chosen.frag, c)}</g>`;
+  const why = t ? `${t.kind}@${t.anchor} sal${t.salience.toFixed(2)}` : "clearance";
   return {
     svg: `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/>${g}</svg>`,
-    reason: `theme shape '${chosen.id}' fit to ${best.name} (clear), recoloured ${c}`,
+    reason: `'${archetype}' deco grammar [${why}] → shape '${chosen.id}' at ${best.name}, ${c}`,
   };
 }
 
