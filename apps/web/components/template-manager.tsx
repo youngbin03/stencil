@@ -16,7 +16,7 @@ export interface ThemeInfo {
   baked: boolean;
   swatches: string[];
 }
-interface SlideRef { id: string }
+interface SlideRef { id: string; thumb?: string }
 
 export function TemplateManager({ themes, onChanged, open: openProp, onOpenChange }: { themes: ThemeInfo[]; onChanged: () => void | Promise<void>; open?: boolean; onOpenChange?: (o: boolean) => void }) {
   const [openState, setOpenState] = useState(false);
@@ -168,7 +168,7 @@ function FolderView({ slug, baked, onChanged }: { slug: string; baked: boolean; 
             {slides.map((s) => (
               <motion.div key={s.id} layout initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="group relative overflow-hidden rounded-lg border bg-white">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/api/templates/file?theme=${slug}&id=${encodeURIComponent(s.id)}`} alt={s.id} className="aspect-video w-full object-contain" loading="lazy" />
+                <img src={s.thumb ?? `/api/templates/file?theme=${slug}&id=${encodeURIComponent(s.id)}`} alt={s.id} className="aspect-video w-full object-contain" loading="lazy" />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/55 to-transparent px-2 pb-1.5 pt-5 opacity-0 transition-opacity group-hover:opacity-100">
                   <span className="text-[11px] font-medium text-white tabular-nums">{s.id}</span>
                   <button onClick={() => remove(s.id)} className="pointer-events-auto rounded-md bg-white/15 p-1 text-white backdrop-blur-sm transition-colors hover:bg-destructive">

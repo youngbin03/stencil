@@ -2,14 +2,19 @@ import { NextResponse } from "next/server";
 import { readdir, writeFile, unlink, mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { resolveTheme, safeId } from "@/lib/themes";
+import { listSupabaseSlides } from "@/lib/supabase-templates";
 
 export const runtime = "nodejs";
 
-/** GET /api/templates?theme=<slug> → { theme, slides: [{ id }] } */
+/** GET /api/templates?theme=<slug> → { theme, slides: [{ id, thumb? }] }.
+ *  Prefers Supabase (works on serverless where the raw SVGs aren't shipped);
+ *  falls back to the local filesystem for dev / not-yet-seeded user themes. */
 export async function GET(req: Request): Promise<Response> {
   const theme = new URL(req.url).searchParams.get("theme") ?? "";
   const t = resolveTheme(theme);
   if (!t) return NextResponse.json({ error: "unknown theme" }, { status: 400 });
+  const sb = await listSupabaseSlides(theme);
+  if (sb.length) return NextResponse.json({ theme, slides: sb });
   try {
     const files = (await readdir(t.templatesDir)).filter((f) => f.toLowerCase().endsWith(".svg"));
     files.sort((a, b) => {

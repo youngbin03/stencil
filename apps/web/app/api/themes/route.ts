@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import { createTheme, listThemes } from "@/lib/themes";
+import { supabaseSlideCounts } from "@/lib/supabase-templates";
 
 export const runtime = "nodejs";
 
-/** GET /api/themes → [{ slug, name, builtin, slides, baked }] */
+/** GET /api/themes → [{ slug, name, builtin, slides, baked }].
+ *  Slide counts come from Supabase when available (serverless has no raw SVGs). */
 export async function GET(): Promise<Response> {
-  return NextResponse.json({ themes: listThemes() });
+  const themes = listThemes();
+  const counts = await supabaseSlideCounts();
+  for (const t of themes) if (counts[t.slug] != null) t.slides = counts[t.slug]!;
+  return NextResponse.json({ themes });
 }
 
 /** POST /api/themes  body: { name } → create an empty user theme */
