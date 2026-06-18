@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { Resvg } from "@resvg/resvg-js";
 import { buildGrammarSpec } from "../packages/synthesizer/dist/grammar.js";
 import { rasterize } from "../packages/classifier/dist/rasterize.js";
 
@@ -40,26 +41,49 @@ function decoOf(id) {
   return { frag: keep.join(""), bg };
 }
 
-// --- open region = the largest band CLEAR of the decoration's salient mass (its
-// clamped bbox is a hard boundary), so any content placed there can't cross the
-// decoration. Returns null if the decoration leaves no usable room. ---
-const GAP = 48;
-function openRegion(layout) {
-  const els = (layout.decorationModel?.elements ?? []).filter((e) => e.kind !== "background" && (e.salience ?? 0) >= 0.2);
-  if (!els.length) return { x: SAFE, y: SAFE, w: W - 2 * SAFE, h: H - 2 * SAFE };
-  const mx0 = Math.max(0, Math.min(...els.map((e) => e.bbox.x)));
-  const my0 = Math.max(0, Math.min(...els.map((e) => e.bbox.y)));
-  const mx1 = Math.min(W, Math.max(...els.map((e) => e.bbox.x + e.bbox.w)));
-  const my1 = Math.min(H, Math.max(...els.map((e) => e.bbox.y + e.bbox.h)));
-  const bands = [
-    { x: SAFE, y: SAFE, w: W - 2 * SAFE, h: my0 - SAFE - GAP },              // above mass
-    { x: SAFE, y: my1 + GAP, w: W - 2 * SAFE, h: H - SAFE - (my1 + GAP) },   // below
-    { x: SAFE, y: SAFE, w: mx0 - SAFE - GAP, h: H - 2 * SAFE },              // left of
-    { x: mx1 + GAP, y: SAFE, w: W - SAFE - (mx1 + GAP), h: H - 2 * SAFE },   // right of
-  ].filter((r) => r.w > W * 0.3 && r.h > H * 0.22);
-  if (!bands.length) return null;
-  bands.sort((a, b) => b.w * b.h - a.w * a.h);
-  return bands[0];
+// --- open region via OCCUPANCY GRID + LARGEST EMPTY RECTANGLE ---
+// Rasterize the decoration shapes (transparent bg) to a low-res grid, mark any inked
+// cell (incl. thin lines/dots/curves — what bbox misses) + a SAFE border as occupied,
+// dilate slightly for padding, then find the biggest all-empty axis-aligned rectangle.
+// Deterministic, shape-accurate, no per-decoration tuning. Returns null if too small.
+const GW = 192, PAD = 2;
+function largestEmptyRect(occ, gw, gh) {
+  const heights = new Array(gw).fill(0);
+  let best = { area: 0, x: 0, y: 0, w: 0, h: 0 };
+  for (let r = 0; r < gh; r++) {
+    for (let c = 0; c < gw; c++) heights[c] = occ[r * gw + c] ? 0 : heights[c] + 1;
+    const stack = [];
+    for (let c = 0; c <= gw; c++) {
+      const hc = c < gw ? heights[c] : 0;
+      while (stack.length && heights[stack[stack.length - 1]] >= hc) {
+        const h = heights[stack.pop()];
+        const left = stack.length ? stack[stack.length - 1] + 1 : 0;
+        const area = h * (c - left);
+        if (area > best.area) best = { area, x: left, y: r - h + 1, w: c - left, h };
+      }
+      stack.push(c);
+    }
+  }
+  return best;
+}
+function openRegion(frag) {
+  const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><g>${frag}</g></svg>`;
+  const img = new Resvg(svg, { fitTo: { mode: "width", value: GW } }).render();
+  const gw = img.width, gh = img.height, px = img.pixels;
+  const occ = new Uint8Array(gw * gh);
+  for (let i = 0; i < gw * gh; i++) if (px[i * 4 + 3] > 20) occ[i] = 1;        // inked
+  const dil = occ.slice();
+  for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) if (occ[y * gw + x]) {
+    for (let dy = -PAD; dy <= PAD; dy++) for (let dx = -PAD; dx <= PAD; dx++) {
+      const ny = y + dy, nx = x + dx; if (ny >= 0 && ny < gh && nx >= 0 && nx < gw) dil[ny * gw + nx] = 1;
+    }
+  }
+  const mc = Math.round((SAFE / W) * gw);                                       // SAFE margin → occupied border
+  for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) if (x < mc || x >= gw - mc || y < mc || y >= gh - mc) dil[y * gw + x] = 1;
+  const b = largestEmptyRect(dil, gw, gh);
+  if (b.area < gw * gh * 0.06) return null;
+  const cw = W / gw, ch = H / gh;
+  return { x: Math.round(b.x * cw), y: Math.round(b.y * ch), w: Math.round(b.w * cw), h: Math.round(b.h * ch) };
 }
 
 // --- content structures (placeholder, consistent voice) placed INTO the region ---
@@ -98,7 +122,7 @@ const structNames = Object.keys(STRUCTURES);
 for (const L of sys.layouts) {
   const { frag, bg } = decoOf(L.id);
   if (!frag.trim()) continue;            // need a real decoration to pair with
-  const region = openRegion(L);
+  const region = openRegion(frag);       // largest empty rect clear of the decoration ink
   if (!region) continue;                 // decoration leaves no clear room
   const bgFill = bg || sys.tokens.colors.bg;
   const fill = bg ? (isDark(bg) ? "#FFFFFF" : text) : text;
