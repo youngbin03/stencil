@@ -1,5 +1,13 @@
 # Stencil
 
+<p align="center">
+  <a href="https://stencil-web.vercel.app/"><img src="https://img.shields.io/badge/Live_App-stencil--web.vercel.app-000000?style=flat-square&logo=vercel" alt="Live app" /></a>
+  <a href="https://youngbin03.github.io/stencil/"><img src="https://img.shields.io/badge/Project_Report-GitHub_Pages-1f6feb?style=flat-square&logo=github" alt="Project report" /></a>
+  <img src="https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Next.js-15-000000?style=flat-square&logo=nextdotjs" alt="Next.js" />
+  <img src="https://img.shields.io/badge/Claude-vision_+_tool--use-d97757?style=flat-square&logo=anthropic&logoColor=white" alt="Claude" />
+</p>
+
 **An agentic generative system for design-grammar slide synthesis.**
 
 Stencil treats uploaded slides not as fill-in templates, but as *design example data*. It distills each deck into a reusable **design system** — palette, type scale, spacing rhythm, alignment grid, component blocks, archetype skeletons, decoration vocabulary, and device mockups — then **synthesizes brand-new layouts** from that grammar. No source frame is ever copied.
