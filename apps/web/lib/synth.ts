@@ -51,6 +51,14 @@ async function callTool<T>(client: Anthropic, model: string, system: string, use
   return t.input as T;
 }
 
+/** Perceptual luminance test — dark backgrounds need light text. */
+function isDark(hex: string): boolean {
+  const h = hex.replace("#", "");
+  if (h.length !== 6) return false;
+  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.62;
+}
+
 const mapLimit = async <T, R>(items: T[], n: number, fn: (x: T) => Promise<R>): Promise<R[]> => {
   const list = Array.isArray(items) ? items : [];
   const out: R[] = [];
@@ -118,9 +126,15 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
       slide = solveDeckSlide(r.layout, r.placement, system.tokens, system.canvas);
       v = evaluateSlide(system, spec, r.layout, slide);
     }
+    const obstacles = r.layout.slots.filter((s) => s.type === "image").map((s) => s.bbox);
+    const deco = pickDecoration(spec, slide, o.archetype, i, decoLib, obstacles);
+    // Full-colour background variant → flip text to white so it stays readable.
+    const rendered = deco.bg && isDark(deco.bg)
+      ? { ...slide, elements: slide.elements.map((e) => (e.kind === "text" ? { ...e, color: "#FFFFFF" } : e)) }
+      : slide;
     return {
       archetype: o.archetype, purpose: o.purpose,
-      svg: injectMockups(renderComposite(slide, pickDecoration(spec, slide, o.archetype, i, decoLib, r.layout.slots.filter((s) => s.type === "image").map((s) => s.bbox)).svg), r.layout, mockups),
+      svg: injectMockups(renderComposite(rendered, deco.svg), r.layout, mockups),
       gate: v.reject ? "REJECT" : v.pass ? "PASS" : "REVISE",
       novelty: v.scores.layoutNovelty, overall: v.scores.overall,
     };

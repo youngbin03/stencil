@@ -59,7 +59,9 @@ for (const a of spec.archetypes) {
   const slide = solveDeckSlide(layout, placement, spec, { w: spec.canvas.w, h: spec.canvas.h });
   const obstacles = layout.slots.filter((s) => s.type === "image").map((s) => s.bbox);
   const deco = pickDecoration(spec, slide, a.archetype, i++, decoLib, obstacles);
-  let svg = injectMockups(renderComposite(slide, deco.svg), layout);
+  const dark = (hex) => { const h = (hex || "").replace("#", ""); if (h.length !== 6) return false; const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16); return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.62; };
+  const rendered = deco.bg && dark(deco.bg) ? { ...slide, elements: slide.elements.map((e) => (e.kind === "text" ? { ...e, color: "#FFFFFF" } : e)) } : slide;
+  let svg = injectMockups(renderComposite(rendered, deco.svg), layout);
   writeFileSync(`fixtures/out/verify/${theme}_${a.archetype}.png`, rasterize(svg, 1200));
   console.log(`${theme}_${a.archetype}: ${deco.reason}`);
 }

@@ -80,7 +80,7 @@ function cornerArt(v: number, cx: number, cy: number, r: number, sx: number, sy:
  *  path(s), with their ink bbox and palette colours. Reused (recoloured, placed
  *  clear of content) so synthesized backgrounds use the theme's ACTUAL free-form
  *  shapes, not generated circles. */
-export interface DecoFrag { id: string; frag: string; bbox: BBox; colors: string[]; archetype?: string }
+export interface DecoFrag { id: string; frag: string; bbox: BBox; colors: string[]; archetype?: string; bg?: string }
 
 function recolor(frag: string, c: string): string {
   return frag.replace(/fill="#[0-9a-fA-F]{3,6}"/g, `fill="${c}"`);
@@ -92,7 +92,7 @@ function recolor(frag: string, c: string): string {
  * background. Falls back to the synthesized composition when no fragment fits or no
  * library is available — so output is never worse than before.
  */
-export function pickDecoration(spec: GrammarSpec, slide: RenderSlide, archetype: string, index: number, lib: DecoFrag[], obstacles: BBox[] = []): { svg: string; reason: string } {
+export function pickDecoration(spec: GrammarSpec, slide: RenderSlide, archetype: string, index: number, lib: DecoFrag[], obstacles: BBox[] = []): { svg: string; reason: string; bg?: string } {
   const { w, h } = spec.canvas;
   const profile = spec.archetypes.find((a) => a.archetype === archetype)?.decoration ?? { coverage: 0, count: 0, treatments: [] };
   if (profile.coverage < 0.02 || !lib?.length) {
@@ -127,19 +127,29 @@ export function pickDecoration(spec: GrammarSpec, slide: RenderSlide, archetype:
   // content, so it clears the synthesized content too) → on-brand AND varied.
   const tMatched = ranked.filter((f) => tIds.has(f.id));
   const tryPick = (arr: DecoFrag[]): DecoFrag | undefined => {
-    for (let k = 0; k < arr.length; k++) { const f = arr[(index + k) % arr.length]!; if (overlap(f.bbox) < 0.18) return f; }
+    // Full-colour-bg shapes are WHITE = same colour as the (flipped) text, so they
+    // must NOT sit under any text → near-zero overlap. Normal shapes allow a little.
+    for (let k = 0; k < arr.length; k++) { const f = arr[(index + k) % arr.length]!; if (overlap(f.bbox) < (f.bg ? 0.03 : 0.18)) return f; }
     return undefined;
   };
   const chosen = tryPick(tMatched) ?? tryPick(ranked);
   if (!chosen) {
     return { svg: `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/></svg>`, reason: `dense '${archetype}' layout — no clear room for decoration` };
   }
-  const c = vivid(spec)[index % vivid(spec).length]!;
+  // Full-colour-background variant: the source slide painted the whole canvas a
+  // palette colour with WHITE decoration. Reproduce it (bg = the colour, shape =
+  // white); the caller flips text to a contrasting colour. Otherwise: light bg +
+  // recoloured shape.
+  const variant = chosen.bg;
+  const bgFill = variant ?? spec.colors.bg;
+  const c = variant ? "#FFFFFF" : vivid(spec)[index % vivid(spec).length]!;
   const why = t ? `${t.kind}@${t.anchor}` : "pool";
-  return {
-    svg: `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/><g>${recolor(chosen.frag, c)}</g></svg>`,
-    reason: `'${archetype}' deco [${why}] → shape '${chosen.id}' native, ${c}`,
+  const out: { svg: string; reason: string; bg?: string } = {
+    svg: `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${bgFill}"/><g>${recolor(chosen.frag, c)}</g></svg>`,
+    reason: `'${archetype}' deco [${why}] → shape '${chosen.id}' native${variant ? `, FULL-COLOUR bg ${variant} + white` : `, ${c}`}`,
   };
+  if (variant) out.bg = variant;
+  return out;
 }
 
 /** Distance from a point to a box (0 inside). */
