@@ -3,7 +3,7 @@ import { classifySlide } from "@stencil/classifier";
 import { rebakeTheme } from "@/lib/themes";
 
 export const runtime = "nodejs";
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 /**
  * POST /api/themes/rebake?slug=<slug>[&vision=1]

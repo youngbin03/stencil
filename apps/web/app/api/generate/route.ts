@@ -5,7 +5,9 @@ import { generateSynthDeck } from "@/lib/synth";
 import { resolveTheme } from "@/lib/themes";
 
 export const runtime = "nodejs";
-export const maxDuration = 300;
+// 60s is the Vercel Hobby ceiling (Pro allows more). Keep within it so the build
+// is accepted on any plan; keep decks small (≤4 slides) to finish in time.
+export const maxDuration = 60;
 
 // Abuse/cost guard for the public deployment: when GATE_PASSWORD is set on the
 // server, generation requires a matching x-gate header (the UI prompts once).
