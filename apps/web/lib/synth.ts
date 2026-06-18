@@ -120,7 +120,7 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
     }
     return {
       archetype: o.archetype, purpose: o.purpose,
-      svg: injectMockups(renderComposite(slide, pickDecoration(spec, slide, o.archetype, i, decoLib).svg), r.layout, mockups),
+      svg: injectMockups(renderComposite(slide, pickDecoration(spec, slide, o.archetype, i, decoLib, r.layout.slots.filter((s) => s.type === "image").map((s) => s.bbox)).svg), r.layout, mockups),
       gate: v.reject ? "REJECT" : v.pass ? "PASS" : "REVISE",
       novelty: v.scores.layoutNovelty, overall: v.scores.overall,
     };

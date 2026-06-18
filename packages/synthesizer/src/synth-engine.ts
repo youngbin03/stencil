@@ -254,8 +254,6 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
     usedRole.add(role);
     const t = spec.type[role];
     const fontSize = sz(t?.size ?? 24);
-    const lines = role === "title" || role === "headline" || role === "quote" ? 2 : role === "body" || role === "subtitle" ? 3 : 1;
-    const h = Math.ceil(fontSize * lh * lines);
     const col = colX(zoneId, role === "title" || role === "quote" ? 0.6 : 0.5);
     const [, hi] = colBounds(col.col);
     // Mined zone widths come from short source text and can be too narrow for
@@ -265,6 +263,12 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
     const minW = role === "title" || role === "headline" || role === "quote" ? Math.round(colW * 0.66)
       : role === "body" || role === "subtitle" ? Math.round(colW * 0.55) : col.w;
     const w = Math.min(Math.max(col.w, minW), hi - col.x);
+    // Reserve height from the ACTUAL text length, not a fixed 2-line guess — a short
+    // title left a dead gap before the body (loose, disconnected layout).
+    const text = plan.singles[role] ?? "";
+    const cap = role === "body" || role === "subtitle" || role === "bullet" ? 3 : role === "title" || role === "headline" || role === "quote" ? 3 : 1;
+    const lines = Math.max(1, Math.min(cap, Math.ceil((text.length * fontSize * 0.52) / Math.max(1, w))));
+    const h = Math.ceil(fontSize * lh * lines);
     items.push({ id: zoneId, role, kind: "single", x: col.x, w, h, relY: relByCol[col.col], col: col.col, fontSize });
     relByCol[col.col] += h + (zoneId === "header" ? tight : loose);
   }

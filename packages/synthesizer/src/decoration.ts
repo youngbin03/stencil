@@ -82,11 +82,6 @@ function cornerArt(v: number, cx: number, cy: number, r: number, sx: number, sy:
  *  shapes, not generated circles. */
 export interface DecoFrag { id: string; frag: string; bbox: BBox; colors: string[]; archetype?: string }
 
-function overlapFrac(a: BBox, b: BBox): number {
-  const ix = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
-  const iy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
-  return (ix * iy) / Math.max(1, b.w * b.h);
-}
 function recolor(frag: string, c: string): string {
   return frag.replace(/fill="#[0-9a-fA-F]{3,6}"/g, `fill="${c}"`);
 }
@@ -97,7 +92,7 @@ function recolor(frag: string, c: string): string {
  * background. Falls back to the synthesized composition when no fragment fits or no
  * library is available — so output is never worse than before.
  */
-export function pickDecoration(spec: GrammarSpec, slide: RenderSlide, archetype: string, index: number, lib: DecoFrag[]): { svg: string; reason: string } {
+export function pickDecoration(spec: GrammarSpec, slide: RenderSlide, archetype: string, index: number, lib: DecoFrag[], obstacles: BBox[] = []): { svg: string; reason: string } {
   const { w, h } = spec.canvas;
   const profile = spec.archetypes.find((a) => a.archetype === archetype)?.decoration ?? { coverage: 0, count: 0 };
   if (profile.coverage < 0.02 || !lib?.length) {
@@ -105,25 +100,51 @@ export function pickDecoration(spec: GrammarSpec, slide: RenderSlide, archetype:
       ? { svg: `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/></svg>`, reason: `theme keeps '${archetype}' undecorated` }
       : chooseDecoration(spec, slide, archetype, index);
   }
-  const content = slide.elements.map((e) => e.bbox).filter((b) => b.w > 0 && b.h > 0);
-  const cbox: BBox = content.length
-    ? { x: Math.min(...content.map((b) => b.x)), y: Math.min(...content.map((b) => b.y)), w: 0, h: 0 }
-    : { x: 0, y: 0, w: 0, h: 0 };
-  if (content.length) {
-    cbox.w = Math.max(...content.map((b) => b.x + b.w)) - cbox.x;
-    cbox.h = Math.max(...content.map((b) => b.y + b.h)) - cbox.y;
+  // Obstacles include device-mockup/image zones (injected after solve, so absent from
+  // slide.elements) — without them the decoration would land on a device.
+  const content = [...slide.elements.map((e) => e.bbox), ...obstacles].filter((b) => b.w > 0 && b.h > 0);
+  // Clear corner = the corner farthest from the content mass; size the decoration to
+  // that clearance so it sits in the open space and never crowds the layout.
+  const corners = [
+    { name: "top-right", x: w, y: 0 }, { name: "bottom-right", x: w, y: h },
+    { name: "bottom-left", x: 0, y: h }, { name: "top-left", x: 0, y: 0 },
+  ];
+  let best = corners[0]!, bestR = 0;
+  for (const k of corners) {
+    const r = content.length ? Math.min(...content.map((b) => distToBox(k.x, k.y, b))) : h * 0.5;
+    if (r > bestR) { bestR = r; best = k; }
   }
+  const r = bestR * 0.95;
+  // Tie size to the theme's decoration habit for this archetype, capped by clearance.
+  const want = Math.sqrt((Math.max(profile.coverage, 0.04) * w * h * 4) / Math.PI);
+  const radius = Math.min(r, want);
   const big = lib.filter((f) => f.bbox.w > 120 && f.bbox.h > 120);
-  const clear = big.filter((f) => overlapFrac(f.bbox, cbox) < 0.08);
-  const sameArch = clear.filter((f) => f.archetype === archetype);
-  const pool = sameArch.length ? sameArch : clear.length ? clear : big;
-  if (!pool.length) return chooseDecoration(spec, slide, archetype, index);
-  const chosen = pool[index % pool.length]!;
+  if (radius < h * 0.12 || !big.length) {
+    // Dense layout (or no usable shape): a small generated accent rather than crowding.
+    return radius < h * 0.12
+      ? { svg: `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/></svg>`, reason: `dense '${archetype}' layout — minimal/no decoration` }
+      : chooseDecoration(spec, slide, archetype, index);
+  }
+  // Full pool, deterministic per-slide rotation → a different shape each slide (no
+  // repeated background across a deck). Transform the chosen shape so its bbox-centre
+  // lands on the clear corner, scaled so its on-canvas quadrant ≈ the clearance.
+  const sorted = [...big].sort((a, b) => (a.id < b.id ? -1 : 1));
+  const chosen = sorted[index % sorted.length]!;
+  const fb = chosen.bbox;
+  // Anchor ~75% of the shape inside the clear corner (25% bleeds off the edge for the
+  // theme's look) — centring on the corner could expose an empty quadrant of the bbox.
+  const s = Math.min(1.3, (1.5 * radius) / fb.w, (1.5 * radius) / fb.h);
+  const tw = s * fb.w, th = s * fb.h;
+  const ox = best.x === 0 ? -0.25 * tw : best.x - 0.75 * tw;
+  const oy = best.y === 0 ? -0.25 * th : best.y - 0.75 * th;
+  const tx = Math.round(ox - s * fb.x);
+  const ty = Math.round(oy - s * fb.y);
   const cols = vivid(spec);
   const c = cols[index % cols.length]!;
+  const g = `<g transform="translate(${tx},${ty}) scale(${s.toFixed(4)})">${recolor(chosen.frag, c)}</g>`;
   return {
-    svg: `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/>${recolor(chosen.frag, c)}</svg>`,
-    reason: `theme decoration shape '${chosen.id}' (organic) recoloured ${c}`,
+    svg: `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="${spec.colors.bg}"/>${g}</svg>`,
+    reason: `theme shape '${chosen.id}' fit to ${best.name} (clear), recoloured ${c}`,
   };
 }
 

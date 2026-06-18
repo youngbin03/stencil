@@ -192,12 +192,19 @@ export async function rebakeTheme(slug: string, classify?: ClassifyFn): Promise<
     const frag = m?.[1]?.trim();
     if (!frag || !/<(path|circle|ellipse|polygon)\b/.test(frag)) return [];
     const layout = system.layouts.find((l) => l.id === d.layoutId);
-    const els = (layout?.decorationModel?.elements ?? []).filter((e) => e.kind !== "background");
-    if (!els.length) return [];
+    // True shape extent from its own path/circle coords (not the canvas-clamped model
+    // bbox) so the synthesizer can transform it into place without misalignment.
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    for (const e of els) { x0 = Math.min(x0, e.bbox.x); y0 = Math.min(y0, e.bbox.y); x1 = Math.max(x1, e.bbox.x + e.bbox.w); y1 = Math.max(y1, e.bbox.y + e.bbox.h); }
-    x0 = Math.max(0, x0); y0 = Math.max(0, y0); x1 = Math.min(system.canvas.w, x1); y1 = Math.min(system.canvas.h, y1);
-    if (x1 <= x0 || y1 <= y0) return [];
+    const ext = (x: number, y: number): void => { if (Number.isFinite(x) && Number.isFinite(y)) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); } };
+    for (const pm of frag.matchAll(/\sd="([^"]+)"/g)) {
+      const nums = (pm[1].match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
+      for (let i = 0; i + 1 < nums.length; i += 2) ext(nums[i]!, nums[i + 1]!);
+    }
+    for (const cm of frag.matchAll(/<circle[^>]*>/g)) {
+      const cx = Number(/cx="(-?[\d.]+)"/.exec(cm[0])?.[1]), cy = Number(/cy="(-?[\d.]+)"/.exec(cm[0])?.[1]), rr = Number(/\br="(-?[\d.]+)"/.exec(cm[0])?.[1] ?? 0);
+      ext(cx - rr, cy - rr); ext(cx + rr, cy + rr);
+    }
+    if (!Number.isFinite(x0) || x1 <= x0 || y1 <= y0) return [];
     const colors = [...new Set([...frag.matchAll(/fill="(#[0-9a-fA-F]{3,6})"/g)].map((x) => x[1]))];
     return [{ id: d.layoutId, frag, bbox: { x: Math.round(x0), y: Math.round(y0), w: Math.round(x1 - x0), h: Math.round(y1 - y0) }, colors, ...(layout?.archetype ? { archetype: layout.archetype } : {}) }];
   });

@@ -57,7 +57,8 @@ let i = 0;
 for (const a of spec.archetypes) {
   const { layout, placement } = synthesizeFromGrammar(spec, content(a.archetype));
   const slide = solveDeckSlide(layout, placement, spec, { w: spec.canvas.w, h: spec.canvas.h });
-  const deco = pickDecoration(spec, slide, a.archetype, i++, decoLib);
+  const obstacles = layout.slots.filter((s) => s.type === "image").map((s) => s.bbox);
+  const deco = pickDecoration(spec, slide, a.archetype, i++, decoLib, obstacles);
   let svg = injectMockups(renderComposite(slide, deco.svg), layout);
   writeFileSync(`fixtures/out/verify/${theme}_${a.archetype}.png`, rasterize(svg, 1200));
   console.log(`${theme}_${a.archetype}: ${deco.reason}`);

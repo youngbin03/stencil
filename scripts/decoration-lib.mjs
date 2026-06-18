@@ -16,13 +16,24 @@ function decorativeFrag(svg) {
 function colorsOf(frag) {
   return [...new Set([...frag.matchAll(/fill="(#[0-9a-fA-F]{3,6})"/g)].map((x) => x[1]))];
 }
-function inkBBox(layout, canvas) {
-  const els = (layout?.decorationModel?.elements ?? []).filter((e) => e.kind !== "background");
-  if (!els.length) return null;
+/** True extent of the shape from its path/circle/ellipse coords (NOT the canvas-
+ *  clamped model bbox) so it can be transformed into place without misalignment. */
+function fragBBox(frag) {
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  for (const e of els) { x0 = Math.min(x0, e.bbox.x); y0 = Math.min(y0, e.bbox.y); x1 = Math.max(x1, e.bbox.x + e.bbox.w); y1 = Math.max(y1, e.bbox.y + e.bbox.h); }
-  x0 = Math.max(0, x0); y0 = Math.max(0, y0); x1 = Math.min(canvas.w, x1); y1 = Math.min(canvas.h, y1);
-  if (x1 <= x0 || y1 <= y0) return null;
+  const ext = (x, y) => { if (Number.isFinite(x) && Number.isFinite(y)) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); } };
+  for (const m of frag.matchAll(/\sd="([^"]+)"/g)) {
+    const nums = (m[1].match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
+    for (let i = 0; i + 1 < nums.length; i += 2) ext(nums[i], nums[i + 1]);
+  }
+  for (const m of frag.matchAll(/<circle[^>]*>/g)) {
+    const cx = +(/cx="(-?[\d.]+)"/.exec(m[0])?.[1] ?? NaN), cy = +(/cy="(-?[\d.]+)"/.exec(m[0])?.[1] ?? NaN), r = +(/\br="(-?[\d.]+)"/.exec(m[0])?.[1] ?? 0);
+    ext(cx - r, cy - r); ext(cx + r, cy + r);
+  }
+  for (const m of frag.matchAll(/<ellipse[^>]*>/g)) {
+    const cx = +(/cx="(-?[\d.]+)"/.exec(m[0])?.[1] ?? NaN), cy = +(/cy="(-?[\d.]+)"/.exec(m[0])?.[1] ?? NaN), rx = +(/rx="(-?[\d.]+)"/.exec(m[0])?.[1] ?? 0), ry = +(/ry="(-?[\d.]+)"/.exec(m[0])?.[1] ?? 0);
+    ext(cx - rx, cy - ry); ext(cx + rx, cy + ry);
+  }
+  if (!Number.isFinite(x0) || x1 <= x0 || y1 <= y0) return null;
   return { x: Math.round(x0), y: Math.round(y0), w: Math.round(x1 - x0), h: Math.round(y1 - y0) };
 }
 
@@ -37,7 +48,7 @@ for (const theme of THEMES) {
     const frag = decorativeFrag(readFileSync(resolve(base, "decorations", f), "utf8"));
     if (!frag) continue;
     const layout = byId.get(id);
-    const bbox = inkBBox(layout, sys.canvas);
+    const bbox = fragBBox(frag);
     if (!bbox) continue;
     lib.push({ id, frag, bbox, colors: colorsOf(frag), ...(layout?.archetype ? { archetype: layout.archetype } : {}) });
   }
