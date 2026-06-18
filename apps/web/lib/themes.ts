@@ -186,27 +186,39 @@ export async function rebakeTheme(slug: string, classify?: ClassifyFn): Promise<
   await mkdir(dirname(t.systemPath), { recursive: true });
   await writeFile(t.systemPath, JSON.stringify(system, null, 2), "utf8");
   await Promise.all(decorations.map((d) => writeFile(resolve(t.decoDir, `${d.layoutId}.svg`), d.svg, "utf8")));
-  // Organic decoration library (real free-form shapes) for synthesis backgrounds.
+  // Decoration library, generalised across vocabularies (organic <g Decorative>
+  // paths, solid colour-block rects, bands) — excludes the background rect, image
+  // holders (pattern fills) and divider lines. Mirrors scripts/decoration-lib.mjs.
+  const NEUTRAL = new Set(["white", "#ffffff", "#fff", "#f3f3f3", "black", "#000000", "#000", "none"]);
+  const bgToken = (system.tokens?.colors?.bg ?? "").toLowerCase();
   const decoLib = decorations.flatMap((d) => {
-    const m = d.svg.match(/<g id="Decorative"[^>]*>([\s\S]*?)<\/g>/);
-    const frag = m?.[1]?.trim();
-    if (!frag || !/<(path|circle|ellipse|polygon)\b/.test(frag)) return [];
-    const layout = system.layouts.find((l) => l.id === d.layoutId);
-    // True shape extent from its own path/circle coords (not the canvas-clamped model
-    // bbox) so the synthesizer can transform it into place without misalignment.
+    let inner = d.svg.replace(/<\?xml[\s\S]*?\?>/, "").replace(/<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "").replace(/<defs[\s\S]*?<\/defs>/g, "");
+    inner = inner.replace(/<g id="Frame"[^>]*>/, "").replace(/<\/g>\s*$/, "");
+    const els = inner.match(/<g id="Decorative"[\s\S]*?<\/g>|<(?:rect|path|circle|ellipse|line)\b[^>]*?\/?>/g) ?? [];
+    let bg: string | undefined, bgSeen = false;
+    const keep: string[] = [];
+    for (const el of els) {
+      const full = /^<rect/.test(el) && /width="1920"/.test(el) && /height="1080"/.test(el);
+      if (full && !bgSeen) { bgSeen = true; const f = (/fill="([^"]+)"/.exec(el)?.[1] ?? "").toLowerCase(); if (f && !NEUTRAL.has(f) && f !== bgToken) bg = f; continue; }
+      if (/^<line/.test(el) || /fill="url\(/.test(el)) continue;
+      keep.push(el);
+    }
+    const frag = keep.join("");
+    if (!frag.trim()) return [];
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     const ext = (x: number, y: number): void => { if (Number.isFinite(x) && Number.isFinite(y)) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); } };
-    for (const pm of frag.matchAll(/\sd="([^"]+)"/g)) {
-      const nums = (pm[1].match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
-      for (let i = 0; i + 1 < nums.length; i += 2) ext(nums[i]!, nums[i + 1]!);
-    }
-    for (const cm of frag.matchAll(/<circle[^>]*>/g)) {
-      const cx = Number(/cx="(-?[\d.]+)"/.exec(cm[0])?.[1]), cy = Number(/cy="(-?[\d.]+)"/.exec(cm[0])?.[1]), rr = Number(/\br="(-?[\d.]+)"/.exec(cm[0])?.[1] ?? 0);
-      ext(cx - rr, cy - rr); ext(cx + rr, cy + rr);
+    for (const pm of frag.matchAll(/\sd="([^"]+)"/g)) { const nums = (pm[1].match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number); for (let i = 0; i + 1 < nums.length; i += 2) ext(nums[i]!, nums[i + 1]!); }
+    for (const cm of frag.matchAll(/<circle[^>]*>/g)) { const cx = Number(/cx="(-?[\d.]+)"/.exec(cm[0])?.[1]), cy = Number(/cy="(-?[\d.]+)"/.exec(cm[0])?.[1]), rr = Number(/\br="(-?[\d.]+)"/.exec(cm[0])?.[1] ?? 0); ext(cx - rr, cy - rr); ext(cx + rr, cy + rr); }
+    for (const rm of frag.matchAll(/<rect[^>]*>/g)) {
+      const rx = Number(/\sx="(-?[\d.]+)"/.exec(rm[0])?.[1] ?? 0), ry = Number(/\sy="(-?[\d.]+)"/.exec(rm[0])?.[1] ?? 0);
+      const rw = Number(/width="(-?[\d.]+)"/.exec(rm[0])?.[1] ?? 0), rh = Number(/height="(-?[\d.]+)"/.exec(rm[0])?.[1] ?? 0);
+      const tr = /transform="translate\((-?[\d.]+)[ ,]+(-?[\d.]+)\)"/.exec(rm[0]); const tx = tr ? Number(tr[1]) : 0, ty = tr ? Number(tr[2]) : 0;
+      ext(rx + tx, ry + ty); ext(rx + tx + rw, ry + ty + rh);
     }
     if (!Number.isFinite(x0) || x1 <= x0 || y1 <= y0) return [];
+    const layout = system.layouts.find((l) => l.id === d.layoutId);
     const colors = [...new Set([...frag.matchAll(/fill="(#[0-9a-fA-F]{3,6})"/g)].map((x) => x[1]))];
-    return [{ id: d.layoutId, frag, bbox: { x: Math.round(x0), y: Math.round(y0), w: Math.round(x1 - x0), h: Math.round(y1 - y0) }, colors, ...(layout?.archetype ? { archetype: layout.archetype } : {}) }];
+    return [{ id: d.layoutId, frag, bbox: { x: Math.round(x0), y: Math.round(y0), w: Math.round(x1 - x0), h: Math.round(y1 - y0) }, colors, ...(bg ? { bg } : {}), ...(layout?.archetype ? { archetype: layout.archetype } : {}) }];
   });
   await writeFile(resolve(dirname(t.systemPath), "decorations-lib.json"), JSON.stringify(decoLib), "utf8");
   if (mockups.length) {
