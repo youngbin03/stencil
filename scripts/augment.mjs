@@ -212,16 +212,16 @@ const pi = {};
 for (const c of picked) { const arr = POOL[c.sName]; const i = pi[c.sName] || 0; c.data = arr[i % arr.length]; pi[c.sName] = i + 1; }
 
 // 4) render
-mkdirSync(`fixtures/out/augment`, { recursive: true });
+mkdirSync(`fixtures/out/augment/${theme}`, { recursive: true });
 const made = [];
 for (const c of picked) {
   const deco = c.bg ? c.frag.replace(/fill="#[0-9a-fA-F]{3,6}"/g, 'fill="#FFFFFF"') : c.frag;
   const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><rect width="${W}" height="${H}" fill="${c.bgFill}"/>${deco}${STRUCTURES[c.sName].render(c.region, c.fill, c.acc, c.data)}</svg>`;
   const name = `${c.id}__${c.sName}`;
-  writeFileSync(`fixtures/out/augment/${name}.png`, rasterize(svg, 1100));
+  writeFileSync(`fixtures/out/augment/${theme}/${name}.png`, rasterize(svg, 1100));
   made.push({ name, deco: c.id, struct: c.sName, full: !!c.bg });
 }
 const cards = made.map((m) => `<figure><img src="${m.name}.png"><figcaption><b>${m.struct}</b> on <code>${m.deco}</code>${m.full ? " · full-colour" : ""}</figcaption></figure>`).join("");
-writeFileSync(`fixtures/out/augment/index.html`, `<!doctype html><meta charset=utf8><title>${theme} augmented</title><style>body{font-family:Inter,system-ui;background:#0a0a0a;color:#eee;margin:0;padding:28px}h1{font-weight:600}.g{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}figure{margin:0;background:#161616;border-radius:12px;overflow:hidden}img{width:100%;display:block;border-bottom:1px solid #222}figcaption{padding:10px 14px;font-size:13px;color:#bbb}code{color:#8ab4ff}</style><h1>${theme} — augmented (+${made.length} new slides)</h1><p style="color:#888">Faithful decoration × a different content structure (distinct content each), placed in the decoration's largest open rectangle. Distinct from the original set.</p><div class=g>${cards}</div>`);
-console.log(`${theme}: +${made.length} new slides (from ${cands.length} candidates) → fixtures/out/augment/index.html`);
+writeFileSync(`fixtures/out/augment/${theme}/index.html`, `<!doctype html><meta charset=utf8><title>${theme} augmented</title><style>body{font-family:Inter,system-ui;background:#0a0a0a;color:#eee;margin:0;padding:28px}h1{font-weight:600}.g{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}figure{margin:0;background:#161616;border-radius:12px;overflow:hidden}img{width:100%;display:block;border-bottom:1px solid #222}figcaption{padding:10px 14px;font-size:13px;color:#bbb}code{color:#8ab4ff}</style><h1>${theme} — augmented (+${made.length} new slides)</h1><p style="color:#888">Faithful decoration × a different content structure (distinct content each), placed in the decoration's largest open rectangle. Distinct from the original set.</p><div class=g>${cards}</div>`);
+console.log(`${theme}: +${made.length} new slides (from ${cands.length} candidates) → fixtures/out/augment/${theme}/index.html`);
 console.log(made.map((m) => `  ${m.struct} on ${m.deco}${m.full ? " (full-colour)" : ""}`).join("\n"));
