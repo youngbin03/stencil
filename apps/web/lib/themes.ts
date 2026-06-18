@@ -29,6 +29,23 @@ export function repoRoot(): string {
   return cachedRoot;
 }
 
+let cachedAssets: string | null = null;
+/** Where baked builtin assets live. Prefers the app-local copy (apps/web/assets,
+ *  which is bundled into the Vercel functions); falls back to repo fixtures for
+ *  local development. */
+export function builtinAssetsRoot(): string {
+  if (cachedAssets) return cachedAssets;
+  // Cover every plausible lambda cwd (apps/web or repo root) + local dev.
+  const candidates = [
+    resolve(process.cwd(), "assets"),
+    resolve(process.cwd(), "apps/web/assets"),
+    resolve(repoRoot(), "apps/web/assets"),
+    resolve(repoRoot(), "fixtures/assets"),
+  ];
+  cachedAssets = candidates.find((p) => existsSync(p)) ?? candidates[0];
+  return cachedAssets;
+}
+
 const BUILTIN: Record<string, { name: string; dir: string }> = {
   colorful: { name: "Colorful", dir: "colorfulldesign" },
   black: { name: "Black", dir: "blackdesign" },
@@ -62,8 +79,8 @@ export function resolveTheme(slug: string): ThemePaths | null {
     return {
       slug, name: b.name, builtin: true,
       templatesDir: resolve(root, "templates", b.dir),
-      systemPath: resolve(root, "fixtures/assets", slug, "system.json"),
-      decoDir: resolve(root, "fixtures/assets", slug, "decorations"),
+      systemPath: resolve(builtinAssetsRoot(), slug, "system.json"),
+      decoDir: resolve(builtinAssetsRoot(), slug, "decorations"),
     };
   }
   const base = resolve(userThemesRoot(), slug);

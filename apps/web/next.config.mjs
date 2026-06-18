@@ -35,9 +35,11 @@ const nextConfig = {
   outputFileTracingRoot: root,
   outputFileTracingIncludes: {
     "/**": [
+      "apps/web/assets/**",
+      "apps/web/fonts/**",
+      "fonts/**",
       "fixtures/assets/*/system.json",
       "fixtures/assets/*/mockups/**",
-      "fonts/**",
     ],
   },
   // Pin the "@/" alias explicitly so the build never depends on tsconfig paths
