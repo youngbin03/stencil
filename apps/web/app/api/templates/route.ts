@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { readdir, writeFile, unlink, mkdir } from "node:fs/promises";
-import { resolve } from "node:path";
+import { readdir } from "node:fs/promises";
 import { resolveTheme, safeId } from "@/lib/themes";
-import { listSupabaseSlides } from "@/lib/supabase-templates";
+import { listSupabaseSlides, canWriteTemplates, putTemplate, removeTemplate } from "@/lib/supabase-templates";
 
 export const runtime = "nodejs";
 
@@ -42,21 +41,31 @@ export async function POST(req: Request): Promise<Response> {
   const svg = String(body.svg ?? "");
   if (!id) return NextResponse.json({ error: "invalid name" }, { status: 400 });
   if (!/<svg[\s>]/i.test(svg)) return NextResponse.json({ error: "not an SVG" }, { status: 400 });
-  await mkdir(t.templatesDir, { recursive: true });
-  await writeFile(resolve(t.templatesDir, `${id}.svg`), svg, "utf8");
-  return NextResponse.json({ ok: true, id });
+  if (!canWriteTemplates()) {
+    return NextResponse.json({ error: "template writes are not configured (set SUPABASE_SERVICE_ROLE_KEY)" }, { status: 501 });
+  }
+  try {
+    await putTemplate(theme, id, svg);
+    return NextResponse.json({ ok: true, id });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "upload failed" }, { status: 500 });
+  }
 }
 
 /** DELETE /api/templates?theme=<slug>&id=Frame-3 */
 export async function DELETE(req: Request): Promise<Response> {
   const url = new URL(req.url);
-  const t = resolveTheme(url.searchParams.get("theme") ?? "");
+  const theme = url.searchParams.get("theme") ?? "";
+  const t = resolveTheme(theme);
   const id = safeId(url.searchParams.get("id") ?? "");
   if (!t || !id) return NextResponse.json({ error: "bad request" }, { status: 400 });
+  if (!canWriteTemplates()) {
+    return NextResponse.json({ error: "template writes are not configured (set SUPABASE_SERVICE_ROLE_KEY)" }, { status: 501 });
+  }
   try {
-    await unlink(resolve(t.templatesDir, `${id}.svg`));
+    await removeTemplate(theme, id);
     return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: "not found" }, { status: 404 });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "delete failed" }, { status: 500 });
   }
 }
