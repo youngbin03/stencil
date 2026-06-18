@@ -30,15 +30,39 @@ function decoOf(id) {
     const full = /^<rect/.test(el) && /width="1920"/.test(el) && /height="1080"/.test(el);
     if (full && !bgSeen) { bgSeen = true; const f = (/fill="([^"]+)"/.exec(el)?.[1] || "").toLowerCase(); if (f && !["white", "#ffffff", "#fff", "#f3f3f3", "black", "#000000", "none"].includes(f) && f !== (sys.tokens.colors.bg || "").toLowerCase()) bg = f; continue; }
     if (/^<line/.test(el) || /fill="url\(/.test(el)) continue;          // divider / image holder
-    if (/^<path/.test(el) && / d="[^"]*"/.test(el)) {                   // drop hairline-paths (e.g. Decorative_2)
-      const ns = (/ d="([^"]+)"/.exec(el)[1].match(/-?\d+(?:\.\d+)?/g) || []).map(Number);
-      let y0 = Infinity, y1 = -Infinity, x0 = Infinity, x1 = -Infinity;
-      for (let i = 0; i + 1 < ns.length; i += 2) { x0 = Math.min(x0, ns[i]); x1 = Math.max(x1, ns[i]); y0 = Math.min(y0, ns[i + 1]); y1 = Math.max(y1, ns[i + 1]); }
-      if (y1 - y0 < 6 || x1 - x0 < 6) continue;
-    }
     keep.push(el);
   }
-  return { frag: keep.join(""), bg };
+  // Keep only AMBIENT background decoration. Measured grammar signal (see /tmp/recur
+  // analysis): ambient decoration FRAMES the content — it anchors to / bleeds past the
+  // canvas edges and is large. Content graphics (Venn diagrams, cards, pills, charts)
+  // sit in the INTERIOR. colorful is saturated with edge-anchored XL shapes; green has
+  // zero; black ~2 real colour panels. So: keep iff edge-anchored AND large. This
+  // replaces per-shape regex heuristics with one principled, theme-agnostic gate.
+  const EDGE = Math.round(W * 0.02);
+  const frag = keep.filter((el) => {
+    const b = inkBBox(el); if (!b) return false;
+    const edge = b.x <= EDGE || b.y <= EDGE || b.x + b.w >= W - EDGE || b.y + b.h >= H - EDGE;
+    const large = b.w >= W * 0.12 || b.h >= H * 0.12;
+    return edge && large;
+  }).join("");
+  return { frag, bg };
+}
+// True INKED bbox of one element, by rasterizing it alone and scanning painted pixels.
+// Robust for any shape (paths with H/V/curve/relative commands, strokes, transforms)
+// where naive coord-parsing fails. Returns canvas-space bbox or null if nothing paints.
+const BW = 240;
+function inkBBox(el) {
+  const bh = Math.round((BW * H) / W);
+  let px;
+  try { px = new Resvg(`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><g>${el}</g></svg>`, { fitTo: { mode: "width", value: BW } }).render().pixels; }
+  catch { return null; }
+  let minx = BW, miny = bh, maxx = -1, maxy = -1;
+  for (let y = 0; y < bh; y++) for (let x = 0; x < BW; x++) {
+    if (px[(y * BW + x) * 4 + 3] > 16) { if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y; }
+  }
+  if (maxx < 0) return null;
+  const sx = W / BW, sy = H / bh;
+  return { x: minx * sx, y: miny * sy, w: (maxx - minx + 1) * sx, h: (maxy - miny + 1) * sy };
 }
 
 // --- open region via OCCUPANCY GRID + LARGEST EMPTY RECTANGLE ---
@@ -177,6 +201,14 @@ function isChartLayout(L) {
   return els.filter((e) => e.bbox.h > e.bbox.w && e.bbox.w < W * 0.18 && e.bbox.w > 0).length >= 3;
 }
 
+// --- RECOMBINATION (themes with NO ambient background decoration, e.g. green/black) ---
+// Out of scope: green/black are hand-crafted minimal / photo-driven decks. Every
+// automated recombination tried (median grammar re-synthesis → sparse/missing-title;
+// direct card-geometry render → gaps) lands below their handcrafted quality bar. Their
+// real augmentation is photo replacement, which needs a source set (separate task).
+// Auto-augmentation here applies only to decks with ambient decoration (colorful).
+function recombine() { return []; }
+
 const N = Number(process.argv[3]) || 10;
 const structNames = Object.keys(STRUCTURES);
 // 1) enumerate valid candidates (decoration × structure, fit + clear region)
@@ -211,17 +243,27 @@ for (const c of cands) { if (picked.length >= N) break; if (!picked.includes(c))
 const pi = {};
 for (const c of picked) { const arr = POOL[c.sName]; const i = pi[c.sName] || 0; c.data = arr[i % arr.length]; pi[c.sName] = i + 1; }
 
-// 4) render
+// 4) render — unified item list { name, svg, label }
 mkdirSync(`fixtures/out/augment/${theme}`, { recursive: true });
-const made = [];
-for (const c of picked) {
-  const deco = c.bg ? c.frag.replace(/fill="#[0-9a-fA-F]{3,6}"/g, 'fill="#FFFFFF"') : c.frag;
-  const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><rect width="${W}" height="${H}" fill="${c.bgFill}"/>${deco}${STRUCTURES[c.sName].render(c.region, c.fill, c.acc, c.data)}</svg>`;
-  const name = `${c.id}__${c.sName}`;
-  writeFileSync(`fixtures/out/augment/${theme}/${name}.png`, rasterize(svg, 1100));
-  made.push({ name, deco: c.id, struct: c.sName, full: !!c.bg });
+const items = [];
+if (picked.length) {
+  // DECORATION MODE (themes with ambient background decoration, e.g. colorful)
+  for (const c of picked) {
+    const deco = c.bg ? c.frag.replace(/fill="#[0-9a-fA-F]{3,6}"/g, 'fill="#FFFFFF"') : c.frag;
+    const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><rect width="${W}" height="${H}" fill="${c.bgFill}"/>${deco}${STRUCTURES[c.sName].render(c.region, c.fill, c.acc, c.data)}</svg>`;
+    items.push({ name: `${c.id}__${c.sName}`, svg, label: `<b>${c.sName}</b> on <code>${c.id}</code>${c.bg ? " · full-colour" : ""}` });
+  }
+} else {
+  // No ambient background decoration (e.g. green/black) → out of scope (see recombine()).
+  for (const r of recombine()) items.push(r);
 }
-const cards = made.map((m) => `<figure><img src="${m.name}.png"><figcaption><b>${m.struct}</b> on <code>${m.deco}</code>${m.full ? " · full-colour" : ""}</figcaption></figure>`).join("");
-writeFileSync(`fixtures/out/augment/${theme}/index.html`, `<!doctype html><meta charset=utf8><title>${theme} augmented</title><style>body{font-family:Inter,system-ui;background:#0a0a0a;color:#eee;margin:0;padding:28px}h1{font-weight:600}.g{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}figure{margin:0;background:#161616;border-radius:12px;overflow:hidden}img{width:100%;display:block;border-bottom:1px solid #222}figcaption{padding:10px 14px;font-size:13px;color:#bbb}code{color:#8ab4ff}</style><h1>${theme} — augmented (+${made.length} new slides)</h1><p style="color:#888">Faithful decoration × a different content structure (distinct content each), placed in the decoration's largest open rectangle. Distinct from the original set.</p><div class=g>${cards}</div>`);
-console.log(`${theme}: +${made.length} new slides (from ${cands.length} candidates) → fixtures/out/augment/${theme}/index.html`);
-console.log(made.map((m) => `  ${m.struct} on ${m.deco}${m.full ? " (full-colour)" : ""}`).join("\n"));
+const made = [];
+for (const it of items) {
+  writeFileSync(`fixtures/out/augment/${theme}/${it.name}.png`, rasterize(it.svg, 1100));
+  made.push(it);
+}
+const mode = picked.length ? "decoration × structure (faithful native decoration + new content in the open region)" : "no ambient background decoration in this theme → out of scope for auto-augmentation";
+const cards = made.map((m) => `<figure><img src="${m.name}.png"><figcaption>${m.label}</figcaption></figure>`).join("");
+writeFileSync(`fixtures/out/augment/${theme}/index.html`, `<!doctype html><meta charset=utf8><title>${theme} augmented</title><style>body{font-family:Inter,system-ui;background:#0a0a0a;color:#eee;margin:0;padding:28px}h1{font-weight:600}.g{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}figure{margin:0;background:#161616;border-radius:12px;overflow:hidden}img{width:100%;display:block;border-bottom:1px solid #222}figcaption{padding:10px 14px;font-size:13px;color:#bbb}code{color:#8ab4ff}</style><h1>${theme} — augmented (+${made.length} new slides)</h1><p style="color:#888">${mode}. Distinct from the original set.</p><div class=g>${cards}</div>`);
+console.log(`${theme}: +${made.length} new slides → fixtures/out/augment/${theme}/index.html`);
+console.log(made.map((m) => `  ${m.name}`).join("\n"));
