@@ -99,7 +99,7 @@ const STRUCTURES = {
     foot: (r) => 3 * Math.min(r.h / 4, 150) + 80,
     render: (r, fill, acc, d) => {
       const items = d.items; const gap = Math.min(r.h / (items.length + 1), 150); let y = r.y + gap * 0.9; let out = txt(r.x, r.y + 40, "eyebrow", d.header, fill);
-      items.forEach((t, idx) => { y += gap; out += txt(r.x, y, "headline", `0${idx + 1}`, fill) + txt(r.x + 260, y, "subtitle", t, fill, r.w - 280) + `<line x1="${r.x}" y1="${Math.round(y + 24)}" x2="${Math.round(r.x + r.w)}" y2="${Math.round(y + 24)}" stroke="${acc}" stroke-width="3"/>`; });
+      items.forEach((t, idx) => { y += gap; out += txt(r.x, y, "headline", `0${idx + 1}`, fill) + txt(r.x + 260, y, "headline", t, fill, r.w - 280) + `<line x1="${r.x}" y1="${Math.round(y + 24)}" x2="${Math.round(r.x + r.w)}" y2="${Math.round(y + 24)}" stroke="${acc}" stroke-width="3"/>`; });
       return out;
     },
   },
@@ -113,6 +113,14 @@ const STRUCTURES = {
     },
   },
   quote: { fits: (r) => r.h > H * 0.3 && r.w > W * 0.5, foot: () => 2 * (spec.type.quote?.size ?? 120) + 70, render: (r, fill, acc, d) => { const cy = r.y + r.h * 0.42, qs = spec.type.quote?.size ?? 120; let out = ""; d.q.forEach((line, i) => { out += txt(r.x, cy + i * qs, "quote", line, fill, r.w); }); return out + txt(r.x, cy + d.q.length * qs + 30, "caption", d.cap, fill, r.w); } },
+  // one bold statement (2 short lines) + a small kicker
+  statement: { fits: (r) => r.w > W * 0.5 && r.h > H * 0.25, foot: () => (spec.type.headline?.size ?? 80) * 2.3 + (spec.type.eyebrow?.size ?? 28) * 1.5, render: (r, fill, acc, d) => { const hs = spec.type.headline?.size ?? 80, cy = r.y + r.h * 0.4; let out = txt(r.x, cy, "eyebrow", d.eyebrow, fill, r.w); d.lines.forEach((l, i) => { out += txt(r.x, cy + (i + 1) * hs * 1.05, "headline", l, fill, r.w); }); return out; } },
+  // a single focal metric — fits tighter clear areas a 3-up KPI row can't
+  bignum: { fits: (r) => r.w > W * 0.3 && r.h > H * 0.25, foot: () => (spec.type.kpi?.size ?? 120) + (spec.type.caption?.size ?? 28) * 1.6, render: (r, fill, acc, d) => { const cy = r.y + r.h * 0.5; return txt(r.x, cy, "kpi", d.n, fill, r.w) + txt(r.x, cy + 60, "caption", d.cap, fill, r.w); } },
+  // horizontal numbered steps (vs the vertical list)
+  steps: { fits: (r) => r.w > W * 0.6 && r.h > H * 0.2, foot: () => (spec.type.headline?.size ?? 80) + (spec.type.label?.size ?? 28) * 2.2, render: (r, fill, acc, d) => { const cw = r.w / d.steps.length, cy = r.y + r.h * 0.5, gapL = (spec.type.headline?.size ?? 80) * 0.8; let out = ""; d.steps.forEach((s, i) => { const x = r.x + i * cw; out += txt(x, cy, "headline", s[0], fill, cw - 24) + txt(x, cy + gapL, "label", s[1], fill, cw - 24); }); return out; } },
+  // two side-by-side blocks (label + short body) — before/after, problem/solution
+  twocol: { fits: (r) => r.w > W * 0.6 && r.h > H * 0.3, foot: () => (spec.type.label?.size ?? 28) * 1.8 + (spec.type.body?.size ?? 28) * 2.6, render: (r, fill, acc, d) => { const cw = r.w / 2, cy = r.y + r.h * 0.42; let out = ""; d.cols.forEach((c, i) => { const x = r.x + i * cw; out += txt(x, cy, "label", c.label, fill, cw - 30); c.body.forEach((b, j) => { out += txt(x, cy + 50 + j * 36, "body", b, fill, cw - 30); }); }); return out; } },
 };
 
 // Content pools — consistent voice (neutral product/design), parallel structure,
@@ -138,6 +146,24 @@ const POOL = {
     { q: ["Simplicity is the", "keystone of design."], cap: "— Design Principle" },
     { q: ["Clarity beats", "cleverness."], cap: "— Team Value" },
     { q: ["Make the right thing", "the easy thing."], cap: "— Product Maxim" },
+  ],
+  statement: [
+    { eyebrow: "North star", lines: ["Build things", "people love."] },
+    { eyebrow: "Mission", lines: ["Make complex", "feel simple."] },
+    { eyebrow: "Belief", lines: ["Ship small,", "learn fast."] },
+  ],
+  bignum: [
+    { n: "10×", cap: "Faster iteration" },
+    { n: "<2s", cap: "Median response" },
+    { n: "100K+", cap: "Teams onboarded" },
+  ],
+  steps: [
+    { steps: [["01", "Discover"], ["02", "Design"], ["03", "Deliver"]] },
+    { steps: [["01", "Listen"], ["02", "Build"], ["03", "Measure"]] },
+  ],
+  twocol: [
+    { cols: [{ label: "Before", body: ["Manual, slow,", "disconnected."] }, { label: "After", body: ["Automated, fast,", "unified."] }] },
+    { cols: [{ label: "Problem", body: ["Too many tools,", "too little signal."] }, { label: "Solution", body: ["One place for", "what matters."] }] },
   ],
 };
 
