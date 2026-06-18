@@ -91,56 +91,94 @@ function txt(x, y, role, s, fill) {
   return `<text x="${Math.round(x)}" y="${Math.round(y)}" font-family="${fam(role)}" font-size="${spec.type[role]?.size ?? 40}" font-weight="${spec.type[role]?.weight ?? 400}" fill="${fill}" style="white-space:pre">${esc(s)}</text>`;
 }
 const STRUCTURES = {
-  title: { fits: (r) => r.h > H * 0.25 && r.w > W * 0.55, render: (r, fill) => { const cy = r.y + r.h * 0.42; return txt(r.x, cy, "eyebrow", "Overview", fill) + txt(r.x, cy + (spec.type.title?.size ?? 120) * 0.9, "title", "Designing with intent", fill); } },
+  title: { fits: (r) => r.h > H * 0.25 && r.w > W * 0.55, render: (r, fill, acc, d) => { const cy = r.y + r.h * 0.42; return txt(r.x, cy, "eyebrow", d.eyebrow, fill) + txt(r.x, cy + (spec.type.title?.size ?? 120) * 0.9, "title", d.title, fill); } },
   list: {
     fits: (r) => r.h > H * 0.45 && r.w > W * 0.45,
-    render: (r, fill) => {
-      const items = ["Start from the problem", "Shape the core idea", "Ship and learn"];
-      const gap = Math.min(r.h / (items.length + 1), 150); let y = r.y + gap * 0.9; let out = txt(r.x, r.y + 40, "eyebrow", "In this section", fill);
-      items.forEach((t, idx) => { y += gap; out += txt(r.x, y, "headline", `0${idx + 1}`, fill) + txt(r.x + 260, y, "subtitle", t, fill) + `<line x1="${r.x}" y1="${Math.round(y + 24)}" x2="${Math.round(r.x + r.w)}" y2="${Math.round(y + 24)}" stroke="${accent}" stroke-width="3"/>`; });
+    render: (r, fill, acc, d) => {
+      const items = d.items; const gap = Math.min(r.h / (items.length + 1), 150); let y = r.y + gap * 0.9; let out = txt(r.x, r.y + 40, "eyebrow", d.header, fill);
+      items.forEach((t, idx) => { y += gap; out += txt(r.x, y, "headline", `0${idx + 1}`, fill) + txt(r.x + 260, y, "subtitle", t, fill) + `<line x1="${r.x}" y1="${Math.round(y + 24)}" x2="${Math.round(r.x + r.w)}" y2="${Math.round(y + 24)}" stroke="${acc}" stroke-width="3"/>`; });
       return out;
     },
   },
   kpi: {
     fits: (r) => r.w > W * 0.6 && r.h > H * 0.25,
-    render: (r, fill) => {
-      const k = ["38%", "2.4×", "+12"], cap = ["Adoption lift", "Faster delivery", "Retention gain"];
+    render: (r, fill, acc, d) => {
       const cw = r.w / 3, cy = r.y + r.h * 0.5; let out = "";
-      k.forEach((v, idx) => { const x = r.x + idx * cw; out += txt(x, cy, "kpi", v, fill) + txt(x, cy + 56, "caption", cap[idx], fill); });
+      d.k.forEach((v, idx) => { const x = r.x + idx * cw; out += txt(x, cy, "kpi", v, fill) + txt(x, cy + 56, "caption", d.cap[idx], fill); });
       return out;
     },
   },
-  quote: { fits: (r) => r.h > H * 0.3 && r.w > W * 0.5, render: (r, fill) => { const cy = r.y + r.h * 0.45; return txt(r.x, cy, "quote", "Simplicity is the", fill) + txt(r.x, cy + (spec.type.quote?.size ?? 120) * 1.0, "quote", "keystone of design.", fill) + txt(r.x, cy + (spec.type.quote?.size ?? 120) * 1.0 + 70, "caption", "— Design Principle", fill); } },
+  quote: { fits: (r) => r.h > H * 0.3 && r.w > W * 0.5, render: (r, fill, acc, d) => { const cy = r.y + r.h * 0.42, qs = spec.type.quote?.size ?? 120; let out = ""; d.q.forEach((line, i) => { out += txt(r.x, cy + i * qs, "quote", line, fill); }); return out + txt(r.x, cy + d.q.length * qs + 30, "caption", d.cap, fill); } },
+};
+
+// Content pools — consistent voice (neutral product/design), parallel structure,
+// fixed info amount per role. Each generated slide gets a DIFFERENT set.
+const POOL = {
+  title: [
+    { eyebrow: "Overview", title: "Designing with intent" },
+    { eyebrow: "Vision", title: "Built for clarity" },
+    { eyebrow: "Principle", title: "Less, but better" },
+    { eyebrow: "Approach", title: "Start with the user" },
+  ],
+  list: [
+    { header: "In this section", items: ["Start from the problem", "Shape the core idea", "Ship and learn"] },
+    { header: "How we work", items: ["Listen to users", "Prototype fast", "Measure what matters"] },
+    { header: "Our priorities", items: ["Reduce friction", "Earn trust", "Compound value"] },
+  ],
+  kpi: [
+    { k: ["38%", "2.4×", "+12"], cap: ["Adoption lift", "Faster delivery", "Retention gain"] },
+    { k: ["94%", "3.1M", "-40%"], cap: ["Satisfaction", "Active users", "Response time"] },
+    { k: ["2×", "+18", "99.9%"], cap: ["Throughput", "NPS gain", "Uptime"] },
+  ],
+  quote: [
+    { q: ["Simplicity is the", "keystone of design."], cap: "— Design Principle" },
+    { q: ["Clarity beats", "cleverness."], cap: "— Team Value" },
+    { q: ["Make the right thing", "the easy thing."], cap: "— Product Maxim" },
+  ],
 };
 
 function isDark(hex) { const h = (hex || "").replace("#", ""); if (h.length !== 6) return false; const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16); return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.62; }
+function domColor(frag) { const m = frag.match(/fill="(#[0-9a-fA-F]{3,6})"/); return m ? m[1] : accent; }
 
-mkdirSync(`fixtures/out/augment`, { recursive: true });
-const made = [];
-const seen = new Set();
+const N = Number(process.argv[3]) || 10;
 const structNames = Object.keys(STRUCTURES);
+// 1) enumerate valid candidates (decoration × structure, fit + clear region)
+const cands = [];
 for (const L of sys.layouts) {
   const { frag, bg } = decoOf(L.id);
-  if (!frag.trim()) continue;            // need a real decoration to pair with
-  const region = openRegion(frag);       // largest empty rect clear of the decoration ink
-  if (!region) continue;                 // decoration leaves no clear room
-  const bgFill = bg || sys.tokens.colors.bg;
+  if (!frag.trim()) continue;
+  const region = openRegion(frag);
+  if (!region) continue;
+  // colour: full-colour bg → everything white; light bg → text=theme, accents harmonise with the decoration's own colour
   const fill = bg ? (isDark(bg) ? "#FFFFFF" : text) : text;
+  const acc = bg ? (isDark(bg) ? "#FFFFFF" : text) : domColor(frag);
+  const bgFill = bg || sys.tokens.colors.bg;
   for (const sName of structNames) {
-    if (sName === L.archetype) continue;           // skip the original pairing
-    const sig = `${L.id}:${sName}:${bg || "light"}`;
-    if (seen.has(sig)) continue;
-    const st = STRUCTURES[sName];
-    if (!st.fits(region)) continue;
-    seen.add(sig);
-    const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><rect width="${W}" height="${H}" fill="${bgFill}"/>${bg ? frag.replace(/fill="#[0-9a-fA-F]{3,6}"/g, 'fill="#FFFFFF"') : frag}${st.render(region, fill)}</svg>`;
-    const name = `${L.id}__${sName}`;
-    writeFileSync(`fixtures/out/augment/${name}.png`, rasterize(svg, 1100));
-    made.push({ name, deco: L.id, struct: sName, region: `${Math.round(region.w)}×${Math.round(region.h)}@${Math.round(region.x)},${Math.round(region.y)}`, full: !!bg });
+    if (sName === L.archetype) continue;
+    if (!STRUCTURES[sName].fits(region)) continue;
+    cands.push({ id: L.id, sName, frag, bg, bgFill, region, fill, acc, area: region.w * region.h });
   }
 }
-// gallery
-const cards = made.map((m) => `<figure><img src="${m.name}.png"><figcaption><b>${m.struct}</b> on <code>${m.deco}</code>${m.full ? " · full-colour" : ""}<br><small>open ${m.region}</small></figcaption></figure>`).join("");
-writeFileSync(`fixtures/out/augment/index.html`, `<!doctype html><meta charset=utf8><title>${theme} augmented</title><style>body{font-family:Inter,system-ui;background:#0a0a0a;color:#eee;margin:0;padding:28px}h1{font-weight:600}.g{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}figure{margin:0;background:#161616;border-radius:12px;overflow:hidden}img{width:100%;display:block;border-bottom:1px solid #222}figcaption{padding:10px 14px;font-size:13px;color:#bbb}code{color:#8ab4ff}</style><h1>${theme} — augmented (${made.length} new slides)</h1><p style="color:#888">Faithful decoration × different content structure, placed in the decoration's open region. Not in the original set.</p><div class=g>${cards}</div>`);
-console.log(`${theme}: ${made.length} new slides → fixtures/out/augment/index.html`);
-console.log(made.slice(0, 12).map((m) => `  ${m.struct} on ${m.deco} (open ${m.region})${m.full ? " full-colour" : ""}`).join("\n"));
+// 2) select ~N diverse: roomiest first, one per decoration, balanced across structures
+cands.sort((a, b) => b.area - a.area);
+const picked = []; const usedDeco = new Set(); const sc = {}; const capPer = Math.ceil(N / structNames.length);
+for (const c of cands) { if (picked.length >= N) break; if (usedDeco.has(c.id) || (sc[c.sName] || 0) >= capPer) continue; picked.push(c); usedDeco.add(c.id); sc[c.sName] = (sc[c.sName] || 0) + 1; }
+for (const c of cands) { if (picked.length >= N) break; if (!picked.includes(c)) picked.push(c); }
+// 3) assign a DISTINCT content set per structure
+const pi = {};
+for (const c of picked) { const arr = POOL[c.sName]; const i = pi[c.sName] || 0; c.data = arr[i % arr.length]; pi[c.sName] = i + 1; }
+
+// 4) render
+mkdirSync(`fixtures/out/augment`, { recursive: true });
+const made = [];
+for (const c of picked) {
+  const deco = c.bg ? c.frag.replace(/fill="#[0-9a-fA-F]{3,6}"/g, 'fill="#FFFFFF"') : c.frag;
+  const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><rect width="${W}" height="${H}" fill="${c.bgFill}"/>${deco}${STRUCTURES[c.sName].render(c.region, c.fill, c.acc, c.data)}</svg>`;
+  const name = `${c.id}__${c.sName}`;
+  writeFileSync(`fixtures/out/augment/${name}.png`, rasterize(svg, 1100));
+  made.push({ name, deco: c.id, struct: c.sName, full: !!c.bg });
+}
+const cards = made.map((m) => `<figure><img src="${m.name}.png"><figcaption><b>${m.struct}</b> on <code>${m.deco}</code>${m.full ? " · full-colour" : ""}</figcaption></figure>`).join("");
+writeFileSync(`fixtures/out/augment/index.html`, `<!doctype html><meta charset=utf8><title>${theme} augmented</title><style>body{font-family:Inter,system-ui;background:#0a0a0a;color:#eee;margin:0;padding:28px}h1{font-weight:600}.g{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}figure{margin:0;background:#161616;border-radius:12px;overflow:hidden}img{width:100%;display:block;border-bottom:1px solid #222}figcaption{padding:10px 14px;font-size:13px;color:#bbb}code{color:#8ab4ff}</style><h1>${theme} — augmented (+${made.length} new slides)</h1><p style="color:#888">Faithful decoration × a different content structure (distinct content each), placed in the decoration's largest open rectangle. Distinct from the original set.</p><div class=g>${cards}</div>`);
+console.log(`${theme}: +${made.length} new slides (from ${cands.length} candidates) → fixtures/out/augment/index.html`);
+console.log(made.map((m) => `  ${m.struct} on ${m.deco}${m.full ? " (full-colour)" : ""}`).join("\n"));
