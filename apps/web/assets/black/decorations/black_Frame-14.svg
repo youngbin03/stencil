@@ -1,0 +1,36 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="Frame">
+<rect width="1920" height="1080" fill="black"/>
+<rect id="Rectangle 3" x="128" y="275" width="512" height="452" fill="url(#pattern0_668_580)"/>
+<rect id="Rectangle 4" x="704" y="275" width="512" height="452" fill="url(#pattern1_668_580)"/>
+<rect id="Rectangle 5" x="1280" y="275" width="512" height="452" fill="url(#pattern2_668_580)"/>
+
+<g id="Text block" clip-path="url(#clip0_668_580)">
+
+
+</g>
+<g id="Text block_2" clip-path="url(#clip1_668_580)">
+
+
+</g>
+<g id="Text block_3" clip-path="url(#clip2_668_580)">
+
+
+</g>
+</g>
+<defs>
+
+
+
+<clipPath id="clip0_668_580">
+<rect width="512.333" height="128" fill="white" transform="translate(128 767)"/>
+</clipPath>
+<clipPath id="clip1_668_580">
+<rect width="512.333" height="128" fill="white" transform="translate(704.333 767)"/>
+</clipPath>
+<clipPath id="clip2_668_580">
+<rect width="512.333" height="128" fill="white" transform="translate(1280.67 767)"/>
+</clipPath>
+
+</defs>
+</svg>

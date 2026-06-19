@@ -1,0 +1,24 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame" clip-path="url(#clip0_668_175)">
+<rect width="1920" height="1080" fill="#F3F3F3"/>
+<g id="Decorative">
+<path d="M928 785C1440.52 785 1762 997.082 1762 1416C1762 1450.94 1758.74 1484.42 1754 1515H-452C-141.888 1101.97 306.451 785 928 785Z" fill="#237267"/>
+</g>
+
+<line id="Line" x1="64" y1="367.5" x2="1856" y2="367.5" stroke="#237267" stroke-width="3"/>
+
+
+
+<line id="Line_2" x1="64" y1="549.5" x2="1856" y2="549.5" stroke="#237267" stroke-width="3"/>
+
+
+
+
+
+</g>
+<defs>
+<clipPath id="clip0_668_175">
+<rect width="1920" height="1080" fill="white"/>
+</clipPath>
+</defs>
+</svg>

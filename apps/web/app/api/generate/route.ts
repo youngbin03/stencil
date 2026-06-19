@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { existsSync } from "node:fs";
 import { generateDeck } from "@/lib/generate";
 import { generateSynthDeck } from "@/lib/synth";
+import { generateLayoutDeck } from "@/lib/layoutgen";
 import { resolveTheme } from "@/lib/themes";
 
 export const runtime = "nodejs";
@@ -29,7 +30,7 @@ export async function POST(req: Request): Promise<Response> {
   const theme = String(body.theme ?? "");
   const prompt = String(body.prompt ?? "").trim();
   const slideCount = Math.min(12, Math.max(1, Number(body.slideCount) || 6));
-  const mode = body.mode === "synthesis" ? "synthesis" : "filler";
+  const mode = body.mode === "synthesis" ? "synthesis" : body.mode === "layout" ? "layout" : "filler";
 
   const resolved = resolveTheme(theme);
   if (!resolved) return NextResponse.json({ error: "unknown theme" }, { status: 400 });
@@ -42,9 +43,11 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   try {
-    const deck = mode === "synthesis"
-      ? await generateSynthDeck(theme, prompt, slideCount)
-      : await generateDeck(theme, prompt, slideCount);
+    const deck = mode === "layout"
+      ? await generateLayoutDeck(theme, prompt, slideCount)
+      : mode === "synthesis"
+        ? await generateSynthDeck(theme, prompt, slideCount)
+        : await generateDeck(theme, prompt, slideCount);
     return NextResponse.json({ mode, ...deck });
   } catch (err) {
     const message = err instanceof Error ? err.message : "generation failed";

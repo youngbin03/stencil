@@ -1,0 +1,22 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="#C7EF4E"/>
+
+
+
+<g id="Frame 1">
+
+<line id="Line 2" x1="1118" y1="396.5" x2="1817" y2="396.5" stroke="black"/>
+
+<line id="Line 3" x1="1118" y1="491.5" x2="1817" y2="491.5" stroke="black"/>
+
+<line id="Line 4" x1="1118" y1="586.5" x2="1817" y2="586.5" stroke="black"/>
+
+<line id="Line 5" x1="1118" y1="681.5" x2="1817" y2="681.5" stroke="black"/>
+
+<line id="Line 6" x1="1118" y1="776.5" x2="1817" y2="776.5" stroke="black"/>
+
+</g>
+<line id="Line 7" x1="100" y1="99.5" x2="1817" y2="99.5" stroke="black"/>
+</g>
+</svg>

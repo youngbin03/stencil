@@ -1,0 +1,35 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="black"/>
+<g id="Venn Diagram 2">
+<g id="Diagram">
+<rect x="1032" y="160" width="760" height="760" rx="380" stroke="white" stroke-width="4"/>
+
+</g>
+<g id="Diagram_2">
+<rect x="1102" y="160" width="620" height="620" rx="310" stroke="white" stroke-width="4"/>
+
+</g>
+<g id="Diagram_3">
+<rect x="1182" y="160" width="460" height="460" rx="230" stroke="white" stroke-width="4"/>
+
+</g>
+<g id="Diagram_4">
+<rect x="1262" y="160" width="300" height="300" rx="150" fill="#424242"/>
+<rect x="1262" y="160" width="300" height="300" rx="150" stroke="white" stroke-width="4"/>
+
+</g>
+</g>
+<g id="Text block" clip-path="url(#clip0_668_663)">
+
+<g id="H3 Regular">
+
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_668_663">
+<rect width="600" height="164" fill="white" transform="translate(128 457.5)"/>
+</clipPath>
+</defs>
+</svg>

@@ -1,0 +1,34 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="white"/>
+
+<line id="Line 8" x1="100" y1="558.5" x2="1920" y2="558.5" stroke="#003310"/>
+<g id="Frame 2">
+<rect x="100" y="426" width="202" height="51" rx="25.5" fill="#C7EF4E"/>
+
+</g>
+<g id="Frame 3">
+<rect x="538" y="426" width="202" height="51" rx="25.5" fill="#C7EF4E"/>
+
+</g>
+<g id="Frame 4">
+<rect x="976" y="426" width="202" height="51" rx="25.5" fill="#C7EF4E"/>
+
+</g>
+<g id="Frame 5">
+<rect x="1419" y="426" width="202" height="51" rx="25.5" fill="#C7EF4E"/>
+
+</g>
+<circle id="Ellipse 1" cx="106" cy="559" r="6" fill="#003310"/>
+<circle id="Ellipse 2" cx="544" cy="559" r="6" fill="#003310"/>
+<circle id="Ellipse 3" cx="981" cy="559" r="6" fill="#003310"/>
+<circle id="Ellipse 4" cx="1419" cy="559" r="6" fill="#003310"/>
+
+
+
+
+
+
+<line id="Line 7" x1="100" y1="99.5" x2="1817" y2="99.5" stroke="#7A7A7A"/>
+</g>
+</svg>

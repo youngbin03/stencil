@@ -1,0 +1,56 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="white"/>
+<g id="Rectangle 2">
+<rect x="100" y="974" width="1720" height="32" fill="#C7EF4E"/>
+<rect x="100" y="974" width="1720" height="32" stroke="#003310"/>
+</g>
+
+<g id="Frame 2">
+<rect x="700" y="278" width="146" height="43" rx="21.5" fill="#003310"/>
+
+</g>
+<g id="Frame 3">
+<rect x="700" y="507" width="146" height="43" rx="21.5" fill="#C7EF4E"/>
+
+</g>
+<g id="Frame 14">
+<rect x="700" y="339" width="146" height="43" rx="21.5" fill="#C7EF4E"/>
+
+</g>
+<g id="Frame 12">
+<rect x="700" y="797" width="146" height="43" rx="21.5" fill="black"/>
+
+</g>
+<g id="Frame 10">
+<rect x="700" y="562" width="146" height="43" rx="21.5" fill="#C7EF4E"/>
+
+</g>
+<g id="Frame 13">
+<rect x="700" y="736" width="146" height="43" rx="21.5" fill="#C7EF4E"/>
+
+</g>
+<rect id="Rectangle 1" x="100" y="974" width="1283" height="32" fill="#003310"/>
+
+
+
+
+
+
+<g id="Frame 6">
+
+
+</g>
+<g id="Frame 7">
+
+
+</g>
+<g id="Frame 8">
+
+
+</g>
+
+
+<line id="Line 7" x1="100" y1="99.5" x2="1817" y2="99.5" stroke="#7A7A7A"/>
+</g>
+</svg>

@@ -1,0 +1,30 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame" clip-path="url(#clip0_668_295)">
+<rect width="1920" height="1080" fill="#237267"/>
+<path id="Bar graph" d="M216 370H310V770H216V370Z" fill="#FF542D"/>
+<path id="Bar graph_2" d="M369 310H463V770H369V310Z" fill="#F3F3F3"/>
+<path id="Bar graph_3" d="M521 469H615V770H521V469Z" fill="#D2B7E9"/>
+<path id="Bar graph line" d="M0 770H1652" stroke="#F3F3F3" stroke-width="3"/>
+<g id="Decorative">
+<path d="M1941 1350L1941 621C1924.98 801.112 1841.06 916.608 1735 998C1845.88 662.778 1943 594.04 1943 493C1943 390.602 1876.08 370 1836 370C1795.92 370 1731 409.157 1731 493L1731 1001C1509.47 1168.06 1195 1191.89 1195 1350L1941 1350Z" fill="#D2B7E9"/>
+</g>
+<g id="Text">
+<g id="Text block">
+
+
+</g>
+<g id="Text block_2">
+
+
+</g>
+</g>
+
+
+
+</g>
+<defs>
+<clipPath id="clip0_668_295">
+<rect width="1920" height="1080" fill="white"/>
+</clipPath>
+</defs>
+</svg>

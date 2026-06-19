@@ -10,3 +10,11 @@ export { synthDecoration, chooseDecoration, pickDecoration } from "./decoration.
 export type { DecoFrag } from "./decoration.js";
 export { makeStructures, STRUCTURE_FOR_ARCHETYPE, STRUCTURE_SCHEMA } from "./structures.js";
 export type { Structure, StructName, Region } from "./structures.js";
+export { buildLayoutBank, signature } from "./layout-bank.js";
+export type { LayoutSig } from "./layout-bank.js";
+export { BLOCK_SCHEMA, blockCount, blockMatches } from "./blocks.js";
+export type { BlockKind } from "./blocks.js";
+export { selectLayout, scoreLayout, availableKinds } from "./select.js";
+export type { PlanBlock } from "./select.js";
+export { planFromBlock } from "./render-block.js";
+export type { BlockPlacement } from "./render-block.js";

@@ -1,0 +1,31 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect width="1920" height="1080" fill="black"/>
+<g id="V Axis">
+
+<path id="Line" d="M960 144L960 935" stroke="white" stroke-width="4" stroke-linecap="round"/>
+
+</g>
+<g id="V Axis_2">
+
+<path id="Line_2" d="M206 539H1714" stroke="white" stroke-width="4" stroke-linecap="round"/>
+
+</g>
+<g id="Label">
+<circle id="Shape" cx="552" cy="298" r="75" fill="#424242"/>
+
+</g>
+<g id="Label_2">
+<circle id="Shape_2" cx="768" cy="728" r="75" fill="#424242"/>
+
+</g>
+<g id="Label_3">
+<circle id="Shape_3" cx="1275" cy="282" r="75" fill="#424242"/>
+
+</g>
+<g id="Label_4">
+<circle id="Shape_4" cx="1474" cy="669" r="75" fill="#424242"/>
+
+</g>
+</g>
+</svg>
