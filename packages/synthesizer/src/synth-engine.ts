@@ -145,6 +145,13 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
     const bw = Math.round(W * 0.42), bh = Math.round(H * 0.72);
     placedImgs[0]!.box = { x: W - margin - bw, y: Math.round((H - bh) / 2), w: bw, h: bh };
   }
+  // Gallery row: pin the image strip to a MIDDLE band so a title fits above it and the
+  // captions/footer fit below it. Mined gallery zones often hug the very top (no room
+  // for a title) and run full-height (captions then collide with the footer).
+  if (plan.archetype === "gallery" && placedImgs.length > 1) {
+    const rowY = Math.round(H * 0.28), rowH = Math.round(H * 0.42);
+    for (const p of placedImgs) p.box = { ...p.box, y: rowY, h: rowH };
+  }
   let tx0 = margin, tx1 = W - margin, textBottomCap = H;
   if (placedImgs.length) {
     const boxes = placedImgs.map((p) => p.box);
@@ -157,7 +164,7 @@ export function synthesizeFromGrammar(spec: GrammarSpec, plan: ContentPlan): { l
     const leftRoom = minX - margin, rightRoom = (W - margin) - maxR;
     if (leftRoom >= rightRoom && leftRoom >= W * 0.3) tx1 = minX - section;       // text left
     else if (rightRoom > leftRoom && rightRoom >= W * 0.3) tx0 = maxR + section;  // text right
-    else textBottomCap = Math.max(H * 0.36, minY - section);                       // text above
+    else textBottomCap = Math.max(H * 0.16, minY - section);                       // text above (strictly above the image row)
   }
 
   // Disposition (relation/spatial consumption): the mined skeleton encodes each

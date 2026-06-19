@@ -18,11 +18,21 @@ function injectMockups(svg: string, layout: Layout, mockups: Record<string, Mock
     if (!s.mockupRef) continue;
     const asset = mockups[s.mockupRef];
     if (!asset) continue;
-    const { defs: d, markup } = placeMockup(asset, s.bbox, undefined, "#FFFFFF");
+    // empty screen reads as an INTENTIONAL placeholder (soft top-down gradient) rather
+    // than a flat white void — we still place, never generate, imagery.
+    const { defs: d, markup } = placeMockup(asset, s.bbox, undefined, "url(#mockScreen)");
     if (!seen.has(s.mockupRef)) { defs += d; seen.add(s.mockupRef); }
     body += markup;
   }
-  return body ? svg.replace("</svg>", `${defs}${body}</svg>`) : svg;
+  if (!body) return svg;
+  const grad = `<linearGradient id="mockScreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E7EAEE"/></linearGradient>`;
+  return svg.replace("</svg>", `<defs>${grad}</defs>${defs}${body}</svg>`);
+}
+
+/** Slightly fade the native decoration so dark content text stays readable where it
+ *  overlaps it (review: colorful gallery captions sat on a vivid blob). */
+function softenDeco(svg: string): string {
+  return svg.replace(/id="Decorative/g, 'opacity="0.82" id="Decorative');
 }
 
 /**
@@ -87,6 +97,25 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
   const themeText = colorTokens.text ?? (isDark(themeBg) ? "#FFFFFF" : "#111111");
   const accentCol = (spec.colors as Record<string, string | undefined>).accent ?? colorTokens.accent ?? "#5FA0FB";
 
+  // Per-ARCHETYPE background colour is part of the design grammar (green: cover/closing =
+  // dark green, agenda/gallery = lime, team = black …). The single tokens.bg ("white")
+  // throws that away, so mine the dominant background each archetype actually uses and
+  // render on it, flipping text/accent for contrast.
+  const norm = (c?: string): string => (c === "white" ? "#FFFFFF" : c === "black" ? "#000000" : (c ?? "#FFFFFF"));
+  const lum = (hex: string): number => { const x = norm(hex).replace("#", ""); if (x.length !== 6) return 0.6; return (0.299 * parseInt(x.slice(0, 2), 16) + 0.587 * parseInt(x.slice(2, 4), 16) + 0.114 * parseInt(x.slice(4, 6), 16)) / 255; };
+  const bgTally: Record<string, Record<string, number>> = {};
+  for (const L of system.layouts) { const a = (L as { archetype?: string }).archetype, b = (L as { background?: string }).background; if (!a || !b) continue; (bgTally[a] ??= {})[b] = (bgTally[a][b] ?? 0) + 1; }
+  const bgForArch: Record<string, string> = {};
+  for (const a in bgTally) bgForArch[a] = norm(Object.entries(bgTally[a]).sort((x, y) => y[1] - x[1])[0]![0]);
+  const slideColors = (arch: string): { bg: string; text: string; acc: string } => {
+    const bg = bgForArch[arch] ?? norm(themeBg);
+    const text = lum(bg) < 0.6 ? "#FFFFFF" : norm(themeText);
+    const a = norm(accentCol);
+    // accent stays the brand colour unless it is nearly the same tone as the bg (then a
+    // box/line would vanish) — a low threshold keeps lime boxes on white (green's device).
+    return { bg, text, acc: Math.abs(lum(a) - lum(bg)) < 0.12 ? text : a };
+  };
+
   const archetypes = spec.archetypes.filter((a) => a.zones.some((z) => z.id !== "footer")).map((a) => a.archetype);
   // Structure-first: surface each archetype's MEDIA (device mockups show a product
   // UI; photos) so the planner picks product/feature archetypes for product slides.
@@ -98,7 +127,7 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
 
   const outline = await callTool<{ title: string; slides: { archetype: string; purpose: string }[] }>(
     client, model,
-    "You plan a presentation as a sequence of composition ARCHETYPES (not fixed templates). Cover first, closing/section last. Prefer an archetype whose media fits the slide — e.g. one with a device mockup for product/feature/demo slides.",
+    "You plan a presentation as a sequence of composition ARCHETYPES (not fixed templates). Cover first, closing/section last. Prefer an archetype whose media fits the slide — e.g. one with a device mockup for product/feature/demo slides. MAXIMIZE variety: use a DIFFERENT archetype for almost every slide and deliberately mix layout kinds (a metrics/stat slide, a comparison, a gallery, a quote, a content/feature slide) instead of repeating the same text archetype — a deck of near-identical layouts is a failure.",
     `Topic: ${prompt}\n\nAvailable archetypes:\n${catalog}\n\nPlan about ${slideCount} slides.`,
     { type: "object", properties: { title: { type: "string" }, slides: { type: "array", items: { type: "object", properties: { archetype: { type: "string" }, purpose: { type: "string" } }, required: ["archetype", "purpose"], additionalProperties: false } } }, required: ["title", "slides"], additionalProperties: false });
   if (!Array.isArray(outline.slides) || outline.slides.length === 0) throw new Error("planner returned no slides");
@@ -137,21 +166,33 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
   const slides = await mapLimit(indexed, 3, async ({ o, i }): Promise<SynthSlide> => {
     const sch = archetypeSchema(spec, o.archetype);
     const structName = STRUCTURE_FOR_ARCHETYPE[o.archetype];
-    // DENSE structure path — text archetypes (no real image/mockup assets). Renders the
-    // same info-rich layout as the augmentation engine into the decoration's open region.
-    if (structName && structures[structName] && sch.images === 0 && sch.mockups === 0) {
+    // DENSE structure path — text archetypes. Photo zones are NEVER filled in generation
+    // (we place, never generate, imagery), so a photo-only archetype renders far better as
+    // a dense structure than as a synth-engine layout with an empty photo hole. Only true
+    // device MOCKUPS (a meaningful product frame) stay on the synth-engine path.
+    if (structName && structures[structName] && sch.mockups === 0) {
       const data = await writeStructure(structName, o.archetype, o.purpose);
       const struct = structures[structName];
       const deco = pickDecoration(spec, { elements: [] } as never, o.archetype, i, decoLib, []);
       const region = openRegion(decoShapeFrag(deco.svg), W, H, SAFE);
       const decorated = !!region && struct.fits(region);
-      const r2 = decorated && region ? region : { x: SAFE, y: Math.round(H * 0.12), w: W - 2 * SAFE, h: Math.round(H * 0.74) };
-      const onColour = decorated && !!deco.bg;
-      const fill = (onColour ? isDark(deco.bg as string) : isDark(themeBg)) ? "#FFFFFF" : themeText;
-      const base = decorated
-        ? deco.svg
-        : `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><rect width="${W}" height="${H}" fill="${themeBg}"/></svg>`;
-      const svg = base.replace("</svg>", struct.render(r2, fill, accentCol, data) + "</svg>");
+      // Undecorated (minimal themes): size the band to the content's own height so the
+      // structure fills it instead of floating dead-centre in a tall empty canvas.
+      let r2: { x: number; y: number; w: number; h: number };
+      if (decorated && region) r2 = region;
+      else {
+        const foot = struct.foot({ x: SAFE, y: 0, w: W - 2 * SAFE, h: H });
+        const bandH = Math.min(Math.round(H * 0.6), Math.max(Math.round(foot * 1.2), Math.round(H * 0.34)));
+        r2 = { x: SAFE, y: Math.round((H - bandH) / 2), w: W - 2 * SAFE, h: bandH };
+      }
+      const useDeco = decorated && /<path/.test(deco.svg);
+      const sc = slideColors(o.archetype);
+      const fill = useDeco ? ((deco.bg && isDark(deco.bg)) ? "#FFFFFF" : themeText) : sc.text;
+      const acc = useDeco ? accentCol : sc.acc;
+      const base = useDeco
+        ? softenDeco(deco.svg)
+        : `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><rect width="${W}" height="${H}" fill="${sc.bg}"/></svg>`;
+      const svg = base.replace("</svg>", struct.render(r2, fill, acc, { ...data, __boxed: !useDeco }) + "</svg>");
       return { archetype: o.archetype, purpose: o.purpose, svg, gate: "PASS", novelty: 1, overall: 1 };
     }
     // Image/mockup archetypes → synth-engine path (real layout + assets).
@@ -167,13 +208,18 @@ export async function generateSynthDeck(theme: Theme, prompt: string, slideCount
     }
     const obstacles = r.layout.slots.filter((s) => s.type === "image").map((s) => s.bbox);
     const deco = pickDecoration(spec, slide, o.archetype, i, decoLib, obstacles);
-    // Full-colour background variant → flip text to white so it stays readable.
-    const rendered = deco.bg && isDark(deco.bg)
+    // Decorated theme (colorful) → keep its native decoration; minimal theme → paint the
+    // archetype's own background colour (green gallery = lime, team = black …).
+    const hasDeco = /<path/.test(deco.svg);
+    const sc = slideColors(o.archetype);
+    const base = hasDeco ? softenDeco(deco.svg) : `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><rect width="${W}" height="${H}" fill="${sc.bg}"/></svg>`;
+    const darkBg = hasDeco ? !!(deco.bg && isDark(deco.bg)) : isDark(sc.bg);
+    const rendered = darkBg
       ? { ...slide, elements: slide.elements.map((e) => (e.kind === "text" ? { ...e, color: "#FFFFFF" } : e)) }
       : slide;
     return {
       archetype: o.archetype, purpose: o.purpose,
-      svg: injectMockups(renderComposite(rendered, deco.svg), r.layout, mockups),
+      svg: injectMockups(renderComposite(rendered, base), r.layout, mockups),
       gate: v.reject ? "REJECT" : v.pass ? "PASS" : "REVISE",
       novelty: v.scores.layoutNovelty, overall: v.scores.overall,
     };

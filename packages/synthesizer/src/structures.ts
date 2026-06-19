@@ -30,6 +30,7 @@ export function makeStructures(spec: GrammarSpec, W: number, H: number): Record<
   const sizeOf = (role: string, fallback: number): number => type[role]?.size ?? fallback;
   const fam = (role: string): string => type[role]?.family ?? (spec as unknown as { fontFamily?: string }).fontFamily ?? "Inter";
   const weightOf = (role: string): number => type[role]?.weight ?? 400;
+  const luma = (hex: string): number => { const x = String(hex).replace("#", ""); if (x.length !== 6) return 0.6; return (0.299 * parseInt(x.slice(0, 2), 16) + 0.587 * parseInt(x.slice(2, 4), 16) + 0.114 * parseInt(x.slice(4, 6), 16)) / 255; };
 
   // emit one text node, shrinking font to fit maxW (same width-fit as augmentation)
   const txt = (x: number, y: number, role: string, s: string, fill: string, maxW?: number): string => {
@@ -39,6 +40,20 @@ export function makeStructures(spec: GrammarSpec, W: number, H: number): Record<
     return `<text x="${Math.round(x)}" y="${Math.round(y)}" font-family="${fam(role)}" font-size="${size}" font-weight="${weightOf(role)}" fill="${fill}" style="white-space:pre">${escXml(str)}</text>`;
   };
 
+  // word-wrap a body string to maxW (keeps a readable size instead of shrinking to a
+  // sliver and overflowing the canvas). Returns the markup + total height consumed.
+  const wrapTxt = (x: number, y: number, role: string, s: string, fill: string, maxW: number, maxLines = 4): { svg: string; h: number } => {
+    const size = sizeOf(role, 28), lh = Math.round(size * 1.35);
+    const cpl = Math.max(10, Math.floor(maxW / (size * 0.52)));
+    const words = String(s ?? "").split(/\s+/).filter(Boolean);
+    const lines: string[] = []; let cur = "";
+    for (const w of words) { if ((cur + " " + w).trim().length > cpl && cur) { lines.push(cur); cur = w; } else cur = cur ? cur + " " + w : w; }
+    if (cur) lines.push(cur);
+    const shown = lines.slice(0, maxLines);
+    const svg = shown.map((ln, i) => `<text x="${Math.round(x)}" y="${Math.round(y + i * lh)}" font-family="${fam(role)}" font-size="${size}" font-weight="${weightOf(role)}" fill="${fill}" style="white-space:pre">${escXml(ln)}</text>`).join("");
+    return { svg, h: shown.length * lh };
+  };
+
   return {
     title: {
       fits: (r) => r.h > H * 0.3 && r.w > W * 0.55,
@@ -46,7 +61,7 @@ export function makeStructures(spec: GrammarSpec, W: number, H: number): Record<
       render: (r, fill, _acc, d) => {
         const ts = sizeOf("title", 120), cy = r.y + r.h * 0.34;
         let o = txt(r.x, cy, "eyebrow", d.eyebrow, fill, r.w) + txt(r.x, cy + ts * 0.9, "title", d.title, fill, r.w);
-        if (d.body) o += txt(r.x, cy + ts * 0.9 + 78, "body", d.body, fill, r.w * 0.82);
+        if (d.body) o += wrapTxt(r.x, cy + ts * 0.9 + 78, "body", d.body, fill, r.w * 0.82, 3).svg;
         return o;
       },
     },
@@ -70,12 +85,23 @@ export function makeStructures(spec: GrammarSpec, W: number, H: number): Record<
     },
     kpi: {
       fits: (r) => r.w > W * 0.6 && r.h > H * 0.38,
-      foot: () => sizeOf("headline", 80) * 1.3 + sizeOf("kpi", 120) + sizeOf("caption", 28) * 2,
-      render: (r, fill, _acc, d) => {
+      foot: () => sizeOf("headline", 80) * 1.3 + sizeOf("kpi", 120) * 1.3 + sizeOf("caption", 28) * 2.4,
+      // d.__boxed → render each metric inside an accent box (the green template's device
+      // that lifts number readability); otherwise plain numbers (e.g. colorful's variant).
+      render: (r, fill, acc, d) => {
         let out = txt(r.x, r.y + sizeOf("headline", 80) * 0.82, "headline", d.title, fill, r.w);
         const k: string[] = d.k ?? [], cap: string[] = d.cap ?? [];
-        const cw = r.w / Math.max(1, k.length), cy = r.y + r.h * 0.68;
-        k.forEach((v, idx) => { const x = r.x + idx * cw; out += txt(x, cy, "kpi", v, fill, cw - 24) + txt(x, cy + 56, "caption", cap[idx] ?? "", fill, cw - 24); });
+        const n = Math.max(1, k.length), cw = r.w / n, ks = sizeOf("kpi", 120);
+        const boxed = !!d.__boxed;
+        const boxY = Math.round(r.y + r.h * 0.46), boxH = Math.round(ks * 1.32), boxW = Math.round(cw - 36);
+        const numCol = boxed ? (luma(acc) < 0.6 ? "#FFFFFF" : "#111111") : fill;
+        const numY = boxed ? boxY + Math.round(boxH * 0.7) : Math.round(r.y + r.h * 0.66);
+        k.forEach((v, idx) => {
+          const x = r.x + idx * cw;
+          if (boxed) out += `<rect x="${Math.round(x)}" y="${boxY}" width="${boxW}" height="${boxH}" rx="14" fill="${acc}"/>`;
+          out += txt(x + (boxed ? 24 : 0), numY, "kpi", v, numCol, (boxed ? boxW - 44 : cw - 24));
+          out += wrapTxt(x, (boxed ? boxY + boxH + 36 : numY + 46), "caption", cap[idx] ?? "", fill, cw - 20, 2).svg;
+        });
         return out;
       },
     },
@@ -98,7 +124,7 @@ export function makeStructures(spec: GrammarSpec, W: number, H: number): Record<
         const lines: string[] = d.lines ?? [];
         let out = txt(r.x, cy, "eyebrow", d.eyebrow, fill, r.w);
         lines.forEach((l, i) => { out += txt(r.x, cy + (i + 1) * hs * 1.05, "headline", l, fill, r.w); });
-        if (d.body) out += txt(r.x, cy + (lines.length + 1) * hs * 1.05 + 30, "body", d.body, fill, r.w * 0.82);
+        if (d.body) out += wrapTxt(r.x, cy + (lines.length + 1) * hs * 1.05 + 30, "body", d.body, fill, r.w * 0.82, 3).svg;
         return out;
       },
     },
