@@ -12,7 +12,7 @@ import { ThemePicker } from "@/components/theme-picker";
 import { cn } from "@/lib/utils";
 
 type Theme = string;
-type Mode = "layout" | "synthesis" | "filler";
+type Mode = "synthesis" | "filler";
 
 interface Slide {
   layoutId?: string;
@@ -40,7 +40,7 @@ interface Attachment {
 export default function Page() {
   const [themes, setThemes] = useState<ThemeInfo[]>([]);
   const [theme, setTheme] = useState<Theme>("");
-  const [mode, setMode] = useState<Mode>("layout");
+  const [mode, setMode] = useState<Mode>("synthesis");
 
   const loadThemes = useCallback(async () => {
     const d = await fetch("/api/themes").then((r) => r.json()).catch(() => ({ themes: [] }));
@@ -211,7 +211,6 @@ export default function Page() {
 
           <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)}>
             <TabsList className="h-8">
-              <TabsTrigger value="layout">layout</TabsTrigger>
               <TabsTrigger value="synthesis">synthesis</TabsTrigger>
               <TabsTrigger value="filler">filler</TabsTrigger>
             </TabsList>
@@ -323,7 +322,7 @@ function DeckView({ deck }: { deck: Deck }) {
         <div>
           <h2 className="text-xl font-semibold tracking-tight">{deck.title}</h2>
           <p className="mt-0.5 text-[13px] text-muted-foreground">
-            {deck.theme} · {deck.slides.length} slides · {deck.mode ?? "layout"}
+            {deck.theme} · {deck.slides.length} slides · {deck.mode ?? "synthesis"}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={() => downloadZip(deck)}>

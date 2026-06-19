@@ -70,3 +70,17 @@ prompt
 - Build Phases 0–3 alongside the current path (feature-flagged) so nothing breaks.
 - Cut over (Phase 6) only after Phase 5 verification passes on all 3 themes.
 - Each phase ends with a render-and-look verification (rasterize, inspect).
+
+## Status: layout mode built + deployed (callable via `mode:"layout"`) but UN-SHIPPED from UI
+The pipeline ships well for metricRow (KPI boxes) and list (pills) but BREAKS on some
+layouts because block↔layout matching ignores the layout's INTERNAL structure:
+- `statement → Frame-8` (green): Frame-8 is a 4-arrow multi-item layout; one statement
+  leaves 4 orphan arrows + a mis-placed body. → block predicates must reject layouts whose
+  repeating decoration/slot structure doesn't match the block's item count.
+- `comparison → Frame-2` (green/black): original placeholder text leaks into eyebrow
+  (`+38%`, `-2.1x`) and the 2-col slot mapping is uneven. → must overwrite/clear ALL of a
+  layout's text slots (fill or blank), not just the ones the block provides.
+- minor: title subtitle truncation, closing label floats, kpi can overflow its box.
+NEXT before re-shipping: (1) match on internal repeat-structure (arrow/pill/slot count),
+(2) clear unfilled text slots so no original placeholder leaks, (3) per-frame fit checks.
+UI reverted to synthesis/filler default until the above land.
