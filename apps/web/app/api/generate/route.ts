@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { generateDeck } from "@/lib/generate";
 import { generateSynthDeck } from "@/lib/synth";
 import { generateLayoutDeck } from "@/lib/layoutgen";
-import { resolveTheme } from "@/lib/themes";
+import { resolveTheme, ensureTheme } from "@/lib/themes";
 
 export const runtime = "nodejs";
 // 60s is the Vercel Hobby ceiling (Pro allows more). Keep within it so the build
@@ -34,6 +34,7 @@ export async function POST(req: Request): Promise<Response> {
 
   const resolved = resolveTheme(theme);
   if (!resolved) return NextResponse.json({ error: "unknown theme" }, { status: 400 });
+  await ensureTheme(theme); // materialize user-theme assets from Supabase into the working dir
   if (!existsSync(resolved.systemPath)) {
     return NextResponse.json({ error: "theme not baked yet — add slides and Rebake first" }, { status: 400 });
   }

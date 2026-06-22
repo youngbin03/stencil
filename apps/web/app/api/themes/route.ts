@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 /** GET /api/themes → [{ slug, name, builtin, slides, baked }].
  *  Slide counts come from Supabase when available (serverless has no raw SVGs). */
 export async function GET(): Promise<Response> {
-  const themes = listThemes();
+  const themes = await listThemes();
   const counts = await supabaseSlideCounts();
   for (const t of themes) if (counts[t.slug] != null) t.slides = counts[t.slug]!;
   return NextResponse.json({ themes });

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { classifySlide } from "@stencil/classifier";
-import { rebakeTheme } from "@/lib/themes";
+import { rebakeTheme, ensureTheme } from "@/lib/themes";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -16,6 +16,7 @@ export async function POST(req: Request): Promise<Response> {
   const slug = url.searchParams.get("slug") ?? "";
   const vision = url.searchParams.get("vision") === "1" && Boolean(process.env.ANTHROPIC_API_KEY);
   try {
+    await ensureTheme(slug); // pull template SVGs from Supabase into the working dir
     const classify = vision ? (svg: string, slots: Parameters<typeof classifySlide>[1]) => classifySlide(svg, slots) : undefined;
     const result = await rebakeTheme(slug, classify);
     return NextResponse.json({ ok: true, vision, ...result });

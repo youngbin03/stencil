@@ -5,6 +5,7 @@ import { Resvg } from "@resvg/resvg-js";
 import { extractThemeSystem, type ClassifyFn, type SlideInput } from "@stencil/extractor";
 import type { MockupAsset } from "@stencil/normalizer";
 import type { DecoFrag } from "@stencil/synthesizer";
+import { putThemeRow, listSupabaseThemes, putAsset, getAssetText, getThemeSvgs, canWriteTemplates } from "./supabase-templates";
 
 // AMBIENT-decoration gate (shared signal with scripts/decoration-lib.mjs): keep an
 // element only if its INKED bbox is edge-anchored AND large. Ambient background
@@ -80,7 +81,12 @@ const BUILTIN: Record<string, { name: string; dir: string }> = {
   green: { name: "Green", dir: "greendesign" },
 };
 
+/** Writable base for user-theme working files. On serverless (Vercel) only /tmp is
+ *  writable, so materialized themes live there; locally they persist under the repo.
+ *  Source of truth for user themes is Supabase — /tmp is a per-invocation cache. */
 export function userThemesRoot(): string {
+  if (process.env.STENCIL_DATA) return process.env.STENCIL_DATA;
+  if (process.env.VERCEL) return "/tmp/stencil-themes";
   return resolve(repoRoot(), "apps/web/.data/themes");
 }
 
@@ -111,8 +117,11 @@ export function resolveTheme(slug: string): ThemePaths | null {
       decoDir: resolve(builtinAssetsRoot(), slug, "decorations"),
     };
   }
+  // User theme: a valid slug always resolves to its (writable) working dir. Whether it
+  // actually exists / is baked is decided by ensureTheme (materializes from Supabase)
+  // and the systemPath existence check at the call site — not by local fs here, since
+  // on serverless the files only appear in /tmp after materialization.
   const base = resolve(userThemesRoot(), slug);
-  if (!existsSync(base)) return null;
   return {
     slug, name: slug, builtin: false,
     templatesDir: resolve(base, "templates"),
@@ -164,33 +173,87 @@ function themeSwatches(systemPath: string): string[] {
   }
 }
 
-export function listThemes(): ThemeInfo[] {
+export async function listThemes(): Promise<ThemeInfo[]> {
   const out: ThemeInfo[] = [];
-  const entry = (slug: string, name: string, builtin: boolean, t: ThemePaths): ThemeInfo => {
-    const baked = existsSync(t.systemPath);
-    return { slug, name, builtin, slides: countSvgs(t.templatesDir), baked, swatches: baked ? themeSwatches(t.systemPath) : [] };
+  const entry = (slug: string, name: string, builtin: boolean, t: ThemePaths, bakedHint?: boolean): ThemeInfo => {
+    const baked = existsSync(t.systemPath) || !!bakedHint;
+    const swatches = existsSync(t.systemPath) ? themeSwatches(t.systemPath) : [];
+    return { slug, name, builtin, slides: countSvgs(t.templatesDir), baked, swatches };
   };
   for (const slug of Object.keys(BUILTIN)) out.push(entry(slug, resolveTheme(slug)!.name, true, resolveTheme(slug)!));
+  const seen = new Set(out.map((t) => t.slug));
+  // user themes: Supabase is the source of truth on serverless
+  for (const r of await listSupabaseThemes()) {
+    if (BUILTIN[r.slug] || seen.has(r.slug) || !SLUG_RE.test(r.slug)) continue;
+    seen.add(r.slug);
+    out.push(entry(r.slug, r.name || r.slug, false, resolveTheme(r.slug)!, r.baked));
+  }
+  // local dev fallback (no Supabase): scan the working dir
   const root = userThemesRoot();
   if (existsSync(root)) {
     for (const e of readdirSync(root, { withFileTypes: true })) {
-      if (!e.isDirectory() || !SLUG_RE.test(e.name) || BUILTIN[e.name]) continue;
-      const t = resolveTheme(e.name);
-      if (t) out.push(entry(e.name, e.name, false, t));
+      if (!e.isDirectory() || !SLUG_RE.test(e.name) || seen.has(e.name)) continue;
+      seen.add(e.name);
+      out.push(entry(e.name, e.name, false, resolveTheme(e.name)!));
     }
   }
   return out;
 }
 
-/** Create an empty user theme folder; returns its slug. */
+/** Create an empty user theme. Persists to Supabase (source of truth) so it survives
+ *  serverless invocations; also seeds the local working dir for dev. */
 export async function createTheme(name: string): Promise<string> {
   const slug = slugify(name);
   if (!slug) throw new Error("invalid theme name");
   if (BUILTIN[slug]) throw new Error("name reserved");
-  const base = resolve(userThemesRoot(), slug);
-  if (existsSync(base)) throw new Error("theme already exists");
-  await mkdir(resolve(base, "templates"), { recursive: true });
+  if (canWriteTemplates()) {
+    const existing = await listSupabaseThemes();
+    if (existing.some((t) => t.slug === slug)) throw new Error("theme already exists");
+    await putThemeRow(slug, name.trim() || slug, false);
+  } else {
+    // local dev without service key: fall back to a local folder
+    const base = resolve(userThemesRoot(), slug);
+    if (existsSync(base)) throw new Error("theme already exists");
+  }
+  await mkdir(resolve(userThemesRoot(), slug, "templates"), { recursive: true });
   return slug;
+}
+
+/** Materialize a user theme's Supabase artifacts into the writable working dir so the
+ *  filesystem-based bake/generate code can run unchanged. Built-in themes (bundled on
+ *  disk) are a no-op. Call before resolveTheme-dependent reads on serverless. */
+export async function ensureTheme(slug: string): Promise<void> {
+  if (BUILTIN[slug] || !SLUG_RE.test(slug)) return;
+  const base = resolve(userThemesRoot(), slug);
+  // template SVGs (always needed for rebake)
+  const svgs = await getThemeSvgs(slug);
+  if (svgs.length) {
+    await mkdir(resolve(base, "templates"), { recursive: true });
+    await Promise.all(svgs.map((s) => writeFile(resolve(base, "templates", `${s.id}.svg`), s.svg, "utf8")));
+  }
+  // baked artifacts (system.json + decorations + mockups), listed in manifest.json
+  const manifestRaw = await getAssetText(`${slug}/manifest.json`);
+  if (!manifestRaw) return;
+  let manifest: { decorations?: string[]; mockups?: string[] };
+  try { manifest = JSON.parse(manifestRaw); } catch { return; }
+  const system = await getAssetText(`${slug}/system.json`);
+  if (system) await writeFile(resolve(base, "system.json"), system, "utf8");
+  const decoLib = await getAssetText(`${slug}/decorations-lib.json`);
+  if (decoLib) await writeFile(resolve(base, "decorations-lib.json"), decoLib, "utf8");
+  if (manifest.decorations?.length) {
+    await mkdir(resolve(base, "decorations"), { recursive: true });
+    await Promise.all(manifest.decorations.map(async (id) => {
+      const svg = await getAssetText(`${slug}/decorations/${id}.svg`);
+      if (svg) await writeFile(resolve(base, "decorations", `${id}.svg`), svg, "utf8");
+    }));
+  }
+  if (manifest.mockups?.length) {
+    await mkdir(resolve(base, "mockups"), { recursive: true });
+    await Promise.all(manifest.mockups.map(async (id) => {
+      const json = await getAssetText(`${slug}/mockups/${id}.json`);
+      if (json) await writeFile(resolve(base, "mockups", `${id}.json`), json, "utf8");
+    }));
+  }
 }
 
 /** Re-assetize a theme: read its template SVGs → build one design system →
@@ -254,6 +317,16 @@ export async function rebakeTheme(slug: string, classify?: ClassifyFn): Promise<
   if (mockups.length) {
     await mkdir(mockupDir, { recursive: true });
     await Promise.all(mockups.map((m) => writeFile(resolve(mockupDir, `${m.id}.json`), JSON.stringify(m.asset), "utf8")));
+  }
+  // Persist baked artifacts to Supabase (source of truth) so generation works across
+  // serverless invocations. Built-in themes ship in the bundle and skip this.
+  if (!t.builtin && canWriteTemplates()) {
+    await putAsset(`${slug}/system.json`, JSON.stringify(system), "application/json");
+    await putAsset(`${slug}/decorations-lib.json`, JSON.stringify(decoLib), "application/json");
+    await Promise.all(decorations.map((d) => putAsset(`${slug}/decorations/${d.layoutId}.svg`, d.svg, "image/svg+xml")));
+    await Promise.all(mockups.map((m) => putAsset(`${slug}/mockups/${m.id}.json`, JSON.stringify(m.asset), "application/json")));
+    await putAsset(`${slug}/manifest.json`, JSON.stringify({ decorations: decorations.map((d) => d.layoutId), mockups: mockups.map((m) => m.id) }), "application/json");
+    await putThemeRow(slug, t.name, true);
   }
   return { layouts: system.layouts.length, slides: slides.length, mockups: mockups.length };
 }

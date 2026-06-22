@@ -68,6 +68,63 @@ export async function removeTemplate(theme: string, id: string): Promise<void> {
   if (!r.ok) throw new Error(`db delete failed (${r.status})`);
 }
 
+/** Upsert a theme row (slug, name, baked). Service-role only. */
+export async function putThemeRow(slug: string, name: string, baked: boolean): Promise<void> {
+  if (!SERVICE) throw new Error("template writes are not configured (set SUPABASE_SERVICE_ROLE_KEY)");
+  const r = await fetch(`${URL}/rest/v1/themes`, {
+    method: "POST",
+    headers: { ...wHeaders(), "content-type": "application/json", prefer: "resolution=merge-duplicates" },
+    body: JSON.stringify({ slug, name, baked }),
+  });
+  if (!r.ok) throw new Error(`theme upsert failed (${r.status})`);
+}
+
+/** All registered themes (slug, name, baked). Empty on failure. */
+export async function listSupabaseThemes(): Promise<{ slug: string; name: string; baked: boolean }[]> {
+  try {
+    const r = await fetch(`${URL}/rest/v1/themes?select=slug,name,baked`, { headers, cache: "no-store" });
+    if (!r.ok) return [];
+    return (await r.json()) as { slug: string; name: string; baked: boolean }[];
+  } catch {
+    return [];
+  }
+}
+
+/** Upload an arbitrary baked artifact to Storage at templates/<path>. Service-role only. */
+export async function putAsset(path: string, body: string, contentType: string): Promise<void> {
+  if (!SERVICE) throw new Error("template writes are not configured (set SUPABASE_SERVICE_ROLE_KEY)");
+  const up = await fetch(`${URL}/storage/v1/object/templates/${path}`, {
+    method: "POST",
+    headers: { ...wHeaders(), "content-type": contentType, "x-upsert": "true" },
+    body,
+  });
+  if (!up.ok) throw new Error(`asset upload failed ${path} (${up.status})`);
+}
+
+/** Download a Storage artifact (public read) as text, or null if absent. */
+export async function getAssetText(path: string): Promise<string | null> {
+  try {
+    const r = await fetch(thumbUrl(path), { cache: "no-store" });
+    if (!r.ok) return null;
+    return await r.text();
+  } catch {
+    return null;
+  }
+}
+
+/** Fetch every template SVG for a theme (id + raw SVG). */
+export async function getThemeSvgs(theme: string): Promise<{ id: string; svg: string }[]> {
+  const slides = await listSupabaseSlides(theme);
+  const out: { id: string; svg: string }[] = [];
+  for (const s of slides) {
+    try {
+      const r = await fetch(s.thumb, { cache: "no-store" });
+      if (r.ok) out.push({ id: s.id, svg: await r.text() });
+    } catch { /* skip unreadable slide */ }
+  }
+  return out;
+}
+
 /** slide count per theme slug (for folder tiles). */
 export async function supabaseSlideCounts(): Promise<Record<string, number>> {
   try {
